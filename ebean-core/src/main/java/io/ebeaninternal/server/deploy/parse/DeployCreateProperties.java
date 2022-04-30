@@ -20,10 +20,10 @@ import java.lang.reflect.*;
  * one or normal scalar property.
  * </p>
  */
-public final class DeployCreateProperties {
+public class DeployCreateProperties {
 
-  private final DetermineManyType determineManyType;
-  private final TypeManager typeManager;
+  protected final DetermineManyType determineManyType;
+  protected final TypeManager typeManager;
 
   public DeployCreateProperties(TypeManager typeManager) {
     this.typeManager = typeManager;
@@ -44,7 +44,7 @@ public final class DeployCreateProperties {
    * We want to ignore ebean internal fields and some others as well.
    * </p>
    */
-  private boolean ignoreFieldByName(String fieldName) {
+  protected boolean ignoreFieldByName(String fieldName) {
     if (fieldName.startsWith("_ebean_")) {
       // ignore Ebean internal fields
       return true;
@@ -63,7 +63,7 @@ public final class DeployCreateProperties {
    * properties the bean properties from Class. Some of these properties may not map to database
    * columns.
    */
-  private void createProperties(DeployBeanDescriptor<?> desc, Class<?> beanType, int level) {
+  protected void createProperties(DeployBeanDescriptor<?> desc, Class<?> beanType, int level) {
     if (beanType.equals(Model.class)) {
       // ignore all fields on model (_$dbName)
       return;

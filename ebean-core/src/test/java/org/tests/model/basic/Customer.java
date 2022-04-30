@@ -9,6 +9,8 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Customer entity bean.
@@ -26,9 +28,19 @@ import java.util.concurrent.locks.ReentrantLock;
 @Entity
 @Table(name = "o_customer")
 @DbComment("Holds external customers")
-public class Customer extends BasicDomain {
+public class Customer extends BasicDomain implements BiConsumer<String,Object>, Function<String,Object> {
 
   private static final long serialVersionUID = 1L;
+
+  @Override
+  public void accept(String s, Object o) {
+    System.out.println(s+":"+o);
+  }
+
+  @Override
+  public Object apply(String s) {
+    return null;
+  }
 
   //public static final CustomerFinder find = new CustomerFinder();
 

@@ -70,10 +70,7 @@ import io.ebeaninternal.api.SpiQuery.Type;
 import io.ebeaninternal.server.autotune.AutoTuneService;
 import io.ebeaninternal.server.cache.RemoteCacheEvent;
 import io.ebeaninternal.server.core.timezone.DataTimeZone;
-import io.ebeaninternal.server.deploy.BeanDescriptor;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
-import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.InheritInfo;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.dto.DtoBeanDescriptor;
 import io.ebeaninternal.server.dto.DtoBeanManager;
 import io.ebeaninternal.server.el.ElFilter;
@@ -2289,5 +2286,9 @@ public final class DefaultServer implements SpiServer, SpiEbeanServer {
 
   List<MetaQueryPlan> queryPlanCollectNow(QueryPlanRequest request) {
     return queryPlanManager.collect(request);
+  }
+
+  public <T extends BeanDescriptorMap> T getBeanDescriptorManager(){
+    return (T)descriptorManager;
   }
 }

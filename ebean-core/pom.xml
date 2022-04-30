@@ -19,7 +19,6 @@
   </scm>
 
   <dependencies>
-
     <dependency>
       <groupId>io.ebean</groupId>
       <artifactId>ebean-ddl-runner</artifactId>

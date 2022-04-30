@@ -1,9 +1,12 @@
 package io.ebean.xtest.base;
 
+import io.ebean.Database;
 import io.ebean.xtest.BaseTestCase;
 import io.ebean.DB;
 import io.ebean.Query;
 import io.ebean.test.LoggedSql;
+import io.ebeaninternal.server.core.DefaultServer;
+import io.ebeaninternal.server.deploy.BeanDescriptorTenantManager;
 import org.junit.jupiter.api.Test;
 import org.tests.model.basic.Customer;
 import org.tests.model.basic.ResetBasicData;
@@ -16,6 +19,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EbeanServer_eqlTest extends BaseTestCase {
 
+  @Test
+  public void testORM(){
+    DefaultServer server = (DefaultServer) this.server();
+    BeanDescriptorTenantManager manager = server.getBeanDescriptorManager();
+    manager.registerEntity(Customer.class);
+    int cnt1 = server.find(Customer.class).findCount();
+
+    Customer customer = new Customer();
+    customer.setId(1);
+    customer.setName("aaaa");
+    customer.accept("name__c","测试");
+    server.save(customer);
+
+    customer = server.find(Customer.class,1);
+    customer.accept("name__c","aa");
+    server.update(customer);
+    customer = server.find(Customer.class,1);
+    System.out.println(customer.apply("name__c"));
+  }
 
   @Test
   public void basic() {

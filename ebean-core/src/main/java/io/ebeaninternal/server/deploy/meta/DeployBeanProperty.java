@@ -26,10 +26,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Description of a property of a bean. Includes its deployment information such
@@ -122,7 +119,7 @@ public class DeployBeanProperty {
   /**
    * The reflected field.
    */
-  private Field field;
+  private Optional<Field> field;
   /**
    * The bean type.
    */
@@ -196,9 +193,10 @@ public class DeployBeanProperty {
   }
 
   public int getSortOverride() {
-    if (field == null) {
+    if (field.isEmpty()) {
       return 0;
     }
+    Field field = this.field.get();
     if (AnnotationUtil.get(field, Id.class) != null) {
       return ID_ORDER;
     } else if (AnnotationUtil.get(field, EmbeddedId.class) != null) {
@@ -216,6 +214,7 @@ public class DeployBeanProperty {
   }
 
   private boolean isAuditProperty() {
+    Field field = this.field.get();
     return (AnnotationUtil.has(field, WhenCreated.class)
       || AnnotationUtil.has(field, WhenModified.class)
       || AnnotationUtil.has(field, WhoModified.class)
@@ -447,14 +446,14 @@ public class DeployBeanProperty {
    * Return the bean Field associated with this property.
    */
   public Field getField() {
-    return field;
+    return field == null ? null : field.orElse(null);
   }
 
   /**
    * Set the bean Field associated with this property.
    */
   public void setField(Field field) {
-    this.field = field;
+    this.field = Optional.ofNullable(field);
   }
 
   public boolean isNaturalKey() {
@@ -1057,7 +1056,10 @@ public class DeployBeanProperty {
   }
 
   public void initMetaAnnotations(Set<Class<?>> metaAnnotationsFilter) {
-    metaAnnotations = AnnotationUtil.metaFindAllFor(field, metaAnnotationsFilter);
+    if(field.isEmpty()){
+      return;
+    }
+    metaAnnotations = AnnotationUtil.metaFindAllFor(field.get(), metaAnnotationsFilter);
   }
 
   @SuppressWarnings("unchecked")

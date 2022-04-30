@@ -59,6 +59,7 @@ import org.slf4j.Logger;
 import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.SQLException;
 import java.sql.Types;
