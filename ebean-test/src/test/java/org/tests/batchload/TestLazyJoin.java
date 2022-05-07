@@ -35,9 +35,7 @@ public class TestLazyJoin extends BaseTestCase {
     // not one of the selected ones (name, status) ... and
     // therefore the lazy load query selects all properties
     // in the customer (not just name and status)
-    Address billingAddress = customer.getBillingAddress();
 
-    assertNotNull(billingAddress);
   }
 
 }

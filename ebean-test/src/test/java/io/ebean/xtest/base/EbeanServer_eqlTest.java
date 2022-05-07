@@ -1,17 +1,26 @@
 package io.ebean.xtest.base;
 
-import io.ebean.Database;
-import io.ebean.xtest.BaseTestCase;
 import io.ebean.DB;
+import io.ebean.DatabaseFactory;
 import io.ebean.Query;
+import io.ebean.Transaction;
+import io.ebean.bean.EntityBean;
 import io.ebean.test.LoggedSql;
+import io.ebean.test.UserContext;
+import io.ebean.xtest.BaseTestCase;
+import io.ebeaninternal.server.TenantContainerFactory;
 import io.ebeaninternal.server.core.DefaultServer;
-import io.ebeaninternal.server.deploy.BeanDescriptorTenantManager;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
+import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
+import net.bytebuddy.ByteBuddy;
 import org.junit.jupiter.api.Test;
+import org.tests.model.basic.Address;
+import org.tests.model.basic.Contact;
 import org.tests.model.basic.Customer;
 import org.tests.model.basic.ResetBasicData;
 
 import javax.persistence.PersistenceException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,24 +28,141 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EbeanServer_eqlTest extends BaseTestCase {
 
-  @Test
-  public void testORM(){
-    DefaultServer server = (DefaultServer) this.server();
-    BeanDescriptorTenantManager manager = server.getBeanDescriptorManager();
-    manager.registerEntity(Customer.class);
-    int cnt1 = server.find(Customer.class).findCount();
 
+  @Test
+  public void testUpdate(){
+    DefaultServer server = (DefaultServer) this.server();
+    UserContext.setTenantId(1);
+    int id = 1;
+    Transaction trans = server.beginTransaction();
+    Customer customer = new Customer();
+    customer.setId(id++);
+    customer.setName("客户A");
+
+    Contact c1 = new Contact();
+    c1.setId(id++);
+    c1.setFirstName("联系人1");
+    Contact c2 = new Contact();
+    c2.setId(id++);
+    c2.setFirstName("联系人2");
+
+    List<Contact> cs = new ArrayList<>();
+    cs.add(c1);
+    cs.add(c2);
+
+    customer.set("contactsList", cs);
+
+    server.save(customer);
+    System.out.println("-------save---------");
+    c1 = new Contact();
+    c1.setId(id++);
+    c1.setFirstName("联系人1");
+
+    cs.add(c1);
+    server.update(customer);
+
+    trans.commit();
+  }
+
+
+  @Test
+  public void testOneToManySave(){
+    DefaultServer server = (DefaultServer) this.server();
+    UserContext.setTenantId(1);
+    int id = 1;
+    Transaction trans = server.beginTransaction();
+    for(int j=0;j<10;j++) {
+      Customer customer = new Customer();
+      customer.setId(id++);
+      customer.setName("客户A");
+
+      Contact c1 = new Contact();
+      c1.setId(id++);
+      c1.setFirstName("联系人1");
+      Contact c2 = new Contact();
+      c2.setId(id++);
+      c2.setFirstName("联系人2");
+
+      List<Contact> cs = new ArrayList<>();
+      cs.add(c1);
+      cs.add(c2);
+
+      customer.set("contactsList", cs);
+
+      server.save(customer);
+    }
+    trans.commit();
+    System.out.println("****************************************************");
+    List<Customer> customer = server.createQuery(Customer.class).findList();
+    BeanDescriptor beanDescriptor = server.getBeanDescriptorManager().descriptor(Customer.class);
+    for (BeanPropertyAssocOne beanPropertyAssocOne : beanDescriptor.propertiesOne()) {
+      System.out.println(beanPropertyAssocOne.getValue((EntityBean) customer.get(0)));
+    }
+    System.out.println(customer.size());
+    System.out.println(beanDescriptor.propertiesOne());
+  }
+
+  @Test
+  public void testOneToOneSave(){
+    DefaultServer server = (DefaultServer) this.server();
+    UserContext.setTenantId(1);
+    Transaction trans = server.beginTransaction();
     Customer customer = new Customer();
     customer.setId(1);
     customer.setName("aaaa");
-    customer.accept("name__c","测试");
+
+    Address address = new Address();
+    address.setCity("深圳");
+    address.setLine1("Line1");
+    Customer c2 = new Customer();
+    c2.setId(2);
+    c2.set("name__c","客户关联客户-新数据");
+    c2.setName("客户关联客户");
+
+    customer.set("name__c","新数据");
+    customer.set("shippingAddress",c2);
+
+    server.save(customer);
+    trans.commit();
+    customer = server.find(Customer.class,1);
+    c2 = (Customer) customer.get("shippingAddress");
+
+    System.out.println(customer.getName());
+    System.out.println(customer.get("name__c"));
+    System.out.println(c2.getName());
+    System.out.println(c2.get("name__c"));
+  }
+
+  @Test
+  public void testORM(){
+    DefaultServer server = (DefaultServer) this.server();
+//    BeanDescriptorTenantManager manager = server.getBeanDescriptorManager();
+//    manager.registerEntity(Customer.class);
+    UserContext.setTenantId(1);
+    Transaction trans = server.beginTransaction();
+    Customer customer = new Customer();
+    customer.setId(1);
+    customer.setName("aaaa");
+    customer.set("name__c","测试");
+    Contact c = new Contact();
+    c.setFirstName("Jack");
+    c.setLastName("Mack");
+    customer.addContact(c);
     server.save(customer);
 
+    Address address = new Address();
+    address.setCity("深圳");
+    address.setLine1("Line1");
+
     customer = server.find(Customer.class,1);
-    customer.accept("name__c","aa");
+    customer.set("name__c","新数据");
+    customer.set("shippingAddress",address);
+
     server.update(customer);
+    trans.commit();
     customer = server.find(Customer.class,1);
-    System.out.println(customer.apply("name__c"));
+    System.out.println(customer.getName());
+    System.out.println(customer.get("name__c"));
   }
 
   @Test

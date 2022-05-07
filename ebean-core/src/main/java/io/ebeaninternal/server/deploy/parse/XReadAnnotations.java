@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.config.DatabaseConfig;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
+import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 
@@ -26,7 +27,7 @@ public class XReadAnnotations {
    */
   public void readInitial(XEntity entity,DeployBeanInfo<?> info) {
     try {
-      new XAnnotationClass(info, readConfig).parse();
+      //new XAnnotationClass(info, readConfig).parse();
       new XAnnotationFields(entity,info, readConfig).parse();
     } catch (RuntimeException e) {
       throw new RuntimeException("Error reading annotations for " + info, e);
@@ -43,15 +44,10 @@ public class XReadAnnotations {
    * associated bean.
    * </p>
    */
-  public void readAssociations(DeployBeanInfo<?> info, BeanDescriptorManager factory) {
+  public void readAssociations(DeployBeanInfo<?> info, BeanDescriptorMap factory) {
     try {
-      new AnnotationAssocOnes(info, readConfig, factory).parse();
-      new AnnotationAssocManys(info, readConfig, factory).parse();
-      // read the Sql annotations last because they may be
-      // dependent on field level annotations
-      new AnnotationSql(info, readConfig).parse();
-      new AnnotationClass(info, readConfig).parseAttributeOverride();
-      info.getDescriptor().postAnnotations();
+      new XAnnotationAssocOnes(info, readConfig, factory).parse();
+      new XAnnotationAssocManys(info, readConfig, factory).parse();
     } catch (RuntimeException e) {
       throw new RuntimeException("Error reading annotations for " + info, e);
     }

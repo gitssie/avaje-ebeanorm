@@ -13,10 +13,10 @@ public class BeanDescriptorTenantTest extends BaseTest{
   @Test
   public void createReference() {
     DefaultServer server = (DefaultServer) spiEbeanServer();
-    BeanDescriptorTenantManager descriptorManager = server.getBeanDescriptorManager();
+//    BeanDescriptorTenantManager descriptorManager = server.getBeanDescriptorManager();
 //    descriptorManager.descMap.put(CustomEntityBean.class.getName(),descriptorManager.descMap.get(Customer.class.getName()));
 
-    descriptorManager.registerEntity(Customer.class);
+//    descriptorManager.registerEntity(Customer.class);
     BeanDescriptor<Customer> customerDesc = server.descriptor(Customer.class);
 //    customerDesc.get
     Customer bean = customerDesc.createReference(null, false, 42, null);

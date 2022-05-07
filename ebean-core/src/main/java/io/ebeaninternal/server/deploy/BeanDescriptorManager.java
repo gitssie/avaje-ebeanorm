@@ -6,6 +6,7 @@ import io.ebean.RawSqlBuilder;
 import io.ebean.annotation.ConstraintMode;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.EntityBean;
+import io.ebean.bean.ObjectEntity;
 import io.ebean.config.*;
 import io.ebean.config.dbplatform.*;
 import io.ebean.core.type.ScalarType;
@@ -301,9 +302,9 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
       logStatus();
 
       // clear collections we no longer need
-      embeddedIdTypes = null;
-      embeddedBeans = null;
-      deployInfoMap = null;
+      embeddedIdTypes = Collections.unmodifiableSet(embeddedIdTypes);
+      embeddedBeans = Collections.unmodifiableList(embeddedBeans);
+      deployInfoMap = Collections.unmodifiableMap(deployInfoMap);
       return asOfTableMap;
     } catch (BeanNotEnhancedException e) {
       throw e;
@@ -1389,7 +1390,10 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
    */
   protected void checkInheritedClasses(Class<?> beanClass) {
     Class<?> superclass = beanClass.getSuperclass();
-    if (Object.class.equals(superclass) || Model.class.equals(superclass) || JAVA_LANG_RECORD.equals(superclass.getName())) {
+    if (Object.class.equals(superclass)
+      || Model.class.equals(superclass)
+      || ObjectEntity.class.equals(superclass)
+      || JAVA_LANG_RECORD.equals(superclass.getName())) {
       // we got to the top of the inheritance
       return;
     }

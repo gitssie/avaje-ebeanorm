@@ -67,7 +67,7 @@ final class AnnotationFields extends AnnotationParser {
   /**
    * Read the Id marker annotations on EmbeddedId properties.
    */
-  private void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
+  protected void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
     readJsonAnnotations(prop);
     if (has(prop, Id.class)) {
       readIdAssocOne(prop);
@@ -112,7 +112,7 @@ final class AnnotationFields extends AnnotationParser {
     }
   }
 
-  private void readField(DeployBeanProperty prop) {
+  protected void readField(DeployBeanProperty prop) {
     // all Enums will have a ScalarType assigned...
     boolean isEnum = prop.getPropertyType().isEnum();
     Enumerated enumerated = get(prop, Enumerated.class);

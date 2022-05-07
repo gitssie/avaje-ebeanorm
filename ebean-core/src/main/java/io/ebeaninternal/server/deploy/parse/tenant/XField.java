@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 
 public class XField {
+  private String label;
   private String name;
   private Class<?> type;
   private boolean enabled = true;
@@ -24,6 +25,14 @@ public class XField {
     this.name = name;
     this.type = type;
     this.annotations = new HashMap<>();
+  }
+
+  public String getLabel() {
+    return label;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
   }
 
   public String getName() {

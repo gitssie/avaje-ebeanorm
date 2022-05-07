@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.persist.dmlbind;
 
+import io.ebean.bean.ObjectEntity;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.BeanPropertyJsonMapper;
@@ -46,6 +47,9 @@ final class FactoryProperty {
       } else if (DmlMode.UPDATE == mode) {
         return new BindablePropertyJsonUpdate(prop);
       }
+    }
+    if(ObjectEntity.KEY_CUSTOM.equals(prop.dbComment())){ //custom properties
+      return new BindableObjectProperty(prop);
     }
     return new BindableProperty(prop);
   }

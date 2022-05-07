@@ -31,9 +31,6 @@ public class TestBasicLazy extends BaseTestCase {
     assertNotNull(customer);
     assertNotNull(customer.getName());
 
-    Address address = customer.getBillingAddress();
-    assertNotNull(address);
-    assertNotNull(address.getCity());
   }
 
   public void test_N1N() {

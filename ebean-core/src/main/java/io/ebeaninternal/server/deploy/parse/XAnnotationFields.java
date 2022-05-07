@@ -62,11 +62,15 @@ final class XAnnotationFields extends AnnotationParser {
   public void parse() {
     for (DeployBeanProperty prop : descriptor.propertiesAll()) {
       prop.initMetaAnnotations(readConfig.getMetaAnnotations());
-      XField field = entity.getField(prop.getName());
-      if (prop instanceof DeployBeanPropertyAssoc<?>) {
-        readAssocOne(field,(DeployBeanPropertyAssoc<?>) prop);
-      } else {
-        readField(field,prop);
+      if(prop.getField() != null){
+        continue;
+      }else {
+        XField field = entity.getField(prop.getName());
+        if (prop instanceof DeployBeanPropertyAssoc<?>) {
+          readAssocOne(field, (DeployBeanPropertyAssoc<?>) prop);
+        } else {
+          readField(field, prop);
+        }
       }
     }
   }
@@ -100,7 +104,7 @@ final class XAnnotationFields extends AnnotationParser {
       if (prop.isId() && !prop.isEmbedded()) {
         prop.setEmbedded();
       }
-      readEmbeddedAttributeOverrides((DeployBeanPropertyAssocOne<?>) prop);
+//      readEmbeddedAttributeOverrides((DeployBeanPropertyAssocOne<?>) prop);
     }
     Formula formula = getMetaAnnotationFormula(field,platform);
     if (formula != null) {

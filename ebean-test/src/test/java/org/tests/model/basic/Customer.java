@@ -31,21 +31,10 @@ import java.util.function.Function;
 @Entity
 @Table(name = "o_customer")
 @DbComment("Holds external customers")
-public class Customer extends BasicDomain implements BiConsumer<String,Object>, Function<String,Object> {
-  private transient Map<String,Object> custom = new HashMap<>();
+public class Customer extends BasicDomain {
   private static final long serialVersionUID = 1L;
 
   public static final CustomerFinder find = new CustomerFinder();
-
-  @Override
-  public void accept(String s, Object o) {
-    custom.put(s,o);
-  }
-
-  @Override
-  public Object apply(String s) {
-    return custom.get(s);
-  }
 
   /**
    * EnumValue is an Ebean specific mapping for enums.
@@ -94,10 +83,10 @@ public class Customer extends BasicDomain implements BiConsumer<String,Object>, 
   @DocEmbedded(doc = "*,country(*)")
   @ManyToOne(cascade = CascadeType.ALL)
   Address billingAddress;
-
-  @DocEmbedded(doc = "*,country(*)")
-  @ManyToOne(cascade = CascadeType.ALL)
-  Address shippingAddress;
+//
+//  @DocEmbedded(doc = "*,country(*)")
+//  @ManyToOne(cascade = CascadeType.ALL)
+//  Address shippingAddress;
 
   @OneToMany(mappedBy = "customer")
   @Where(clause = "${ta}.order_date is not null")
@@ -156,16 +145,16 @@ public class Customer extends BasicDomain implements BiConsumer<String,Object>, 
   /**
    * Return shipping address.
    */
-  public Address getShippingAddress() {
-    return shippingAddress;
-  }
+//  public Address getShippingAddress() {
+//    return shippingAddress;
+//  }
 
   /**
    * Set shipping address.
    */
-  public void setShippingAddress(Address shippingAddress) {
-    this.shippingAddress = shippingAddress;
-  }
+//  public void setShippingAddress(Address shippingAddress) {
+//    this.shippingAddress = shippingAddress;
+//  }
 
   /**
    * Return orders.

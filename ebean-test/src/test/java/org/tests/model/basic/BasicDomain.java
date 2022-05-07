@@ -2,15 +2,19 @@ package org.tests.model.basic;
 
 import io.ebean.annotation.WhenCreated;
 import io.ebean.annotation.WhenModified;
+import io.ebean.bean.ObjectEntity;
 
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import javax.persistence.Version;
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 @MappedSuperclass
-public class BasicDomain implements Serializable {
+public class BasicDomain extends ObjectEntity implements Serializable {
 
   private static final long serialVersionUID = 5569496199004449769L;
 
@@ -26,6 +30,8 @@ public class BasicDomain implements Serializable {
   @Version
   Long version;
 
+  @Transient
+  private Map<String,Object> custom;
   public Integer getId() {
     return id;
   }
@@ -56,5 +62,12 @@ public class BasicDomain implements Serializable {
 
   public void setVersion(Long version) {
     this.version = version;
+  }
+
+  public Map<String,Object> custom(){
+    if(custom == null){
+      custom = new HashMap<>();
+    }
+    return custom;
   }
 }

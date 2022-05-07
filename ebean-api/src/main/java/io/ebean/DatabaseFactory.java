@@ -30,6 +30,7 @@ public final class DatabaseFactory {
 
   private static final ReentrantLock lock = new ReentrantLock();
   private static SpiContainer container;
+  private static SpiContainerFactory containerFactory;
   private static String defaultServerName;
 
   static {
@@ -46,6 +47,15 @@ public final class DatabaseFactory {
     lock.lock();
     try {
       container(containerConfig);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public static void initialiseContainerFactory(SpiContainerFactory containerFactory){
+    lock.lock();
+    try {
+      DatabaseFactory.containerFactory = containerFactory;
     } finally {
       lock.unlock();
     }
@@ -161,6 +171,9 @@ public final class DatabaseFactory {
    * Create the container instance using the configuration.
    */
   protected static SpiContainer createContainer(ContainerConfig containerConfig) {
+    if(containerFactory != null){
+      return containerFactory.create(containerConfig);
+    }
     Iterator<SpiContainerFactory> factories = ServiceLoader.load(SpiContainerFactory.class).iterator();
     if (factories.hasNext()) {
       return factories.next().create(containerConfig);

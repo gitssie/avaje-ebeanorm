@@ -4,6 +4,7 @@ import io.ebean.RawSql;
 import io.ebeaninternal.server.deploy.TableJoin;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
 
 /**
@@ -14,7 +15,7 @@ public final class DeployBeanInfo<T> {
   private final DeployUtil util;
   private final DeployBeanDescriptor<T> descriptor;
   private DeployBeanPropertyAssoc<?> embeddedId;
-
+  private XEntity entity;
   /**
    * Create with a DeployUtil and BeanDescriptor.
    */
@@ -23,6 +24,11 @@ public final class DeployBeanInfo<T> {
     this.descriptor = descriptor;
   }
 
+  public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor,XEntity entity) {
+    this.util = util;
+    this.descriptor = descriptor;
+    this.entity = entity;
+  }
   @Override
   public String toString() {
     return String.valueOf(descriptor);
@@ -76,5 +82,13 @@ public final class DeployBeanInfo<T> {
 
   public boolean isEmbedded() {
     return descriptor.isEmbedded();
+  }
+
+  public XEntity getEntity() {
+    return entity;
+  }
+
+  public void setEntity(XEntity entity) {
+    this.entity = entity;
   }
 }

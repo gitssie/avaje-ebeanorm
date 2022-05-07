@@ -84,11 +84,6 @@ public class TestAutoTuneProfiling extends BaseTestCase {
     // order.setShipDate(new Date(System.currentTimeMillis()));
     Customer customer = order.getCustomer();
     customer.getName();
-    Address shippingAddress = customer.getShippingAddress();
-    if (shippingAddress != null) {
-      shippingAddress.getLine1();
-      shippingAddress.getCity();
-    }
   }
 
   private void useLotUntuned() {

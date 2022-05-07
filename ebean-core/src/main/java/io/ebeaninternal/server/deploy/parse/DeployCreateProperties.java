@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.ObjectEntity;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.api.CoreLog;
@@ -53,7 +54,7 @@ public class DeployCreateProperties {
     return fieldName.startsWith("ajc$instance$");
   }
 
-  private boolean ignoreField(Field field) {
+  protected boolean ignoreField(Field field) {
     return Modifier.isStatic(field.getModifiers())
       || Modifier.isTransient(field.getModifiers())
       || ignoreFieldByName(field.getName());

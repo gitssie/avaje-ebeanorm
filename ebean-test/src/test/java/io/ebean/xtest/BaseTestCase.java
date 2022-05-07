@@ -1,9 +1,6 @@
 package io.ebean.xtest;
 
-import io.ebean.CacheMode;
-import io.ebean.DB;
-import io.ebean.Database;
-import io.ebean.Query;
+import io.ebean.*;
 import io.ebean.annotation.PersistBatch;
 import io.ebean.annotation.Platform;
 import io.ebean.cache.ServerCacheStatistics;
@@ -14,6 +11,7 @@ import io.ebean.util.StringHelper;
 import io.ebean.xtest.base.PlatformCondition;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.api.SpiTransaction;
+import io.ebeaninternal.server.TenantContainerFactory;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.expression.platform.DbExpressionHandler;
 import io.ebeaninternal.server.expression.platform.DbExpressionHandlerFactory;
@@ -71,6 +69,7 @@ public abstract class BaseTestCase {
       String propsFile = System.getProperty("props.file");
       System.out.println("BaseTestCase: -Dprops.file=" + propsFile); // help debug CI
       // First try, if we get the default server. If this fails, all tests will fail.
+      DatabaseFactory.initialiseContainerFactory(new TenantContainerFactory());
       DB.getDefault();
     } catch (Throwable e) {
       logger.error("Fatal error while getting ebean-server. Exiting...", e);

@@ -3,28 +3,30 @@ package io.ebeaninternal.server.deploy.parse;
 import io.ebean.Model;
 import io.ebean.annotation.*;
 import io.ebean.core.type.ScalarType;
-import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.ManyType;
 import io.ebeaninternal.server.deploy.meta.*;
-import io.ebeaninternal.server.deploy.parse.DetermineManyType;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
-import io.ebeaninternal.server.deploy.parse.tenant.XEntityProvider;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
 import io.ebeaninternal.server.type.TypeManager;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Transient;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedHashMap;
 
-public class TenantDeployCreateProperties extends DeployCreateProperties{
-  private XEntityProvider entityProvider;
+public class TenantDeployCreateProperties  {
+  private XEntityFinder entityProvider;
+  protected final DetermineManyType determineManyType;
+  protected final TypeManager typeManager;
 
-  public TenantDeployCreateProperties(TypeManager typeManager) {
-    super(typeManager);
-    entityProvider = new XEntityProvider();
+  public TenantDeployCreateProperties(DeployCreateProperties createProperties, XEntityFinder entityProvider) {
+    this.typeManager = createProperties.typeManager;
+    this.determineManyType = createProperties.determineManyType;
+    this.entityProvider = entityProvider;
   }
 
   private void setProperties(DeployBeanDescriptor<?> desc) {
@@ -43,23 +45,24 @@ public class TenantDeployCreateProperties extends DeployCreateProperties{
     }
     try {
       Collection<XField> fields = entity.getFields();
-      int i=-1;
+      int i= 0;
       for (XField field : fields) {
+        if(desc.getBeanProperty(field.getName()) != null){
+          continue;
+        }
         i++;
-        if (!ignoreFieldByName(field.getName())) {
-          DeployBeanProperty prop = createProp(desc, field, beanType);
-          if (prop != null) {
-            // set a order that gives priority to inherited properties
-            // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
-            int sortOverride = prop.getSortOverride();
-            prop.setSortOrder((1 * 10000 + 100 - i + sortOverride));
+        DeployBeanProperty prop = createProp(desc, field, beanType);
+        if (prop != null) {
+          // set a order that gives priority to inherited properties
+          // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
+          int sortOverride = prop.getSortOverride();
+          prop.setSortOrder((1 * 10000 + 100 - i + sortOverride));
 
-            DeployBeanProperty replaced = desc.addBeanProperty(prop);
-            if (replaced != null && !replaced.isTransient()) {
-              String msg = "Huh??? property " + prop.getFullBeanName() + " being defined twice";
-              msg += " but replaced property was not transient? This is not expected?";
-              CoreLog.log.warn(msg);
-            }
+          DeployBeanProperty replaced = desc.addBeanProperty(prop);
+          if (replaced != null && !replaced.isTransient()) {
+            String msg = "Huh??? property " + prop.getFullBeanName() + " being defined twice";
+            msg += " but replaced property was not transient? This is not expected?";
+            CoreLog.log.warn(msg);
           }
         }
       }
@@ -151,22 +154,52 @@ public class TenantDeployCreateProperties extends DeployCreateProperties{
   }
 
 
-  /**
-   * 创建Deploy Bean
-   * @param deployUtil
-   * @param desc
-   * @param readAnnotations
-   * @return
-   * @param <T>
-   */
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(DeployUtil deployUtil, DeployBeanDescriptor<T> desc, XReadAnnotations readAnnotations) {
-    XEntity entity = entityProvider.getEntity(desc);
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass,DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    XEntity entity = entityProvider.getEntity(beanClass);
+    if(!isChanged(entity,info.getDescriptor())){
+        return info;
+    }
+    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(),beanClass);
     createProperties(desc, entity,desc.getBeanType());
-    desc.sortProperties();
     setProperties(desc);
 
-    DeployBeanInfo<T> info = new DeployBeanInfo<>(deployUtil, desc);
+    info = new DeployBeanInfo<>(info.getUtil(), desc,entity);
     readAnnotations.readInitial(entity,info); //初始化属性
     return info;
+  }
+
+
+  protected boolean isChanged(XEntity entity,DeployBeanDescriptor desc){
+    if(entity.getBeanType() != desc.getBeanType()){
+      return true;
+    }
+    return entity.getFields().size() > 0;
+  }
+
+  public boolean isChanged(Class<?> entityClass) {
+    return false;
+  }
+
+  protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
+    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass,null);
+    Field[] fields = descriptor.getClass().getDeclaredFields();
+    LinkedHashMap<String, DeployBeanProperty> propMap;
+    for (Field field : fields) {
+      field.setAccessible(true);
+      if(Modifier.isStatic(field.getModifiers()) ){
+        continue;
+      }
+      if (field.getName().equals("propMap")) {
+        propMap = (LinkedHashMap<String, DeployBeanProperty>) field.get(descriptor);
+        field.set(desc, new LinkedHashMap<>(propMap));
+      } else if (field.getName().equals("properties")) {
+        field.set(desc, null);
+      } else if (field.getName().equals("beanType")) {
+        continue;
+      } else {
+        field.set(desc, field.get(descriptor));
+      }
+    }
+    return desc;
   }
 }

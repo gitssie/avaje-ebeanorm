@@ -189,7 +189,6 @@ public class ResetBasicData {
       shippingAddr.setCity("Auckland");
       shippingAddr.setCountry(DB.reference(Country.class, "NZ"));
 
-      c.setShippingAddress(shippingAddr);
     }
 
     if (billingStreet != null) {

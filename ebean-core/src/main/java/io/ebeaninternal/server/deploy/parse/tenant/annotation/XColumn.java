@@ -4,9 +4,15 @@ import javax.persistence.Column;
 import java.lang.annotation.Annotation;
 
 public class XColumn implements Column {
+  private String name;
+
+  public XColumn(String name) {
+    this.name = name;
+  }
+
   @Override
   public String name() {
-    return null;
+    return name;
   }
 
   @Override

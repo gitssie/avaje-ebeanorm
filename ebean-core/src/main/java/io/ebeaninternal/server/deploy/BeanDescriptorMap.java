@@ -82,4 +82,6 @@ public interface BeanDescriptorMap {
    * (= an entity exists)
    */
   boolean isTableManaged(String tableName);
+
+  BeanTable beanTable(Class<?> type);
 }
