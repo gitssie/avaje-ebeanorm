@@ -1,13 +1,11 @@
 package io.ebeaninternal.server.core;
 
-import io.ebean.bean.XEntityProvider;
 import io.ebean.config.DatabaseConfig;
 import io.ebeaninternal.api.SpiBackgroundExecutor;
 import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.deploy.BeanDescriptorManagerTenant;
 import io.ebeaninternal.server.deploy.parse.DeployCreateProperties;
-import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.dto.DtoBeanManager;
 import io.ebeaninternal.server.query.CQueryEngine;
 
@@ -29,10 +27,5 @@ public class TenantInternalConfiguration extends InternalConfiguration{
     this.dataTimeZone = initDataTimeZone();
     this.binder = getBinder(typeManager, databasePlatform, dataTimeZone);
     this.cQueryEngine = new CQueryEngine(config, databasePlatform, binder, asOfTableMapping, draftTableMap);
-  }
-
-  public XEntityFinder initEntityFinder() {
-    final XEntityProvider service = service(XEntityProvider.class);
-    return service == null ? null : service.create();
   }
 }

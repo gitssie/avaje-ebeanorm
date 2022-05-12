@@ -76,15 +76,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   @Override
-  public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
-    if(entityType == Object.class){
-      return null;
-    }
-    deployOnChange(entityType);
-    return (BeanDescriptor<T>)descMap.get(entityType.getName());
-  }
-
-  @Override
   public EncryptKey encryptKey(String tableName, String columnName) {
     return beanDescriptorManager.encryptKey(tableName,columnName);
   }
@@ -123,6 +114,15 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   public BeanTable beanTable(Class<?> type) {
     BeanTable table = beanTableMap.get(type);
     return table != null ? table : beanDescriptorManager.beanTable(type);
+  }
+
+  @Override
+  public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
+    if(entityType == Object.class){
+      return null;
+    }
+    deployOnChange(entityType);
+    return (BeanDescriptor<T>)descMap.get(entityType.getName());
   }
 
   public <T> BeanManager<T> beanManager(Class<T> entityType) {
@@ -225,7 +225,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (BeanDescriptor.EntityType.SQL == desc.getEntityType()) {
       desc.setBaseTable(null, null, null);
     }
-
     // mark transient properties
     beanDescriptorManager.transientProperties.process(desc);
     beanDescriptorManager.setScalarType(desc);

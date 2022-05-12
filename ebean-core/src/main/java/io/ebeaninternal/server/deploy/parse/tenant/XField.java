@@ -18,8 +18,9 @@ public class XField {
   private boolean sortable = true;
   private Integer minLength = null;
   private Integer maxLength = null;
-
   private Map<Class<? extends Annotation>,Annotation> annotations;
+
+  private String etag;
 
   public XField(String name, Class<?> type) {
     this.name = name;
@@ -121,5 +122,13 @@ public class XField {
 
   public <T extends Annotation> T getAnnotation(Class<T> annClass) {
     return (T) annotations.get(annClass);
+  }
+
+  public String getEtag() {
+    return etag;
+  }
+
+  public void setEtag(String etag) {
+    this.etag = etag;
   }
 }

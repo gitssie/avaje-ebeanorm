@@ -7,7 +7,6 @@ import io.ebeaninternal.server.core.InternalConfiguration;
 import io.ebeaninternal.server.core.ServiceUtil;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
-import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,13 +24,9 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     this.tenantProvider = config.getConfig().getCurrentTenantProvider();
     String versionsBetweenSuffix = versionsBetweenSuffix(databasePlatform, this.config);
     this.readAnnotations = new XReadAnnotations(config.getGeneratedPropertyFactory(), asOfViewSuffix, versionsBetweenSuffix, this.config);
-    this.tenantCreateProperties = new TenantDeployCreateProperties(createProperties,initEntityFinder());
+    XEntityProvider entityProvider = (XEntityProvider) config.getConfig().getServiceObject(XEntityProvider.class.getName());
+    this.tenantCreateProperties = new TenantDeployCreateProperties(createProperties,entityProvider.create());
     this.initContext = new BeanDescriptorInitContext(asOfTableMap, draftTableMap, asOfViewSuffix);
-  }
-
-  protected XEntityFinder initEntityFinder() {
-    final XEntityProvider service = service(XEntityProvider.class);
-    return service == null ? null : service.create();
   }
 
   protected <S> S service(Class<S> cls) {
@@ -41,7 +36,7 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
     Object tenantId = tenantProvider.currentId();
-    if(tenantId == null){
+    if(ebeanServer == null || tenantId == null){
       return super.descriptor(entityType);
     }
     BeanDescriptorMapTenant mapTenant = getDescriptorTenant(tenantId);
@@ -51,7 +46,7 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   @Override
   public <T> BeanManager<T> beanManager(Class<T> entityType) {
     Object tenantId = tenantProvider.currentId();
-    if(tenantId == null){
+    if(ebeanServer == null || tenantId == null){
       return super.beanManager(entityType);
     }
     BeanDescriptorMapTenant mapTenant = getDescriptorTenant(tenantId);

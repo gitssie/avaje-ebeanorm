@@ -13,6 +13,7 @@ import io.ebeaninternal.server.core.DefaultServer;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.implementation.FixedValue;
 import org.junit.jupiter.api.Test;
 import org.tests.model.basic.Address;
 import org.tests.model.basic.Contact;
@@ -20,13 +21,45 @@ import org.tests.model.basic.Customer;
 import org.tests.model.basic.ResetBasicData;
 
 import javax.persistence.PersistenceException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.bytebuddy.matcher.ElementMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EbeanServer_eqlTest extends BaseTestCase {
+  protected Class<?> generateCustomEntityClass(ClassLoader parentClassLoader,Class<?> parent,String className) throws NoSuchMethodException {
+    System.out.println( Modifier.isAbstract(parent.getMethod("_ebean_newInstance").getModifiers()));
+    return new ByteBuddy()
+      .subclass(parent)
+      .name(parent.getPackageName()+"." + className)
+      .make()
+      .load(parentClassLoader)
+      .getLoaded();
+  }
+
+  @Test
+  public void testCustomUpdate() throws Exception{
+    DefaultServer server = (DefaultServer) this.server();
+    UserContext.setTenantId(1);
+    int id = 1;
+    Class<?> customClass = generateCustomEntityClass(getClass().getClassLoader(),Customer.class,"QCustomer");
+    Customer customer = (Customer) customClass.getDeclaredConstructor().newInstance();
+
+    customer.setId(id++);
+    customer.setName("客户A");
+
+    server.save(customer);
+
+    customer = (Customer) server.find(customClass,1);
+    customer.setName("客户B");
+    server.update(customer);
+    server.delete(customer);
+    System.out.println(customer.getClass());
+    System.out.println(customer);
+  }
 
 
   @Test
@@ -38,6 +71,8 @@ public class EbeanServer_eqlTest extends BaseTestCase {
     Customer customer = new Customer();
     customer.setId(id++);
     customer.setName("客户A");
+
+    server.save(customer);
 
     Contact c1 = new Contact();
     c1.setId(id++);
@@ -62,6 +97,9 @@ public class EbeanServer_eqlTest extends BaseTestCase {
     server.update(customer);
 
     trans.commit();
+
+    customer = server.find(Customer.class,1);
+    System.out.println(customer.getClass());
   }
 
 

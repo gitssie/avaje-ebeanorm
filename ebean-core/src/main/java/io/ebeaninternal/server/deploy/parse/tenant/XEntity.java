@@ -1,14 +1,14 @@
 package io.ebeaninternal.server.deploy.parse.tenant;
 
+import java.lang.annotation.Annotation;
 import java.util.*;
 
 public class XEntity {
   private String label;
   private String name;
-  private String tableName;
   private Class<?> beanType;
   private Map<String,XField> fields;
-
+  private Map<Class<? extends Annotation>,Annotation> annotations;
   private boolean custom = false;
   private boolean disabled = false;
   private boolean createable = true;
@@ -17,9 +17,12 @@ public class XEntity {
   private boolean queryable = true;
   private boolean feedEnabled = true;
 
+  private String etag; //缓存使用的ETAG
+
   public XEntity(Class<?> beanType) {
     this.beanType = beanType;
     this.fields = new HashMap<>();
+    this.annotations = new HashMap<>();
   }
 
   public String getLabel() {
@@ -36,14 +39,6 @@ public class XEntity {
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public String getTableName() {
-    return tableName;
-  }
-
-  public void setTableName(String tableName) {
-    this.tableName = tableName;
   }
 
   public Class<?> getBeanType() {
@@ -116,5 +111,29 @@ public class XEntity {
 
   public void setFeedEnabled(boolean feedEnabled) {
     this.feedEnabled = feedEnabled;
+  }
+
+  public Collection<Annotation> getAnnotations() {
+    return annotations.values();
+  }
+
+  public <T extends Annotation> boolean has(Class<T> annotation){
+    return annotations.containsKey(annotation);
+  }
+
+  public void addAnnotation(Annotation annotation) {
+    this.annotations.put(annotation.annotationType(),annotation);
+  }
+
+  public <T extends Annotation> T getAnnotation(Class<T> annClass) {
+    return (T) annotations.get(annClass);
+  }
+
+  public String getEtag() {
+    return etag;
+  }
+
+  public void setEtag(String etag) {
+    this.etag = etag;
   }
 }

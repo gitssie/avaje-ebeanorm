@@ -25,10 +25,10 @@ public class XReadAnnotations {
    * to resolve the relationships etc.
    * </p>
    */
-  public void readInitial(XEntity entity,DeployBeanInfo<?> info) {
+  public void readInitial(XEntity entity, DeployBeanInfo<?> info) {
     try {
-      //new XAnnotationClass(info, readConfig).parse();
-      new XAnnotationFields(entity,info, readConfig).parse();
+      new XAnnotationClass(entity, info, readConfig).parse();
+      new XAnnotationFields(entity, info, readConfig).parse();
     } catch (RuntimeException e) {
       throw new RuntimeException("Error reading annotations for " + info, e);
     }

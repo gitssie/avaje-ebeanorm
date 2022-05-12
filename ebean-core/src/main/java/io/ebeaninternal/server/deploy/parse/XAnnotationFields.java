@@ -61,7 +61,6 @@ final class XAnnotationFields extends AnnotationParser {
   @Override
   public void parse() {
     for (DeployBeanProperty prop : descriptor.propertiesAll()) {
-      prop.initMetaAnnotations(readConfig.getMetaAnnotations());
       if(prop.getField() != null){
         continue;
       }else {

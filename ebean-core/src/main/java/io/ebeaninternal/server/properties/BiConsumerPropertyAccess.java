@@ -48,13 +48,13 @@ public final class BiConsumerPropertyAccess  {
     @Override
     public void set(EntityBean bean, Object value) {
       ObjectEntity entity = (ObjectEntity) bean;
-      entity.set(properties.get(fieldIndex),value);
+      entity.setValueIntercept(properties.get(fieldIndex),value,false);
     }
 
     @Override
     public void setIntercept(EntityBean bean, Object value) {
       ObjectEntity entity = (ObjectEntity) bean;
-      entity.set(properties.get(fieldIndex),value);
+      entity.setValueIntercept(properties.get(fieldIndex),value,true);
     }
   }
 }

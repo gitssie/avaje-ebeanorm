@@ -1734,7 +1734,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       throw new UnsupportedOperationException("cannot create entity bean for abstract entity " + name());
     }
     try {
-      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
+//      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
+      EntityBean bean = createPrototypeEntityBean(beanType);
       if (beanPostConstructListener != null) {
         beanPostConstructListener.autowire(bean); // calls all registered listeners
         beanPostConstructListener.postConstruct(bean); // calls first the @PostConstruct method and then the listeners

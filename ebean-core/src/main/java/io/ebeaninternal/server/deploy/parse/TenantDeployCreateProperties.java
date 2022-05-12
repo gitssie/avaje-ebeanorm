@@ -177,7 +177,7 @@ public class TenantDeployCreateProperties  {
   }
 
   public boolean isChanged(Class<?> entityClass) {
-    return false;
+    return entityProvider.isChanged(entityClass);
   }
 
   protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
