@@ -172,7 +172,7 @@ public class DeployCreateProperties {
     return AnnotationUtil.has(field, Transient.class);
   }
 
-  private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field, Class<?> beanType) {
+  protected DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field, Class<?> beanType) {
     DeployBeanProperty prop = createProp(desc, field);
     if (prop == null) {
       // transient annotation on unsupported type

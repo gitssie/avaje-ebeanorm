@@ -7,8 +7,8 @@ public class XEntity {
   private String label;
   private String name;
   private Class<?> beanType;
-  private Map<String,XField> fields;
-  private Map<Class<? extends Annotation>,Annotation> annotations;
+  private Map<String, XField> fields;
+  private Map<Class<? extends Annotation>, Annotation> annotations;
   private boolean custom = false;
   private boolean disabled = false;
   private boolean createable = true;
@@ -19,7 +19,12 @@ public class XEntity {
 
   private String etag; //缓存使用的ETAG
 
+  public XEntity() {
+    this(null);
+  }
+
   public XEntity(Class<?> beanType) {
+    this.name = name;
     this.beanType = beanType;
     this.fields = new HashMap<>();
     this.annotations = new HashMap<>();
@@ -45,12 +50,16 @@ public class XEntity {
     return beanType;
   }
 
+  public void setBeanType(Class<?> beanType) {
+    this.beanType = beanType;
+  }
+
   public Collection<XField> getFields() {
     return fields.values();
   }
 
   public XField addField(XField field) {
-    return fields.put(field.getName(),field);
+    return fields.put(field.getName(), field);
   }
 
   public XField getField(String name) {
@@ -117,12 +126,12 @@ public class XEntity {
     return annotations.values();
   }
 
-  public <T extends Annotation> boolean has(Class<T> annotation){
+  public <T extends Annotation> boolean has(Class<T> annotation) {
     return annotations.containsKey(annotation);
   }
 
   public void addAnnotation(Annotation annotation) {
-    this.annotations.put(annotation.annotationType(),annotation);
+    this.annotations.put(annotation.annotationType(), annotation);
   }
 
   public <T extends Annotation> T getAnnotation(Class<T> annClass) {

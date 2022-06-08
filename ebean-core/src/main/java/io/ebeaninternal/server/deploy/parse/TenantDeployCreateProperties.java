@@ -4,6 +4,7 @@ import io.ebean.Model;
 import io.ebean.annotation.*;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.api.CoreLog;
+import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.ManyType;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
@@ -13,17 +14,20 @@ import io.ebeaninternal.server.type.TypeManager;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Transient;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
-public class TenantDeployCreateProperties  {
+public class TenantDeployCreateProperties {
   private XEntityFinder entityProvider;
   protected final DetermineManyType determineManyType;
   protected final TypeManager typeManager;
+  private final DeployCreateProperties createProperties;
 
   public TenantDeployCreateProperties(DeployCreateProperties createProperties, XEntityFinder entityProvider) {
+    this.createProperties = createProperties;
     this.typeManager = createProperties.typeManager;
     this.determineManyType = createProperties.determineManyType;
     this.entityProvider = entityProvider;
@@ -31,23 +35,39 @@ public class TenantDeployCreateProperties  {
 
   private void setProperties(DeployBeanDescriptor<?> desc) {
     String[] properties = new String[desc.properties().size()];
-    int i=0;
+    int i = 0;
     for (DeployBeanProperty property : desc.properties()) {
       properties[i++] = property.getName();
     }
     desc.setProperties(properties);
   }
 
-  protected void createProperties(DeployBeanDescriptor<?> desc,XEntity entity, Class<?> beanType) {
+  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) {
+    /*
+    if (!field.getAnnotations().isEmpty()) {
+      DeployBeanProperty prop = createProperties.createProp(desc, property.getField(), beanType);
+      desc.addBeanProperty(prop);
+      for (Annotation annotation : property.getField().getAnnotations()) {
+        if (!field.has(annotation.annotationType())) {
+          field.addAnnotation(annotation);
+        }
+      }
+    }*/
+  }
+
+  protected void createProperties(DeployBeanDescriptor<?> desc, XEntity entity, Class<?> beanType) {
     if (beanType.equals(Model.class)) {
       // ignore all fields on model (_$dbName)
       return;
     }
     try {
       Collection<XField> fields = entity.getFields();
-      int i= 0;
+      int i = 0;
+      DeployBeanProperty property;
       for (XField field : fields) {
-        if(desc.getBeanProperty(field.getName()) != null){
+        property = desc.getBeanProperty(field.getName());
+        if (property != null) {
+          changeBeanProperty(desc, property, field, beanType);
           continue;
         }
         i++;
@@ -85,6 +105,7 @@ public class TenantDeployCreateProperties  {
       return prop;
     }
   }
+
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field) {
     Class<?> propertyType = field.getType();
     if (isSpecialScalarType(field)) {
@@ -154,23 +175,32 @@ public class TenantDeployCreateProperties  {
   }
 
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass,DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
     XEntity entity = entityProvider.getEntity(beanClass);
-    if(!isChanged(entity,info.getDescriptor())){
-        return info;
+    if (!isChanged(entity, info.getDescriptor())) {
+      return info;
     }
-    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(),beanClass);
-    createProperties(desc, entity,desc.getBeanType());
+    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
+    createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
 
-    info = new DeployBeanInfo<>(info.getUtil(), desc,entity);
-    readAnnotations.readInitial(entity,info); //初始化属性
+    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
+    readAnnotations.readInitial(entity, info); //初始化属性
+    return info;
+  }
+
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
+    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
+    createProperties(desc, entity, desc.getBeanType());
+    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
+    readAnnotations.readInitial(entity, info); //初始化属性
+    readAnnotations.readAssociations(info, factory);
     return info;
   }
 
 
-  protected boolean isChanged(XEntity entity,DeployBeanDescriptor desc){
-    if(entity.getBeanType() != desc.getBeanType()){
+  protected boolean isChanged(XEntity entity, DeployBeanDescriptor desc) {
+    if (entity.getBeanType() != desc.getBeanType()) {
       return true;
     }
     return entity.getFields().size() > 0;
@@ -181,17 +211,15 @@ public class TenantDeployCreateProperties  {
   }
 
   protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
-    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass,null);
+    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null);
     Field[] fields = descriptor.getClass().getDeclaredFields();
-    LinkedHashMap<String, DeployBeanProperty> propMap;
     for (Field field : fields) {
       field.setAccessible(true);
-      if(Modifier.isStatic(field.getModifiers()) ){
+      if (Modifier.isStatic(field.getModifiers())) {
         continue;
       }
       if (field.getName().equals("propMap")) {
-        propMap = (LinkedHashMap<String, DeployBeanProperty>) field.get(descriptor);
-        field.set(desc, new LinkedHashMap<>(propMap));
+        field.set(desc, copyBeanProperty(desc, (LinkedHashMap<String, DeployBeanProperty>) field.get(descriptor)));
       } else if (field.getName().equals("properties")) {
         field.set(desc, null);
       } else if (field.getName().equals("beanType")) {
@@ -201,5 +229,9 @@ public class TenantDeployCreateProperties  {
       }
     }
     return desc;
+  }
+
+  protected LinkedHashMap<String, DeployBeanProperty> copyBeanProperty(DeployBeanDescriptor<?> desc, LinkedHashMap<String, DeployBeanProperty> propMap) {
+    return new LinkedHashMap<>(propMap);
   }
 }

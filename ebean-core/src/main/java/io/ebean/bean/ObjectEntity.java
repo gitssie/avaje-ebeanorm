@@ -31,10 +31,10 @@ public abstract class ObjectEntity {
     EntityBeanIntercept intercept = bean._ebean_getIntercept();
     initPropertyIndex(bean);
     Map<String,Object> custom = this.custom();
-    boolean isNew = intercept.isNew();
+    /*boolean isNew = intercept.isNew();
     if(isNew){
       intercept.setLoadedProperty(propertyIndex);
-    }else if(InterceptReadWrite.notEqual(value,custom.get(key))){
+    }else */if(InterceptReadWrite.notEqual(value,custom.get(key))){
       if(dirtyProperties == null){
         dirtyProperties = new HashSet<>();
       }

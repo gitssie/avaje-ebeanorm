@@ -23,7 +23,7 @@ public class TenantInternalConfiguration extends InternalConfiguration{
     this.beanDescriptorManager = new BeanDescriptorManagerTenant(this);
     Map<String, String> asOfTableMapping = beanDescriptorManager.deploy(xmlMap.xmlDeployment());
     Map<String, String> draftTableMap = beanDescriptorManager.draftTableMap();
-    beanDescriptorManager.scheduleBackgroundTrim();
+    //beanDescriptorManager.scheduleBackgroundTrim();
     this.dataTimeZone = initDataTimeZone();
     this.binder = getBinder(typeManager, databasePlatform, dataTimeZone);
     this.cQueryEngine = new CQueryEngine(config, databasePlatform, binder, asOfTableMapping, draftTableMap);

@@ -16,6 +16,7 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanTable;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.properties.BeanPropertyGetter;
 import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.properties.BiConsumerPropertyAccess;
@@ -42,7 +43,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected final TenantDeployCreateProperties createProperties;
   protected final Map<Class<?>, DeployBeanInfo<?>> deployInfoMap;
 
-  public BeanDescriptorMapTenant(Object tenantId,BeanDescriptorManagerTenant beanDescriptorManager) {
+  public BeanDescriptorMapTenant(Object tenantId, BeanDescriptorManagerTenant beanDescriptorManager) {
     this.tenantId = tenantId;
     this.beanDescriptorManager = beanDescriptorManager;
     this.readAnnotations = beanDescriptorManager.readAnnotations;
@@ -77,7 +78,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public EncryptKey encryptKey(String tableName, String columnName) {
-    return beanDescriptorManager.encryptKey(tableName,columnName);
+    return beanDescriptorManager.encryptKey(tableName, columnName);
   }
 
   @Override
@@ -87,7 +88,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public <T> DocStoreBeanAdapter<T> createDocStoreBeanAdapter(BeanDescriptor<T> descriptor, DeployBeanDescriptor<T> deploy) {
-    return beanDescriptorManager.createDocStoreBeanAdapter(descriptor,deploy);
+    return beanDescriptorManager.createDocStoreBeanAdapter(descriptor, deploy);
   }
 
   @Override
@@ -118,42 +119,43 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
-    if(entityType == Object.class){
+    if (entityType == Object.class) {
       return null;
     }
     deployOnChange(entityType);
-    return (BeanDescriptor<T>)descMap.get(entityType.getName());
+    return (BeanDescriptor<T>) descMap.get(entityType.getName());
   }
 
   public <T> BeanManager<T> beanManager(Class<T> entityType) {
-    if(entityType == Object.class){
+    if (entityType == Object.class) {
       return null;
     }
     deployOnChange(entityType);
-    return (BeanManager<T>)beanManagerMap.get(entityType.getName());
+    return (BeanManager<T>) beanManagerMap.get(entityType.getName());
   }
 
-  protected void deployOnChange(Class<?> entityClass){
-    if(descMap.containsKey(entityClass.getName())){
-      if(createProperties.isChanged(entityClass)){
+  protected void deployOnChange(Class<?> entityClass) {
+    if (descMap.containsKey(entityClass.getName())) {
+      if (createProperties.isChanged(entityClass)) {
         deploy(entityClass);
       }
-    }else{
+    } else {
       deploy(entityClass);
     }
   }
 
-  protected boolean isDeployed(Class<?> entityClass){
+  protected boolean isDeployed(Class<?> entityClass) {
     return descMap.containsKey(entityClass.getName()) && beanManagerMap.containsKey(entityClass.getName());
   }
 
   public void deploy(Class<?> entityClass) {
-    lock.lock();;
+    lock.lock();
+    ;
     try {
-      if(!isDeployed(entityClass)){
+      if (!isDeployed(entityClass)) {
         deployEntity(entityClass);
       }
-    }finally {
+    } finally {
       lock.unlock();
     }
   }
@@ -162,7 +164,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     //1.createListeners();
     //2.readEntityDeploymentInitial
     DeployBeanInfo<?> info = createDeployBeanInfo(entityClass);
-    if(info == null){
+    if (info == null) {
       return;
     }
     //3.readEntityBeanTable();
@@ -194,10 +196,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
           "Error - for type " + beanClass);
     }
     try {
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass,info, readAnnotations);
-      if(newInfo == info){ //Class的属性没有发生变化,部署的是同一个
+      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, info, readAnnotations);
+      if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         BeanManager beanManager = beanDescriptorManager.beanManager(beanClass.getName());
-        if(beanManager != null) {
+        if (beanManager != null) {
           registerBeanManager(beanManager);
           return null;
         }
@@ -232,7 +234,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     setBeanReflect(desc);
   }
 
-  protected void registerBeanManager(BeanManager beanManager){
+  protected void registerBeanManager(BeanManager beanManager) {
     Class<?> beanClass = beanManager.getBeanDescriptor().beanType;
     descMap.put(beanClass.getName(), beanManager.getBeanDescriptor());
     beanManagerMap.put(beanClass.getName(), beanManager);
@@ -272,16 +274,16 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     // use generated code. NB: Due to Bug 166 so now doing this for
     // abstract classes as well.
     boolean supportCustom = ObjectEntity.class.isAssignableFrom(desc.getBeanType());
-    if(!supportCustom){
+    if (!supportCustom) {
       return;
     }
     Integer customIndex = null;
     for (DeployBeanProperty prop : desc.propertiesAll()) {
-      if(prop.getName().equals(ObjectEntity.KEY_CUSTOM) && prop.isTransient()){
+      if (prop.getName().equals(ObjectEntity.KEY_CUSTOM) && prop.isTransient()) {
         customIndex = prop.getPropertyIndex();
       }
     }
-    if(customIndex == null){
+    if (customIndex == null) {
       return;
     }
     BiConsumerPropertyAccess customAccess = new BiConsumerPropertyAccess();
@@ -291,7 +293,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
         Object getterSetter = customAccess.getGetter(customPos);
         prop.setPropertyIndex(customIndex);
         prop.setDbComment(ObjectEntity.KEY_CUSTOM);
-        prop.setGetter((BeanPropertyGetter)getterSetter);
+        prop.setGetter((BeanPropertyGetter) getterSetter);
         prop.setSetter((BeanPropertySetter) getterSetter);
       }
     }
@@ -363,5 +365,13 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
         }
       }
     }
+  }
+
+  public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
+    DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
+
+    DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, entity, info, readAnnotations, this);
+
+    return new BeanDescriptor<>(this, newInfo.getDescriptor());
   }
 }

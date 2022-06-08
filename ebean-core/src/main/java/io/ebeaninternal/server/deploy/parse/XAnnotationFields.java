@@ -24,11 +24,11 @@ import io.ebeaninternal.server.type.ScalarTypeEncryptedWrapper;
 
 import javax.persistence.*;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.sql.Types;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+
+import static io.ebean.util.AnnotationUtil.get;
 
 /**
  * Read the field level deployment annotations.
@@ -45,7 +45,7 @@ final class XAnnotationFields extends AnnotationParser {
    */
   private FetchType defaultLobFetchType = FetchType.LAZY;
 
-  XAnnotationFields(XEntity entity,DeployBeanInfo<?> info, ReadAnnotationConfig readConfig) {
+  XAnnotationFields(XEntity entity, DeployBeanInfo<?> info, ReadAnnotationConfig readConfig) {
     super(info, readConfig);
     this.entity = entity;
     this.jacksonAnnotationsPresent = readConfig.isJacksonAnnotations();
@@ -61,10 +61,10 @@ final class XAnnotationFields extends AnnotationParser {
   @Override
   public void parse() {
     for (DeployBeanProperty prop : descriptor.propertiesAll()) {
-      if(prop.getField() != null){
-        continue;
-      }else {
-        XField field = entity.getField(prop.getName());
+      XField field = entity.getField(prop.getName());
+      if (prop.getField() != null) {
+        readIndex(field, prop);
+      } else {
         if (prop instanceof DeployBeanPropertyAssoc<?>) {
           readAssocOne(field, (DeployBeanPropertyAssoc<?>) prop);
         } else {
@@ -74,15 +74,25 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
+  private void readIndex(XField field, DeployBeanProperty prop) {
+    boolean isAssoc = prop instanceof DeployBeanPropertyAssoc<?>;
+    if (isAssoc || field == null) {
+      return;
+    }
+    for (Index index : annotationIndexes(field)) {
+      addIndex(field, prop, index);
+    }
+  }
+
   /**
    * Read the Id marker annotations on EmbeddedId properties.
    */
-  private void readAssocOne(XField field,DeployBeanPropertyAssoc<?> prop) {
-    readJsonAnnotations(field,prop);
-    if (field.has( Id.class)) {
+  private void readAssocOne(XField field, DeployBeanPropertyAssoc<?> prop) {
+    readJsonAnnotations(field, prop);
+    if (field.has(Id.class)) {
       readIdAssocOne(prop);
     }
-    if (field.has( EmbeddedId.class)) {
+    if (field.has(EmbeddedId.class)) {
       prop.setId();
       prop.setNullable(false);
       prop.setEmbedded();
@@ -92,7 +102,7 @@ final class XAnnotationFields extends AnnotationParser {
     if (docEmbedded != null) {
       prop.setDocStoreEmbedded(docEmbedded.doc());
       if (descriptor.isDocStoreOnly()) {
-        if (field.has( ManyToOne.class)) {
+        if (field.has(ManyToOne.class)) {
           prop.setEmbedded();
           prop.setDbInsertable(true);
           prop.setDbUpdateable(true);
@@ -105,24 +115,24 @@ final class XAnnotationFields extends AnnotationParser {
       }
 //      readEmbeddedAttributeOverrides((DeployBeanPropertyAssocOne<?>) prop);
     }
-    Formula formula = getMetaAnnotationFormula(field,platform);
+    Formula formula = getMetaAnnotationFormula(field, platform);
     if (formula != null) {
       prop.setSqlFormula(processFormula(formula.select()), processFormula(formula.join()));
     }
-    initWhoProperties(field,prop);
-    initDbMigration(field,prop);
+    initWhoProperties(field, prop);
+    initDbMigration(field, prop);
   }
 
-  private void initWhoProperties(XField field,DeployBeanProperty prop) {
-    if (field.has( WhoModified.class)) {
+  private void initWhoProperties(XField field, DeployBeanProperty prop) {
+    if (field.has(WhoModified.class)) {
       generatedPropFactory.setWhoModified(prop);
     }
-    if (field.has( WhoCreated.class)) {
+    if (field.has(WhoCreated.class)) {
       generatedPropFactory.setWhoCreated(prop);
     }
   }
 
-  private void readField(XField field,DeployBeanProperty prop) {
+  private void readField(XField field, DeployBeanProperty prop) {
     // all Enums will have a ScalarType assigned...
     boolean isEnum = prop.getPropertyType().isEnum();
     Enumerated enumerated = field.getAnnotation(Enumerated.class);
@@ -138,39 +148,53 @@ final class XAnnotationFields extends AnnotationParser {
     if (column != null) {
       readColumn(column, prop);
     }
-    readJsonAnnotations(field,prop);
+    readJsonAnnotations(field, prop);
     if (prop.getDbColumn() == null) {
       // No @Column or @Column.name() so use NamingConvention
       prop.setDbColumn(namingConvention.getColumnFromProperty(beanType, prop.getName()));
     }
-    initIdentity(field,prop);
-    initTenantId(field,prop);
-    initDbJson(field,prop);
-    initFormula(field,prop);
-    initVersion(field,prop);
-    initWhen(field,prop);
-    initWhoProperties(field,prop);
-    initDbMigration(field,prop);
+    initIdentity(field, prop);
+    initTenantId(field, prop);
+    initDbJson(field, prop);
+    initFormula(field, prop);
+    initVersion(field, prop);
+    initWhen(field, prop);
+    initWhoProperties(field, prop);
+    initDbMigration(field, prop);
     // Want to process last so we can use with @Formula
-    if (field.has( Transient.class)) {
+    if (field.has(Transient.class)) {
       // it is not a persistent property.
       prop.setDbRead(false);
       prop.setDbInsertable(false);
       prop.setDbUpdateable(false);
       prop.setTransient();
     }
-    initEncrypt(field,prop);
-    /** 取消索引的使用
-    for (Index index : annotationIndexes(prop)) {
-      addIndex(field,prop, index);
-    }**/
+    initEncrypt(field, prop);
+
+    for (Index index : annotationIndexes(field)) {
+      addIndex(field, prop, index);
+    }
   }
 
-  private void initIdentity(XField field,DeployBeanProperty prop) {
-    Id id = field.getAnnotation( Id.class);
+  public static Set<Index> annotationIndexes(XField field) {
+    final Index ann = field.getAnnotation(Index.class);
+    if (ann != null) {
+      return Collections.singleton(ann);
+    }
+    final Indices collection = field.getAnnotation(Indices.class);
+    if (collection != null) {
+      Set<Index> result = new LinkedHashSet<>();
+      Collections.addAll(result, collection.value());
+      return result;
+    }
+    return Collections.emptySet();
+  }
+
+  private void initIdentity(XField field, DeployBeanProperty prop) {
+    Id id = field.getAnnotation(Id.class);
     GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
     if (gen != null) {
-      readGenValue(field,gen, id, prop);
+      readGenValue(field, gen, id, prop);
     }
     if (id != null) {
       readIdScalar(prop);
@@ -181,22 +205,22 @@ final class XAnnotationFields extends AnnotationParser {
     }
     // determine the JDBC type using Lob/Temporal
     // otherwise based on the property Class
-    Temporal temporal = field.getAnnotation( Temporal.class);
+    Temporal temporal = field.getAnnotation(Temporal.class);
     if (temporal != null) {
       readTemporal(temporal, prop);
-    } else if (field.has( Lob.class)) {
+    } else if (field.has(Lob.class)) {
       util.setLobType(prop);
     }
-    Length length = field.getAnnotation( Length.class);
+    Length length = field.getAnnotation(Length.class);
     if (length != null) {
       prop.setDbLength(length.value());
     }
-    if (field.has( NotNull.class)) {
+    if (field.has(NotNull.class)) {
       prop.setNullable(false);
     }
   }
 
-  private void initValidation(XField field,DeployBeanProperty prop) {
+  private void initValidation(XField field, DeployBeanProperty prop) {
     prop.setNullable(field.isNullable());
     if (!prop.isLob()) {
       Integer maxSize = field.getMaxLength();
@@ -206,31 +230,31 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initTenantId(XField field,DeployBeanProperty prop) {
+  private void initTenantId(XField field, DeployBeanProperty prop) {
     if (readConfig.checkValidationAnnotations()) {
-      initValidation(field,prop);
+      initValidation(field, prop);
     }
     if (field.has(TenantId.class)) {
       prop.setTenantId();
     }
-    if (field.has( Draft.class)) {
+    if (field.has(Draft.class)) {
       prop.setDraft();
     }
-    if (field.has( DraftOnly.class)) {
+    if (field.has(DraftOnly.class)) {
       prop.setDraftOnly();
     }
-    if (field.has( DraftDirty.class)) {
+    if (field.has(DraftDirty.class)) {
       prop.setDraftDirty();
     }
-    if (field.has( DraftReset.class)) {
+    if (field.has(DraftReset.class)) {
       prop.setDraftReset();
     }
-    if (field.has( SoftDelete.class)) {
+    if (field.has(SoftDelete.class)) {
       prop.setSoftDelete();
     }
   }
 
-  private void initDbJson(XField field,DeployBeanProperty prop) {
+  private void initDbJson(XField field, DeployBeanProperty prop) {
     DbComment comment = field.getAnnotation(DbComment.class);
     if (comment != null) {
       prop.setDbComment(comment.value());
@@ -258,20 +282,20 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initFormula(XField field,DeployBeanProperty prop) {
-    DocCode docCode = field.getAnnotation( DocCode.class);
+  private void initFormula(XField field, DeployBeanProperty prop) {
+    DocCode docCode = field.getAnnotation(DocCode.class);
     if (docCode != null) {
       prop.setDocCode(docCode);
     }
-    DocSortable docSortable = field.getAnnotation( DocSortable.class);
+    DocSortable docSortable = field.getAnnotation(DocSortable.class);
     if (docSortable != null) {
       prop.setDocSortable(docSortable);
     }
-    DocProperty docProperty = field.getAnnotation( DocProperty.class);
+    DocProperty docProperty = field.getAnnotation(DocProperty.class);
     if (docProperty != null) {
       prop.setDocProperty(docProperty);
     }
-    Formula formula = getMetaAnnotationFormula(field,platform);
+    Formula formula = getMetaAnnotationFormula(field, platform);
     if (formula != null) {
       prop.setSqlFormula(processFormula(formula.select()), processFormula(formula.join()));
     }
@@ -281,7 +305,7 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private Formula getMetaAnnotationFormula(XField field,Platform platform) {
+  private Formula getMetaAnnotationFormula(XField field, Platform platform) {
     Formula fallback = null;
     for (Annotation ann : field.getAnnotations()) {
       if (ann.annotationType() == Formula.class) {
@@ -307,6 +331,7 @@ final class XAnnotationFields extends AnnotationParser {
     }
     return fallback;
   }
+
   private boolean matchPlatform(Platform[] platforms, Platform match) {
     for (Platform platform : platforms) {
       if (platform == match) {
@@ -316,13 +341,13 @@ final class XAnnotationFields extends AnnotationParser {
     return false;
   }
 
-  private void initVersion(XField field,DeployBeanProperty prop) {
+  private void initVersion(XField field, DeployBeanProperty prop) {
     if (field.has(Version.class)) {
       // explicitly specify a version column
       prop.setVersionColumn();
       generatedPropFactory.setVersion(prop);
     }
-    Basic basic = field.getAnnotation( Basic.class);
+    Basic basic = field.getAnnotation(Basic.class);
     if (basic != null) {
       prop.setFetchType(basic.fetch());
       if (!basic.optional()) {
@@ -334,7 +359,7 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initWhen(XField field,DeployBeanProperty prop) {
+  private void initWhen(XField field, DeployBeanProperty prop) {
     if (field.has(WhenCreated.class)) {
       generatedPropFactory.setInsertTimestamp(prop);
     }
@@ -343,7 +368,7 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initEncrypt(XField field,DeployBeanProperty prop) {
+  private void initEncrypt(XField field, DeployBeanProperty prop) {
     if (!prop.isTransient()) {
       EncryptDeploy encryptDeploy = util.getEncryptDeploy(info.getDescriptor().getBaseTableFull(), prop.getDbColumn());
       if (encryptDeploy == null || encryptDeploy.getMode() == Mode.MODE_ANNOTATION) {
@@ -361,7 +386,7 @@ final class XAnnotationFields extends AnnotationParser {
     descriptor.setIdentityMode(identity);
   }
 
-  private void initDbMigration(XField field,DeployBeanProperty prop) {
+  private void initDbMigration(XField field, DeployBeanProperty prop) {
     if (field.has(HistoryExclude.class)) {
       prop.setExcludedFromHistory();
     }
@@ -369,14 +394,27 @@ final class XAnnotationFields extends AnnotationParser {
     if (dbDefault != null) {
       prop.setDbColumnDefault(dbDefault.value());
     }
-    /**
-    Set<DbMigration> dbMigration = annotationDbMigrations(prop);
+
+    Set<DbMigration> dbMigration = dbMigrations(field);
     dbMigration.forEach(ann -> prop.addDbMigrationInfo(
       new DbMigrationInfo(ann.preAdd(), ann.postAdd(), ann.preAlter(), ann.postAlter(), ann.platforms())));
-     **/
   }
 
-  private void addIndex(XField field,DeployBeanProperty prop, Index index) {
+  public static Set<DbMigration> dbMigrations(XField field) {
+    final DbMigration ann = field.getAnnotation(DbMigration.class);
+    if (ann != null) {
+      return Collections.singleton(ann);
+    }
+    final DbMigration.List collection = field.getAnnotation(DbMigration.List.class);
+    if (collection != null) {
+      Set<DbMigration> result = new LinkedHashSet<>();
+      Collections.addAll(result, collection.value());
+      return result;
+    }
+    return Collections.emptySet();
+  }
+
+  private void addIndex(XField field, DeployBeanProperty prop, Index index) {
     String[] columnNames;
     if (index.columnNames().length == 0) {
       columnNames = new String[]{prop.getDbColumn()};
@@ -396,13 +434,13 @@ final class XAnnotationFields extends AnnotationParser {
         throw new RuntimeException("DB-columname has to be specified exactly one time in columnNames.");
       }
     }
-    if (columnNames.length == 1 && hasRelationshipItem(field,prop)) {
+    if (columnNames.length == 1 && hasRelationshipItem(field, prop)) {
       throw new RuntimeException("Can't use Index on foreign key relationships.");
     }
     descriptor.addIndex(new IndexDefinition(columnNames, index.name(), index.unique(), index.platforms(), index.concurrent(), index.definition()));
   }
 
-  private void readJsonAnnotations(XField field,DeployBeanProperty prop) {
+  private void readJsonAnnotations(XField field, DeployBeanProperty prop) {
     if (jacksonAnnotationsPresent) {
       com.fasterxml.jackson.annotation.JsonIgnore jsonIgnore = field.getAnnotation(com.fasterxml.jackson.annotation.JsonIgnore.class);
       if (jsonIgnore != null) {
@@ -425,8 +463,8 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private boolean hasRelationshipItem(XField field,DeployBeanProperty prop) {
-    return field.has(OneToMany.class) || field.has( ManyToOne.class) || field.has( OneToOne.class);
+  private boolean hasRelationshipItem(XField field, DeployBeanProperty prop) {
+    return field.has(OneToMany.class) || field.has(ManyToOne.class) || field.has(OneToOne.class);
   }
 
   private void setEncryption(DeployBeanProperty prop, boolean dbEncString, int dbLen) {
@@ -482,7 +520,7 @@ final class XAnnotationFields extends AnnotationParser {
     return util.createDataEncryptSupport(table, column);
   }
 
-  private void readGenValue(XField field,GeneratedValue gen, Id id, DeployBeanProperty prop) {
+  private void readGenValue(XField field, GeneratedValue gen, Id id, DeployBeanProperty prop) {
     if (id == null) {
       if (UUID.class.equals(prop.getPropertyType())) {
         generatedPropFactory.setUuid(prop);

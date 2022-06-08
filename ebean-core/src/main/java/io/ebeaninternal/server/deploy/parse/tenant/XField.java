@@ -18,9 +18,13 @@ public class XField {
   private boolean sortable = true;
   private Integer minLength = null;
   private Integer maxLength = null;
-  private Map<Class<? extends Annotation>,Annotation> annotations;
+  private Map<Class<? extends Annotation>, Annotation> annotations;
 
   private String etag;
+
+  public XField(String name) {
+    this(name, null);
+  }
 
   public XField(String name, Class<?> type) {
     this.name = name;
@@ -42,6 +46,10 @@ public class XField {
 
   public Class<?> getType() {
     return type;
+  }
+
+  public void setType(Class<?> type) {
+    this.type = type;
   }
 
   public boolean isEnabled() {
@@ -112,12 +120,12 @@ public class XField {
     return annotations.values();
   }
 
-  public <T extends Annotation> boolean has(Class<T> annotation){
+  public <T extends Annotation> boolean has(Class<T> annotation) {
     return annotations.containsKey(annotation);
   }
 
   public void addAnnotation(Annotation annotation) {
-    this.annotations.put(annotation.annotationType(),annotation);
+    this.annotations.put(annotation.annotationType(), annotation);
   }
 
   public <T extends Annotation> T getAnnotation(Class<T> annClass) {
