@@ -7,6 +7,9 @@ import java.lang.annotation.Annotation;
 public class XDbDefault implements DbDefault {
   private String value;
 
+  public XDbDefault() {
+  }
+
   public XDbDefault(String value) {
     this.value = value;
   }
@@ -14,6 +17,10 @@ public class XDbDefault implements DbDefault {
   @Override
   public String value() {
     return value;
+  }
+
+  public void setValue(String value) {
+    this.value = value;
   }
 
   @Override

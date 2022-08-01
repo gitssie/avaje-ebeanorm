@@ -114,7 +114,13 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   @Override
   public BeanTable beanTable(Class<?> type) {
     BeanTable table = beanTableMap.get(type);
-    return table != null ? table : beanDescriptorManager.beanTable(type);
+    table = table != null ? table : beanDescriptorManager.beanTable(type);
+    if (table != null) {
+      return table;
+    } else {
+      deployOnChange(type); //部署类型
+      return beanTableMap.get(type);
+    }
   }
 
   @Override
@@ -167,6 +173,17 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (info == null) {
       return;
     }
+    deploy(info);
+    //7.initialiseAll
+    registerDescriptor(info);
+//    initialise(info);
+    //8.
+//    readForeignKeys();
+    //9.
+//    readTableToDescriptor();
+  }
+
+  protected void deploy(DeployBeanInfo<?> info) {
     //3.readEntityBeanTable();
     readEntityBeanTable(info);
     //4.readEntityDeploymentAssociations();
@@ -175,12 +192,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     readInheritedIdGenerators(info);
     //6.7.8.9.creates the BeanDescriptors
     readEntityRelationships(info);
-    //7.initialiseAll
-//    initialise(info);
-    //8.
-//    readForeignKeys();
-    //9.
-//    readTableToDescriptor();
   }
 
   protected DeployBeanInfo<?> createDeployBeanInfo(final Class<?> beanClass) {
@@ -246,6 +257,14 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (desc.isDocStoreMapped()) {
       descQueueMap.put(desc.docStoreQueueId(), desc);
     }
+    deploy(desc);
+    //10.ebeanServer
+    // putting mapping bean
+    beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
+    desc.setEbeanServer(beanDescriptorManager.ebeanServer);
+  }
+
+  protected void deploy(BeanDescriptor<?> desc) {
     //7.loadOtherAssocBeans(desc);
     //7.initialiseAll
     initialise(desc);
@@ -253,8 +272,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     desc.initialiseFkeys();
     //9.readTableToDescriptor();
     readTableToDescriptor(desc);
-    //10.ebeanServer
-    desc.setEbeanServer(beanDescriptorManager.ebeanServer);
   }
 
   protected void readInheritedIdGenerators(DeployBeanInfo<?> info) {
@@ -277,26 +294,27 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (!supportCustom) {
       return;
     }
-    Integer customIndex = null;
+    DeployBeanProperty customPropMap = null;
     for (DeployBeanProperty prop : desc.propertiesAll()) {
       if (prop.getName().equals(ObjectEntity.KEY_CUSTOM) && prop.isTransient()) {
-        customIndex = prop.getPropertyIndex();
+        customPropMap = prop;
+        break;
       }
     }
-    if (customIndex == null) {
+    if (customPropMap == null) {
       return;
     }
     BiConsumerPropertyAccess customAccess = new BiConsumerPropertyAccess();
     for (DeployBeanProperty prop : desc.propertiesAll()) {
-      if (prop.getField() == null) {
+      if (prop.getField() == null) {//is custom
         int customPos = customAccess.addProperties(prop.getName());
         Object getterSetter = customAccess.getGetter(customPos);
-        prop.setPropertyIndex(customIndex);
-        prop.setDbComment(ObjectEntity.KEY_CUSTOM);
+        prop.setPropertyIndex(customPropMap.getPropertyIndex());
         prop.setGetter((BeanPropertyGetter) getterSetter);
         prop.setSetter((BeanPropertySetter) getterSetter);
       }
     }
+    desc.removeProperty(customPropMap);
   }
 
   protected void readEntityRelationships(DeployBeanInfo<?> info) {
@@ -313,8 +331,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     beanDescriptorManager.secondaryPropsJoins(info);
 
     beanDescriptorManager.setInheritanceInfo(info);
-
-    registerDescriptor(info);
   }
 
   protected void initialise(BeanDescriptor<?> d) {
@@ -342,8 +358,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
     // create BeanManager for each non-embedded entity bean
     d.initLast();
-    // putting mapping bean
-    beanManagerMap.put(d.fullName(), beanDescriptorManager.beanManagerFactory.create(d));
   }
 
   protected void readTableToDescriptor(BeanDescriptor<?> desc) {
@@ -371,7 +385,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
 
     DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, entity, info, readAnnotations, this);
-
-    return new BeanDescriptor<>(this, newInfo.getDescriptor());
+    deploy(newInfo);
+    BeanDescriptor desc = new BeanDescriptor<>(this, newInfo.getDescriptor());
+    deploy(desc);
+    return desc;
   }
 }

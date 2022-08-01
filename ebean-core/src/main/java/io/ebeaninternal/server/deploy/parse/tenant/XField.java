@@ -16,6 +16,8 @@ public class XField {
   private boolean createable = true;
   private boolean updateable = true;
   private boolean sortable = true;
+  private boolean nameable = false; //  boolean           DEFAULT TRUE,
+
   private Integer minLength = null;
   private Integer maxLength = null;
   private Map<Class<? extends Annotation>, Annotation> annotations;
@@ -114,6 +116,14 @@ public class XField {
 
   public void setNullable(boolean nullable) {
     this.nullable = nullable;
+  }
+
+  public boolean isNameable() {
+    return nameable;
+  }
+
+  public void setNameable(boolean nameable) {
+    this.nameable = nameable;
   }
 
   public Collection<Annotation> getAnnotations() {

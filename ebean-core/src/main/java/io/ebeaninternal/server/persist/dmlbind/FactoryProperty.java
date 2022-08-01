@@ -1,6 +1,5 @@
 package io.ebeaninternal.server.persist.dmlbind;
 
-import io.ebean.bean.ObjectEntity;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.BeanPropertyJsonMapper;
@@ -35,11 +34,11 @@ final class FactoryProperty {
       // Lob exclusion
       return null;
     }
-    if (prop.isDbEncrypted()){
+    if (prop.isDbEncrypted()) {
       return new BindableEncryptedProperty(prop, bindEncryptDataFirst);
     }
     if (allowManyToOne && prop instanceof BeanPropertyAssocOne) {
-      return  new BindableAssocOne((BeanPropertyAssocOne<?>)prop);
+      return new BindableAssocOne((BeanPropertyAssocOne<?>) prop);
     }
     if (prop instanceof BeanPropertyJsonMapper) {
       if (DmlMode.INSERT == mode) {
@@ -48,8 +47,8 @@ final class FactoryProperty {
         return new BindablePropertyJsonUpdate(prop);
       }
     }
-    if(ObjectEntity.KEY_CUSTOM.equals(prop.dbComment())){ //custom properties
-      return new BindableObjectProperty(prop);
+    if (prop.isCustom()) { //custom properties
+      return new BindableObjectProperty(prop, bindEncryptDataFirst);
     }
     return new BindableProperty(prop);
   }

@@ -1062,6 +1062,10 @@ public class DeployBeanProperty {
     metaAnnotations = AnnotationUtil.metaFindAllFor(field.get(), metaAnnotationsFilter);
   }
 
+  public void initAnnotations(Set<Annotation> annotations) {
+    metaAnnotations = annotations;
+  }
+
   @SuppressWarnings("unchecked")
   public <A extends Annotation> A getMetaAnnotation(Class<A> annotationType) {
     for (Annotation ann : metaAnnotations) {

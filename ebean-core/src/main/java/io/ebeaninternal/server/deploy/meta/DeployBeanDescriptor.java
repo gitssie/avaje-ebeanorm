@@ -254,7 +254,7 @@ public class DeployBeanDescriptor<T> {
     }
     return partitionMeta;
   }
-  
+
   public void setTablespaceMeta(TablespaceMeta tablespaceMeta) {
     this.tablespaceMeta = tablespaceMeta;
   }
@@ -693,6 +693,10 @@ public class DeployBeanDescriptor<T> {
 
   public Collection<DeployBeanProperty> properties() {
     return propMap.values();
+  }
+
+  public void removeProperty(DeployBeanProperty prop){
+    propMap.remove(prop.getName());
   }
 
   /**

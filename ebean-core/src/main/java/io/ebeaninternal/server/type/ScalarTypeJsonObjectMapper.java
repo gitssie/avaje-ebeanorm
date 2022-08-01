@@ -34,17 +34,17 @@ final class ScalarTypeJsonObjectMapper {
     AnnotatedField field = (AnnotatedField) prop.getJacksonField();
     MutationDetection mode = prop.getMutationDetection();
     if (mode == MutationDetection.NONE) {
-      return new NoMutationDetection(jsonManager, field, dbType, docType);
+      return new NoMutationDetection(jsonManager, field, dbType, docType, prop);
     } else if (mode != MutationDetection.DEFAULT) {
-      return new GenericObject(jsonManager, field, dbType, docType);
+      return new GenericObject(jsonManager, field, dbType, docType, prop);
     }
     // using the global default MutationDetection mode (defaults to HASH)
     final MutationDetection defaultMode = jsonManager.mutationDetection();
     prop.setMutationDetection(defaultMode);
     if (MutationDetection.NONE == defaultMode) {
-      return new NoMutationDetection(jsonManager, field, dbType, docType);
+      return new NoMutationDetection(jsonManager, field, dbType, docType, prop);
     }
-    return new GenericObject(jsonManager, field, dbType, docType);
+    return new GenericObject(jsonManager, field, dbType, docType, prop);
   }
 
   /**
@@ -52,8 +52,8 @@ final class ScalarTypeJsonObjectMapper {
    */
   private static final class NoMutationDetection extends Base<Object> {
 
-    NoMutationDetection(TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType) {
-      super(Object.class, jsonManager, field, dbType, docType);
+    NoMutationDetection(TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType, DeployBeanProperty prop) {
+      super(Object.class, jsonManager, field, dbType, docType, prop);
     }
 
     @Override
@@ -74,8 +74,8 @@ final class ScalarTypeJsonObjectMapper {
 
     private final boolean jsonb;
 
-    GenericObject(TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType) {
-      super(Object.class, jsonManager, field, dbType, docType);
+    GenericObject(TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType, DeployBeanProperty prop) {
+      super(Object.class, jsonManager, field, dbType, docType, prop);
       this.jsonb = "jsonb".equals(pgType);
     }
 
@@ -134,14 +134,19 @@ final class ScalarTypeJsonObjectMapper {
     protected final String pgType;
     private final DocPropertyType docType;
 
-    Base(Class<T> cls, TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType) {
+    Base(Class<T> cls, TypeJsonManager jsonManager, AnnotatedField field, int dbType, DocPropertyType docType, DeployBeanProperty prop) {
       super(cls, false, dbType);
       this.objectReader = jsonManager.objectMapper();
       this.pgType = jsonManager.postgresType(dbType);
       this.docType = docType;
-      final JacksonTypeHelper helper = new JacksonTypeHelper(field, objectReader);
-      this.deserType = helper.type();
-      this.objectWriter = helper.objectWriter();
+      if (field != null) {
+        final JacksonTypeHelper helper = new JacksonTypeHelper(field, objectReader);
+        this.deserType = helper.type();
+        this.objectWriter = helper.objectWriter();
+      } else {
+        this.deserType = objectReader.constructType(prop.getGenericType());
+        this.objectWriter = objectReader.writerFor(deserType);
+      }
     }
 
     @Override

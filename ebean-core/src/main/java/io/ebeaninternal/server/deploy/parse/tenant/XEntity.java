@@ -8,6 +8,7 @@ public class XEntity {
   private String name;
   private Class<?> beanType;
   private Map<String, XField> fields;
+  private XField nameable;
   private Map<Class<? extends Annotation>, Annotation> annotations;
   private boolean custom = false;
   private boolean disabled = false;
@@ -24,7 +25,6 @@ public class XEntity {
   }
 
   public XEntity(Class<?> beanType) {
-    this.name = name;
     this.beanType = beanType;
     this.fields = new HashMap<>();
     this.annotations = new HashMap<>();
@@ -59,11 +59,18 @@ public class XEntity {
   }
 
   public XField addField(XField field) {
+    if (field.isNameable()) {
+      this.nameable = field;
+    }
     return fields.put(field.getName(), field);
   }
 
   public XField getField(String name) {
     return fields.get(name);
+  }
+
+  public XField getNameable() {
+    return nameable;
   }
 
   public boolean isCustom() {

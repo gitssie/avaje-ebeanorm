@@ -14,11 +14,12 @@ import java.util.Set;
  * Bindable for a single BeanProperty.
  */
 class BindableObjectProperty implements Bindable {
-
+  private final boolean bindEncryptDataFirst;
   final BeanProperty prop;
 
-  BindableObjectProperty(BeanProperty prop) {
+  BindableObjectProperty(BeanProperty prop, boolean bindEncryptDataFirst) {
     this.prop = prop;
+    this.bindEncryptDataFirst = bindEncryptDataFirst;
   }
 
   @Override
@@ -34,13 +35,13 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    if(bean instanceof ObjectEntity){
+    if (bean instanceof ObjectEntity) {
       ObjectEntity entity = (ObjectEntity) bean;
       Set<String> dirtySet = entity.dirtySet();
-      if(dirtySet != null && dirtySet.contains(prop.name())){
+      if (dirtySet != null && dirtySet.contains(prop.name())) {
         list.add(this);
       }
-    }else if (request.isAddToUpdate(prop)) {
+    } else if (request.isAddToUpdate(prop)) {
       list.add(this);
     }
   }

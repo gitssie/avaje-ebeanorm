@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
+import io.ebean.bean.DynamicEntity;
+
 import javax.persistence.Entity;
 
 /**
@@ -11,6 +13,9 @@ public final class PersistenceContextUtil {
    * Find and return the root bean type for the given class.
    */
   public static Class<?> root(Class<?> beanType) {
+    if (DynamicEntity.class.isAssignableFrom(beanType)) {
+      return beanType;
+    }
     Class<?> parent = beanType.getSuperclass();
     while (parent != null && parent.isAnnotationPresent(Entity.class)) {
       beanType = parent;

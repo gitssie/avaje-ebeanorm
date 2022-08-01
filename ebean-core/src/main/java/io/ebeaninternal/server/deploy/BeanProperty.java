@@ -1493,4 +1493,8 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
       desc.registerColumn(dbColumn, path);
     }
   }
+
+  public boolean isCustom(){
+    return field == null;
+  }
 }

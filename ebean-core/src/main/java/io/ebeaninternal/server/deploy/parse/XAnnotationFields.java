@@ -17,6 +17,7 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
+import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.DefaultGeneratedProperty;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
@@ -65,6 +66,7 @@ final class XAnnotationFields extends AnnotationParser {
       if (prop.getField() != null) {
         readIndex(field, prop);
       } else {
+        prop.initAnnotations(new HashSet<>(field.getAnnotations()));
         if (prop instanceof DeployBeanPropertyAssoc<?>) {
           readAssocOne(field, (DeployBeanPropertyAssoc<?>) prop);
         } else {
@@ -393,6 +395,7 @@ final class XAnnotationFields extends AnnotationParser {
     DbDefault dbDefault = field.getAnnotation(DbDefault.class);
     if (dbDefault != null) {
       prop.setDbColumnDefault(dbDefault.value());
+      prop.setGeneratedProperty(new DefaultGeneratedProperty());
     }
 
     Set<DbMigration> dbMigration = dbMigrations(field);

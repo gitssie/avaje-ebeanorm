@@ -10,6 +10,8 @@ import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
+import io.ebeaninternal.server.deploy.parse.tenant.annotation.GenericType;
+import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGenericType;
 import io.ebeaninternal.server.type.TypeManager;
 
 import javax.persistence.PersistenceException;
@@ -17,6 +19,7 @@ import javax.persistence.Transient;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
@@ -109,7 +112,9 @@ public class TenantDeployCreateProperties {
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field) {
     Class<?> propertyType = field.getType();
     if (isSpecialScalarType(field)) {
-      return new DeployBeanProperty(desc, propertyType, field.getType());
+      XGenericType genericType = (XGenericType) field.getAnnotation(GenericType.class);
+      Type gType = genericType != null ? genericType.genericType() : field.getType();
+      return new DeployBeanProperty(desc, propertyType, gType);
     }
     // check for Collection type (list, set or map)
     ManyType manyType = determineManyType.getManyType(propertyType);

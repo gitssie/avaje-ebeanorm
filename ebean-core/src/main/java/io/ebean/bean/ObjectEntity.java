@@ -9,51 +9,64 @@ public abstract class ObjectEntity {
   private transient Set<String> dirtyProperties;
   private transient int propertyIndex = -1;
 
-  private void initPropertyIndex(EntityBean bean){
-    if(propertyIndex == -1){
+  private void initPropertyIndex(EntityBean bean) {
+    if (propertyIndex == -1) {
       String[] propertyNames = bean._ebean_getPropertyNames();
-      for(int i=0;i<propertyNames.length;i++){
-        if(propertyNames[i] == KEY_CUSTOM){
+      for (int i = 0; i < propertyNames.length; i++) {
+        if (propertyNames[i].equals(KEY_CUSTOM)) {
           propertyIndex = i + 1;
           break;
         }
       }
-      propertyIndex --;
+      propertyIndex--;
     }
+  }
+
+  public void put(String key, Object value) {
+    set(key, value);
   }
 
   public void set(String key, Object value) {
-    setValueIntercept(key,value,true);
+    setValueIntercept(key, value, true);
   }
 
-  public void setValueIntercept(String key, Object value,boolean isIntercept){
+  public void setValueIntercept(String key, Object value, boolean isIntercept) {
     EntityBean bean = ((EntityBean) this);
     EntityBeanIntercept intercept = bean._ebean_getIntercept();
     initPropertyIndex(bean);
-    Map<String,Object> custom = this.custom();
-    /*boolean isNew = intercept.isNew();
-    if(isNew){
-      intercept.setLoadedProperty(propertyIndex);
-    }else */if(InterceptReadWrite.notEqual(value,custom.get(key))){
-      if(dirtyProperties == null){
+    Map<String, Object> custom = this.custom();
+    Object oldValue = custom.get(key);
+    if (isIntercept && InterceptReadWrite.notEqual(oldValue, value)) {
+      if (dirtyProperties == null) {
         dirtyProperties = new HashSet<>();
       }
-      intercept.preSetter(isIntercept,propertyIndex,custom.get(key),value);
       dirtyProperties.add(key);
     }
-    custom.put(key,value);
+    intercept.preSetter(isIntercept, propertyIndex, oldValue, value);
+    custom.put(key, value);
   }
 
   public Object get(String key) {
-    return custom().get(key);
+    return getValueIntercept(key,true);
   }
 
-  public boolean has(String key){
-    Map<String,Object> cust = custom();
-    return cust != null && cust.containsKey(key);
+  public Object getValueIntercept(String key, boolean isIntercept) {
+    if(isIntercept) {
+      EntityBean bean = ((EntityBean) this);
+      EntityBeanIntercept intercept = bean._ebean_getIntercept();
+      initPropertyIndex(bean);
+      intercept.preGetter(propertyIndex);
+    }
+    Map<String, Object> custom = this.custom();
+    return custom.get(key);
   }
 
-  public abstract Map<String,Object> custom();
+  public boolean has(String key) {
+    Object value = getValueIntercept(key,true);
+    return value != null;
+  }
+
+  public abstract Map<String, Object> custom();
 
   public Set<String> dirtySet() {
     return dirtyProperties;
