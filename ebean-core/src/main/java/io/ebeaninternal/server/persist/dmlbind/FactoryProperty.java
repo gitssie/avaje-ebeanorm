@@ -34,6 +34,11 @@ final class FactoryProperty {
       // Lob exclusion
       return null;
     }
+
+    if (prop.isCustom()) { //custom properties
+      return new BindableObjectProperty(prop, mode, bindEncryptDataFirst, allowManyToOne);
+    }
+
     if (prop.isDbEncrypted()) {
       return new BindableEncryptedProperty(prop, bindEncryptDataFirst);
     }
@@ -46,9 +51,6 @@ final class FactoryProperty {
       } else if (DmlMode.UPDATE == mode) {
         return new BindablePropertyJsonUpdate(prop);
       }
-    }
-    if (prop.isCustom()) { //custom properties
-      return new BindableObjectProperty(prop, bindEncryptDataFirst);
     }
     return new BindableProperty(prop);
   }
