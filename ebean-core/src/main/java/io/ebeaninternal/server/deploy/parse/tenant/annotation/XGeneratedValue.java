@@ -8,6 +8,9 @@ public class XGeneratedValue implements GeneratedValue {
   private GenerationType strategy = GenerationType.AUTO;
   private String generator = "";
 
+  public XGeneratedValue() {
+  }
+
   public XGeneratedValue(GenerationType strategy, String generator) {
     this.strategy = strategy;
     this.generator = generator;
@@ -25,6 +28,10 @@ public class XGeneratedValue implements GeneratedValue {
   @Override
   public String generator() {
     return generator;
+  }
+
+  public void setGenerator(String generator) {
+    this.generator = generator;
   }
 
   @Override

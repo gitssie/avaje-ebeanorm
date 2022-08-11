@@ -64,7 +64,7 @@ final class XAnnotationFields extends AnnotationParser {
     for (DeployBeanProperty prop : descriptor.propertiesAll()) {
       XField field = entity.getField(prop.getName());
       if (prop.getField() != null) {
-        readIndex(field, prop);
+        readAnnotation(field, prop, prop.getField());
       } else {
         prop.initAnnotations(new HashSet<>(field.getAnnotations()));
         if (prop instanceof DeployBeanPropertyAssoc<?>) {
@@ -76,13 +76,20 @@ final class XAnnotationFields extends AnnotationParser {
     }
   }
 
-  private void readIndex(XField field, DeployBeanProperty prop) {
+  private void readAnnotation(XField field, DeployBeanProperty prop, Field realField) {
     boolean isAssoc = prop instanceof DeployBeanPropertyAssoc<?>;
     if (isAssoc || field == null) {
       return;
     }
     for (Index index : annotationIndexes(field)) {
       addIndex(field, prop, index);
+    }
+    if (prop.isId()) {
+      Id id = realField.getAnnotation(Id.class);
+      GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
+      if (gen != null) {
+        readGenValue(field, gen, id, prop);
+      }
     }
   }
 

@@ -45,17 +45,22 @@ public class TenantDeployCreateProperties {
     desc.setProperties(properties);
   }
 
-  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) {
-    /*
+  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) throws Exception{
     if (!field.getAnnotations().isEmpty()) {
-      DeployBeanProperty prop = createProperties.createProp(desc, property.getField(), beanType);
-      desc.addBeanProperty(prop);
-      for (Annotation annotation : property.getField().getAnnotations()) {
-        if (!field.has(annotation.annotationType())) {
-          field.addAnnotation(annotation);
+      if (property.getClass().equals(DeployBeanProperty.class)) {
+        DeployBeanProperty prop = new DeployBeanProperty(desc, property.getPropertyType(), property.getGenericType());
+        Field[] fields = DeployBeanProperty.class.getDeclaredFields();
+        for (Field rField : fields) {
+          rField.setAccessible(true);
+          if (Modifier.isStatic(rField.getModifiers())) {
+            continue;
+          }
+          rField.set(prop, rField.get(property));
         }
+        prop.setOwningType(beanType);
+        desc.addBeanProperty(prop);
       }
-    }*/
+    }
   }
 
   protected void createProperties(DeployBeanDescriptor<?> desc, XEntity entity, Class<?> beanType) {
