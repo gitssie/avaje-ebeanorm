@@ -402,7 +402,9 @@ final class XAnnotationFields extends AnnotationParser {
     DbDefault dbDefault = field.getAnnotation(DbDefault.class);
     if (dbDefault != null) {
       prop.setDbColumnDefault(dbDefault.value());
-      prop.setGeneratedProperty(new DefaultGeneratedProperty());
+      if (prop.getGeneratedProperty() == null) {
+        prop.setGeneratedProperty(new DefaultGeneratedProperty());
+      }
     }
 
     Set<DbMigration> dbMigration = dbMigrations(field);
