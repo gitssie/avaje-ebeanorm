@@ -156,7 +156,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   public void deploy(Class<?> entityClass) {
     lock.lock();
-    ;
     try {
       if (!isDeployed(entityClass)) {
         deployEntity(entityClass);
@@ -241,6 +240,12 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     // mark transient properties
     beanDescriptorManager.transientProperties.process(desc);
     beanDescriptorManager.setScalarType(desc);
+    if (!desc.isEmbedded()) {
+      // Set IdGenerator or use DB Identity
+      beanDescriptorManager.setIdGeneration(desc);
+      // find the appropriate default concurrency mode
+      beanDescriptorManager.setConcurrencyMode(desc);
+    }
     // generate the byte code
     setBeanReflect(desc);
   }
@@ -257,21 +262,25 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (desc.isDocStoreMapped()) {
       descQueueMap.put(desc.docStoreQueueId(), desc);
     }
-    deploy(desc);
+    deployDescriptor(desc);
     //10.ebeanServer
     // putting mapping bean
     beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
     desc.setEbeanServer(beanDescriptorManager.ebeanServer);
   }
 
-  protected void deploy(BeanDescriptor<?> desc) {
+  protected void deployDescriptor(BeanDescriptor<?> desc) {
     //7.loadOtherAssocBeans(desc);
     //7.initialiseAll
-    initialise(desc);
+    initialiseAll(desc);
     //8.readForeignKeys
-    desc.initialiseFkeys();
+    readForeignKeys(desc);
     //9.readTableToDescriptor();
     readTableToDescriptor(desc);
+  }
+
+  protected void readForeignKeys(BeanDescriptor<?> desc) {
+    desc.initialiseFkeys();
   }
 
   protected void readInheritedIdGenerators(DeployBeanInfo<?> info) {
@@ -333,7 +342,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     beanDescriptorManager.setInheritanceInfo(info);
   }
 
-  protected void initialise(BeanDescriptor<?> d) {
+  protected void initialiseAll(BeanDescriptor<?> d) {
     // now that all the BeanDescriptors are in their map
     // we can initialise them which sorts out circular
     // dependencies for OneToMany and ManyToOne etc
@@ -387,7 +396,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, entity, info, readAnnotations, this);
     deploy(newInfo);
     BeanDescriptor desc = new BeanDescriptor<>(this, newInfo.getDescriptor());
-    deploy(desc);
+    deployDescriptor(desc);
     return desc;
   }
 }

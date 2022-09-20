@@ -45,7 +45,7 @@ public class TenantDeployCreateProperties {
     desc.setProperties(properties);
   }
 
-  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) throws Exception{
+  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) throws Exception {
     if (!field.getAnnotations().isEmpty()) {
       if (property.getClass().equals(DeployBeanProperty.class)) {
         DeployBeanProperty prop = new DeployBeanProperty(desc, property.getPropertyType(), property.getGenericType());
@@ -232,7 +232,7 @@ public class TenantDeployCreateProperties {
         field.set(desc, copyBeanProperty(desc, (LinkedHashMap<String, DeployBeanProperty>) field.get(descriptor)));
       } else if (field.getName().equals("properties")) {
         field.set(desc, null);
-      } else if (field.getName().equals("beanType")) {
+      } else if (field.getName().equals("beanType") || field.getName().equals("concurrencyMode")) {
         continue;
       } else {
         field.set(desc, field.get(descriptor));

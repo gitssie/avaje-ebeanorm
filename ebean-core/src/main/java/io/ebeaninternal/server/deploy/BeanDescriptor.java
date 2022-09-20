@@ -3160,7 +3160,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   public ConcurrencyMode concurrencyMode(EntityBeanIntercept ebi) {
-    if (!hasVersionProperty(ebi)) {
+    if (concurrencyMode == null && !hasVersionProperty(ebi)) {
       return ConcurrencyMode.NONE;
     } else {
       return concurrencyMode;
