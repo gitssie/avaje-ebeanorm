@@ -39,6 +39,10 @@ public class BeanDescriptorManagerProvider implements BeanDescriptorMap {
     return getDescriptorTenant().createBeanDescriptor(beanClass, entity);
   }
 
+  public boolean redeploy(Object tenantId, Class<?> entityClass, XEntity entity) {
+    return getDescriptorTenant(tenantId).redeploy(entityClass, entity);
+  }
+
   @Override
   public String name() {
     return getClass().getSimpleName();

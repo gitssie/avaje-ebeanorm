@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
+import io.ebean.bean.ToStringBuilder;
+
 import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -11,7 +13,7 @@ public class XTable implements Table {
   private String schema;
 
   public XTable(String name) {
-    this(name,"","");
+    this(name, "", "");
   }
 
   public XTable(String name, String catalog, String schema) {
@@ -48,5 +50,16 @@ public class XTable implements Table {
   @Override
   public Class<? extends Annotation> annotationType() {
     return Table.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.add("catalog", catalog);
+    builder.add("schema", schema);
+    builder.end();
+    return builder.toString();
   }
 }

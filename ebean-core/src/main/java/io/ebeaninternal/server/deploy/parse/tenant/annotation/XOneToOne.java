@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
+import io.ebean.bean.ToStringBuilder;
+
 import javax.persistence.CascadeType;
 import javax.persistence.FetchType;
 import javax.persistence.OneToOne;
@@ -54,5 +56,14 @@ public class XOneToOne implements OneToOne {
   @Override
   public Class<? extends Annotation> annotationType() {
     return OneToOne.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("mappedBy", mappedBy);
+    builder.end();
+    return builder.toString();
   }
 }

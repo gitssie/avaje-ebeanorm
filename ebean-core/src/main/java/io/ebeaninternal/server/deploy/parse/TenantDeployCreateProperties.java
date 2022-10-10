@@ -184,16 +184,19 @@ public class TenantDeployCreateProperties {
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }
 
-
   public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
     XEntity entity = entityProvider.getEntity(beanClass);
-    if (!isChanged(entity, info.getDescriptor())) {
+    return createDeployBeanInfo(entity, beanClass, info, readAnnotations);
+  }
+
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    if (!isCustomEntity(entity, info.getDescriptor())) {
       return info;
     }
     DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
-
+    desc.setDbComment(entity.generateEtag());
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
     readAnnotations.readInitial(entity, info); //初始化属性
     return info;
@@ -209,7 +212,7 @@ public class TenantDeployCreateProperties {
   }
 
 
-  protected boolean isChanged(XEntity entity, DeployBeanDescriptor desc) {
+  protected boolean isCustomEntity(XEntity entity, DeployBeanDescriptor desc) {
     if (entity.getBeanType() != desc.getBeanType()) {
       return true;
     }

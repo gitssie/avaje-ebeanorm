@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.annotation.DbMap;
+import io.ebean.bean.ToStringBuilder;
 
 import javax.persistence.Lob;
 import java.lang.annotation.Annotation;
@@ -31,5 +32,14 @@ public class XDbMap implements DbMap {
   @Override
   public Class<? extends Annotation> annotationType() {
     return DbMap.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.end();
+    return builder.toString();
   }
 }

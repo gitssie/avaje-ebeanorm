@@ -3,6 +3,7 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 import io.ebean.annotation.DbJson;
 import io.ebean.annotation.DbJsonType;
 import io.ebean.annotation.MutationDetection;
+import io.ebean.bean.ToStringBuilder;
 
 import java.lang.annotation.Annotation;
 
@@ -51,5 +52,14 @@ public class XDbJson implements DbJson {
   @Override
   public Class<? extends Annotation> annotationType() {
     return DbJson.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.end();
+    return builder.toString();
   }
 }

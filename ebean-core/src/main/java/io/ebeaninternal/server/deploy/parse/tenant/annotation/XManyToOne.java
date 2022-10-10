@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
+import io.ebean.bean.ToStringBuilder;
+
 import javax.persistence.CascadeType;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
@@ -38,5 +40,13 @@ public class XManyToOne implements ManyToOne {
   @Override
   public Class<? extends Annotation> annotationType() {
     return ManyToOne.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.end();
+    return builder.toString();
   }
 }

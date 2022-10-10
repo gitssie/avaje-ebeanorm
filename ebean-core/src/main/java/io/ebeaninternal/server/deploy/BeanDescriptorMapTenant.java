@@ -118,7 +118,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (table != null) {
       return table;
     } else {
-      deployOnChange(type); //部署类型
+      deploy(type); //部署类型
       return beanTableMap.get(type);
     }
   }
@@ -128,7 +128,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (entityType == Object.class) {
       return null;
     }
-    deployOnChange(entityType);
+    deploy(entityType);
     return (BeanDescriptor<T>) descMap.get(entityType.getName());
   }
 
@@ -136,18 +136,8 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (entityType == Object.class) {
       return null;
     }
-    deployOnChange(entityType);
+    deploy(entityType);
     return (BeanManager<T>) beanManagerMap.get(entityType.getName());
-  }
-
-  protected void deployOnChange(Class<?> entityClass) {
-    if (descMap.containsKey(entityClass.getName())) {
-      if (createProperties.isChanged(entityClass)) {
-        deploy(entityClass);
-      }
-    } else {
-      deploy(entityClass);
-    }
   }
 
   protected boolean isDeployed(Class<?> entityClass) {
@@ -155,6 +145,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public void deploy(Class<?> entityClass) {
+    if (isDeployed(entityClass)) {
+      return;
+    }
     lock.lock();
     try {
       if (!isDeployed(entityClass)) {
@@ -165,10 +158,35 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     }
   }
 
+  public boolean redeploy(Class<?> entityClass, XEntity entity) {
+    if (!isDeployed(entityClass)) { //it's a lazy deploy
+      return false;
+    }
+    lock.lock();
+    try {
+      if (isChanged(entityClass, entity)) {
+        deployEntity(entityClass, entity);
+      }
+    } finally {
+      lock.unlock();
+    }
+    return true;
+  }
+
+  protected boolean isChanged(Class<?> entityClass, XEntity entity) {
+    String etag = entity.generateEtag();
+    String oldEtag = descMap.get(entityClass.getName()).dbComment();
+    return !etag.equals(oldEtag);
+  }
+
   protected void deployEntity(Class<?> entityClass) {
+    deployEntity(entityClass, null);
+  }
+
+  protected void deployEntity(Class<?> entityClass, XEntity entity) {
     //1.createListeners();
     //2.readEntityDeploymentInitial
-    DeployBeanInfo<?> info = createDeployBeanInfo(entityClass);
+    DeployBeanInfo<?> info = createDeployBeanInfo(entityClass, entity);
     if (info == null) {
       return;
     }
@@ -194,6 +212,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected DeployBeanInfo<?> createDeployBeanInfo(final Class<?> beanClass) {
+    return createDeployBeanInfo(beanClass, null);
+  }
+
+  protected DeployBeanInfo<?> createDeployBeanInfo(final Class<?> beanClass, final XEntity entity) {
     DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
     Class<?> clazz = beanClass;
     while (info == null && !(clazz.equals(Object.class) || clazz.equals(Model.class))) {
@@ -206,7 +228,12 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
           "Error - for type " + beanClass);
     }
     try {
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, info, readAnnotations);
+      DeployBeanInfo<?> newInfo;
+      if (entity != null) {
+        newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
+      } else {
+        newInfo = createProperties.createDeployBeanInfo(beanClass, info, readAnnotations);
+      }
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         BeanManager beanManager = beanDescriptorManager.beanManager(beanClass.getName());
         if (beanManager != null) {

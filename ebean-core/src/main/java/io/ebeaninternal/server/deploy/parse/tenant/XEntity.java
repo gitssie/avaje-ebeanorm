@@ -1,5 +1,8 @@
 package io.ebeaninternal.server.deploy.parse.tenant;
 
+import io.ebean.bean.ToStringBuilder;
+import io.ebeaninternal.server.util.Md5;
+
 import java.lang.annotation.Annotation;
 import java.util.*;
 
@@ -17,8 +20,6 @@ public class XEntity {
   private boolean updateable = true;
   private boolean queryable = true;
   private boolean feedEnabled = true;
-
-  private String etag; //缓存使用的ETAG
 
   public XEntity() {
     this(null);
@@ -145,11 +146,29 @@ public class XEntity {
     return (T) annotations.get(annClass);
   }
 
-  public String getEtag() {
-    return etag;
+  public String generateEtag() {
+    return Md5.hash(toString());
   }
 
-  public void setEtag(String etag) {
-    this.etag = etag;
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.add("disabled", disabled);
+    builder.add("createable", createable);
+    builder.add("updateable", updateable);
+    if (annotations != null) {
+      Object[] arr = annotations.keySet().toArray(new Object[0]);
+      Arrays.sort(arr);
+      for (Object key : arr) {
+        Annotation o = annotations.get(key);
+        builder.start(o);
+        builder.add("toString", o.toString());
+        builder.end();
+      }
+    }
+    builder.end();
+    return builder.toString();
   }
 }

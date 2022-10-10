@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy.parse.tenant;
 
+import io.ebean.bean.ToStringBuilder;
 import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
@@ -21,8 +22,6 @@ public class XField {
   private Integer minLength = null;
   private Integer maxLength = null;
   private Map<Class<? extends Annotation>, Annotation> annotations;
-
-  private String etag;
 
   public XField(String name) {
     this(name, null);
@@ -142,11 +141,28 @@ public class XField {
     return (T) annotations.get(annClass);
   }
 
-  public String getEtag() {
-    return etag;
-  }
-
-  public void setEtag(String etag) {
-    this.etag = etag;
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.add("enabled", enabled);
+    builder.add("required", required);
+    builder.add("createable", createable);
+    builder.add("updateable", updateable);
+    builder.add("minLength", minLength);
+    builder.add("maxLength", maxLength);
+    if (annotations != null) {
+      Object[] arr = annotations.keySet().toArray(new Object[0]);
+      Arrays.sort(arr);
+      for (Object key : arr) {
+        Annotation o = annotations.get(key);
+        builder.start(o);
+        builder.add("toString", o.toString());
+        builder.end();
+      }
+    }
+    builder.end();
+    return builder.toString();
   }
 }

@@ -8,4 +8,9 @@ public class XLob implements Lob {
   public Class<? extends Annotation> annotationType() {
     return Lob.class;
   }
+
+  @Override
+  public String toString(){
+    return getClass().getSimpleName();
+  }
 }

@@ -11,7 +11,9 @@ import io.ebean.xtest.BaseTestCase;
 import io.ebeaninternal.server.TenantContainerFactory;
 import io.ebeaninternal.server.core.DefaultServer;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
+import io.ebeaninternal.server.deploy.BeanDescriptorManagerProvider;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.FixedValue;
 import org.junit.jupiter.api.Test;
@@ -30,22 +32,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EbeanServer_eqlTest extends BaseTestCase {
-  protected Class<?> generateCustomEntityClass(ClassLoader parentClassLoader,Class<?> parent,String className) throws NoSuchMethodException {
-    System.out.println( Modifier.isAbstract(parent.getMethod("_ebean_newInstance").getModifiers()));
+  protected Class<?> generateCustomEntityClass(ClassLoader parentClassLoader, Class<?> parent, String className) throws NoSuchMethodException {
+    System.out.println(Modifier.isAbstract(parent.getMethod("_ebean_newInstance").getModifiers()));
     return new ByteBuddy()
       .subclass(parent)
-      .name(parent.getPackageName()+"." + className)
+      .name(parent.getPackageName() + "." + className)
       .make()
       .load(parentClassLoader)
       .getLoaded();
   }
 
   @Test
-  public void testCustomUpdate() throws Exception{
+  public void testCustomUpdate() throws Exception {
     DefaultServer server = (DefaultServer) this.server();
+    BeanDescriptorManagerProvider provider = server.config().getServiceObject(BeanDescriptorManagerProvider.class);
     UserContext.setTenantId(1);
     int id = 1;
-    Class<?> customClass = generateCustomEntityClass(getClass().getClassLoader(),Customer.class,"QCustomer");
+    Class<?> customClass = generateCustomEntityClass(getClass().getClassLoader(), Customer.class, "QCustomer");
     Customer customer = (Customer) customClass.getDeclaredConstructor().newInstance();
 
     customer.setId(id++);
@@ -53,17 +56,19 @@ public class EbeanServer_eqlTest extends BaseTestCase {
 
     server.save(customer);
 
-    customer = (Customer) server.find(customClass,1);
+    customer = (Customer) server.find(customClass, 1);
     customer.setName("客户B");
     server.update(customer);
     server.delete(customer);
     System.out.println(customer.getClass());
     System.out.println(customer);
+
+    provider.redeploy(1, customClass, new XEntity());
   }
 
 
   @Test
-  public void testUpdate(){
+  public void testUpdate() {
     DefaultServer server = (DefaultServer) this.server();
     UserContext.setTenantId(1);
     int id = 1;
@@ -98,18 +103,18 @@ public class EbeanServer_eqlTest extends BaseTestCase {
 
     trans.commit();
 
-    customer = server.find(Customer.class,1);
+    customer = server.find(Customer.class, 1);
     System.out.println(customer.getClass());
   }
 
 
   @Test
-  public void testOneToManySave(){
+  public void testOneToManySave() {
     DefaultServer server = (DefaultServer) this.server();
     UserContext.setTenantId(1);
     int id = 1;
     Transaction trans = server.beginTransaction();
-    for(int j=0;j<10;j++) {
+    for (int j = 0; j < 10; j++) {
       Customer customer = new Customer();
       customer.setId(id++);
       customer.setName("客户A");
@@ -141,7 +146,7 @@ public class EbeanServer_eqlTest extends BaseTestCase {
   }
 
   @Test
-  public void testOneToOneSave(){
+  public void testOneToOneSave() {
     DefaultServer server = (DefaultServer) this.server();
     UserContext.setTenantId(1);
     Transaction trans = server.beginTransaction();
@@ -154,15 +159,15 @@ public class EbeanServer_eqlTest extends BaseTestCase {
     address.setLine1("Line1");
     Customer c2 = new Customer();
     c2.setId(2);
-    c2.set("name__c","客户关联客户-新数据");
+    c2.set("name__c", "客户关联客户-新数据");
     c2.setName("客户关联客户");
 
-    customer.set("name__c","新数据");
-    customer.set("shippingAddress",c2);
+    customer.set("name__c", "新数据");
+    customer.set("shippingAddress", c2);
 
     server.save(customer);
     trans.commit();
-    customer = server.find(Customer.class,1);
+    customer = server.find(Customer.class, 1);
     c2 = (Customer) customer.get("shippingAddress");
 
     System.out.println(customer.getName());
@@ -172,7 +177,7 @@ public class EbeanServer_eqlTest extends BaseTestCase {
   }
 
   @Test
-  public void testORM(){
+  public void testORM() {
     DefaultServer server = (DefaultServer) this.server();
 //    BeanDescriptorTenantManager manager = server.getBeanDescriptorManager();
 //    manager.registerEntity(Customer.class);
@@ -181,7 +186,7 @@ public class EbeanServer_eqlTest extends BaseTestCase {
     Customer customer = new Customer();
     customer.setId(1);
     customer.setName("aaaa");
-    customer.set("name__c","测试");
+    customer.set("name__c", "测试");
     Contact c = new Contact();
     c.setFirstName("Jack");
     c.setLastName("Mack");
@@ -192,13 +197,13 @@ public class EbeanServer_eqlTest extends BaseTestCase {
     address.setCity("深圳");
     address.setLine1("Line1");
 
-    customer = server.find(Customer.class,1);
-    customer.set("name__c","新数据");
-    customer.set("shippingAddress",address);
+    customer = server.find(Customer.class, 1);
+    customer.set("name__c", "新数据");
+    customer.set("shippingAddress", address);
 
     server.update(customer);
     trans.commit();
-    customer = server.find(Customer.class,1);
+    customer = server.find(Customer.class, 1);
     System.out.println(customer.getName());
     System.out.println(customer.get("name__c"));
   }
@@ -380,7 +385,7 @@ public class EbeanServer_eqlTest extends BaseTestCase {
   @Test
   public void unboundNamedParams_expect_PersistenceException() {
     Query<Customer> query = server().createQuery(Customer.class, "where name = :name");
-    assertThrows(PersistenceException.class, () ->query.findOne());
+    assertThrows(PersistenceException.class, () -> query.findOne());
   }
 
   @Test

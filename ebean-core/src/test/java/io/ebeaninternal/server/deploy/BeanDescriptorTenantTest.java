@@ -21,7 +21,6 @@ public class BeanDescriptorTenantTest extends BaseTest{
 //    customerDesc.get
     Customer bean = customerDesc.createReference(null, false, 42, null);
     assertThat(bean.getId()).isEqualTo(42);
-    System.out.println(bean.getName());
     Assertions.assertThat(server().beanState(bean).isReadOnly()).isFalse();
   }
 

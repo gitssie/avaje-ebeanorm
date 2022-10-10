@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
+import io.ebean.bean.ToStringBuilder;
+
 import javax.persistence.Column;
 import java.lang.annotation.Annotation;
 
@@ -63,5 +65,14 @@ public class XColumn implements Column {
   @Override
   public Class<? extends Annotation> annotationType() {
     return Column.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.end();
+    return builder.toString();
   }
 }

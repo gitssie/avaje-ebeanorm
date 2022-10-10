@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.annotation.Index;
 import io.ebean.annotation.Platform;
+import io.ebean.bean.ToStringBuilder;
 
 import java.lang.annotation.Annotation;
 
@@ -79,5 +80,18 @@ public class XIndex implements Index {
 
   public void setPlatforms(Platform[] platforms) {
     this.platforms = platforms;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("name", name);
+    builder.add("unique", unique);
+    builder.add("concurrent", concurrent);
+    builder.add("definition", definition);
+    builder.add("columnNames", columnNames);
+    builder.end();
+    return builder.toString();
   }
 }

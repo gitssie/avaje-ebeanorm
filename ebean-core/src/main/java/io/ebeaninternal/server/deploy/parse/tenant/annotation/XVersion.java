@@ -8,4 +8,8 @@ public class XVersion implements Version {
   public Class<? extends Annotation> annotationType() {
     return Version.class;
   }
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
 }

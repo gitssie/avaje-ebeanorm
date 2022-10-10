@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
+import io.ebean.bean.ToStringBuilder;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import java.lang.annotation.Annotation;
@@ -37,5 +39,14 @@ public class XGeneratedValue implements GeneratedValue {
   @Override
   public Class<? extends Annotation> annotationType() {
     return GeneratedValue.class;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder();
+    builder.start(this);
+    builder.add("generator", generator);
+    builder.end();
+    return builder.toString();
   }
 }
