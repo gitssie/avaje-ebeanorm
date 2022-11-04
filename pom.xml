@@ -9,7 +9,7 @@
 
   <groupId>io.ebean</groupId>
   <artifactId>ebean-parent</artifactId>
-  <version>13.6.1-SNAPSHOT</version>
+  <version>13.6.0</version>
   <packaging>pom</packaging>
 
   <name>ebean parent</name>
@@ -119,5 +119,11 @@
     </profile>
   </profiles>
 
+  <distributionManagement>
+    <repository>
+      <id>rdc-snapshots</id>
+      <url>https://packages.aliyun.com/maven/repository/2295106-snapshot-S8QL3k/</url>
+    </repository>
+  </distributionManagement>
 </project>
 

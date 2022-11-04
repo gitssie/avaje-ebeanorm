@@ -81,7 +81,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     ORM, EMBEDDED, VIEW, SQL, DOC
   }
 
-  //private final ConcurrentHashMap<String, SpiUpdatePlan> updatePlanCache = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, SpiUpdatePlan> updatePlanCache = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<CQueryPlanKey, CQueryPlan> queryPlanCache = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, ElPropertyValue> elCache = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, ElPropertyDeploy> elDeployCache = new ConcurrentHashMap<>();
@@ -1526,15 +1526,14 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * Get a UpdatePlan for a given hash.
    */
   public SpiUpdatePlan updatePlan(String key) {
-    //return updatePlanCache.get(key);
-    return null;
+    return updatePlanCache.get(key);
   }
 
   /**
    * Add a UpdatePlan to the cache with a given hash.
    */
   public void updatePlan(String key, SpiUpdatePlan plan) {
-    //updatePlanCache.put(key, plan);
+    updatePlanCache.put(key, plan);
   }
 
   /**

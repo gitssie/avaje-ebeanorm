@@ -4,6 +4,7 @@ import io.ebean.ValuePair;
 import io.ebean.annotation.DocStoreMode;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
+import io.ebean.bean.ObjectEntity;
 import io.ebean.bean.PreGetterCallback;
 import io.ebean.event.BeanPersistController;
 import io.ebean.event.BeanPersistListener;
@@ -29,6 +30,7 @@ import io.ebeaninternal.server.persist.Flags;
 import io.ebeaninternal.server.persist.PersistExecute;
 import io.ebeaninternal.server.persist.SaveMany;
 import io.ebeaninternal.server.transaction.BeanPersistIdMap;
+import io.ebeaninternal.server.util.Md5;
 import io.ebeanservice.docstore.api.DocStoreUpdate;
 import io.ebeanservice.docstore.api.DocStoreUpdateContext;
 import io.ebeanservice.docstore.api.DocStoreUpdates;
@@ -38,11 +40,7 @@ import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * PersistRequest for insert update or delete of a bean.
@@ -895,6 +893,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     }
     // if bean persisted again then should result in an update
     intercept.setLoaded();
+    setCustomPropertiesLoaded();
     if (isInsert()) {
       postInsert();
     }
@@ -1173,10 +1172,43 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
         key.append('v');
       }
     }
+
+    updatePlanHashOnCustomProperties(key);
+
     if (publish) {
       key.append('p');
     }
     return key.toString();
+  }
+
+  private void updatePlanHashOnCustomProperties(StringBuilder buf) {
+    if (entityBean instanceof ObjectEntity) {
+      Set<String> dirtyProperties = ((ObjectEntity) entityBean).dirtySet();
+      if (dirtyProperties == null || dirtyProperties.isEmpty()) {
+        return;
+      }
+      int len = buf.length();
+      String[] arr = dirtyProperties.toArray(new String[0]);
+      Arrays.sort(arr);
+      for (String s : arr) {
+        buf.append(s).append(',');
+      }
+      String hash = Md5.hash(buf.toString());
+      buf.setLength(len);
+      buf.append(hash).append(',');
+    }
+  }
+
+  /**
+   * see intercept.setLoaded();
+   */
+  private void setCustomPropertiesLoaded() {
+    if (entityBean instanceof ObjectEntity) {
+      Set<String> dirtyProperties = ((ObjectEntity) entityBean).dirtySet();
+      if (dirtyProperties != null) {
+        dirtyProperties.clear();
+      }
+    }
   }
 
   /**

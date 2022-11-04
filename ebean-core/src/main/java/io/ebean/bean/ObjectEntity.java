@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class ObjectEntity {
+public abstract class ObjectEntity implements EntityBean {
   public static final String KEY_CUSTOM = "custom";
   private transient Set<String> dirtyProperties;
   private transient int propertyIndex = -1;
@@ -31,9 +31,8 @@ public abstract class ObjectEntity {
   }
 
   public void setValueIntercept(String key, Object value, boolean isIntercept) {
-    EntityBean bean = ((EntityBean) this);
-    EntityBeanIntercept intercept = bean._ebean_getIntercept();
-    initPropertyIndex(bean);
+    EntityBeanIntercept intercept = this._ebean_getIntercept();
+    initPropertyIndex(this);
     Map<String, Object> custom = this.custom();
     Object oldValue = custom.get(key);
     if (isIntercept && InterceptReadWrite.notEqual(oldValue, value)) {
@@ -47,14 +46,13 @@ public abstract class ObjectEntity {
   }
 
   public Object get(String key) {
-    return getValueIntercept(key,true);
+    return getValueIntercept(key, true);
   }
 
   public Object getValueIntercept(String key, boolean isIntercept) {
-    if(isIntercept) {
-      EntityBean bean = ((EntityBean) this);
-      EntityBeanIntercept intercept = bean._ebean_getIntercept();
-      initPropertyIndex(bean);
+    if (isIntercept) {
+      EntityBeanIntercept intercept = this._ebean_getIntercept();
+      initPropertyIndex(this);
       intercept.preGetter(propertyIndex);
     }
     Map<String, Object> custom = this.custom();
@@ -62,7 +60,7 @@ public abstract class ObjectEntity {
   }
 
   public boolean has(String key) {
-    Object value = getValueIntercept(key,true);
+    Object value = getValueIntercept(key, true);
     return value != null;
   }
 
