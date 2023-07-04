@@ -5,8 +5,13 @@ import io.ebean.config.CurrentTenantProvider;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.server.core.InternalConfiguration;
 import io.ebeaninternal.server.core.ServiceUtil;
+import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
+import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
+import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
+
+import javax.persistence.PersistenceException;
 
 public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   protected final XReadAnnotations readAnnotations;
@@ -56,5 +61,20 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     super.setEbeanServer(internalEbean);
     ebeanServer = internalEbean;
     internalEbean.config().putServiceObject(beanDescriptorManagerProvider);
+  }
+
+  @Override
+  protected DeployBeanDescriptor<?> targetDescriptor(DeployBeanPropertyAssoc<?> prop) {
+    Object tenantId = tenantProvider.currentId();
+    if (ebeanServer == null || tenantId == null) {
+      return super.targetDescriptor(prop);
+    }
+    Class<?> targetType = prop.getTargetType();
+    BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
+    DeployBeanInfo<?> info = mapTenant.descInfo(targetType);
+    if (info == null) {
+      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop.getFullBeanName());
+    }
+    return info.getDescriptor();
   }
 }

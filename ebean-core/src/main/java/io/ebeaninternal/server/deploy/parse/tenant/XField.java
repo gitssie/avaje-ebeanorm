@@ -11,6 +11,8 @@ public class XField {
   private String label;
   private String name;
   private Class<?> type;
+  private Class<?> targetType;
+
   private boolean enabled = true;
   private boolean nullable = true;
   private boolean required = false;
@@ -51,6 +53,15 @@ public class XField {
 
   public void setType(Class<?> type) {
     this.type = type;
+    this.targetType = type;
+  }
+
+  public Class<?> getTargetType() {
+    return targetType;
+  }
+
+  public void setTargetType(Class<?> targetType) {
+    this.targetType = targetType;
   }
 
   public boolean isEnabled() {

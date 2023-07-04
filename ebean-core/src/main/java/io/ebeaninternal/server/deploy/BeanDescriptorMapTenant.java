@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.Model;
+import io.ebean.bean.EntityBean;
 import io.ebean.bean.ObjectEntity;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
@@ -28,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   private final Lock lock = new ReentrantLock();
-
+  private final ThreadLocal<List<BeanDescriptor<?>>> initializeDAG = new ThreadLocal<>();
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;
 
@@ -36,6 +37,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
   protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
   protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
+  protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
   protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
   protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
 
@@ -118,18 +120,24 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (table != null) {
       return table;
     } else {
-      deploy(type); //部署类型
-      return beanTableMap.get(type);
+      DeployBeanInfo<?> info = descInfo(type);
+      table = readEntityBeanTable(info);
+      readDeployAssociations(info);
+      return table;
     }
   }
 
   @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
-    if (entityType == Object.class) {
+    if (!EntityBean.class.isAssignableFrom(entityType)) {
       return null;
     }
     deploy(entityType);
-    return (BeanDescriptor<T>) descMap.get(entityType.getName());
+    BeanDescriptor<T> desc = (BeanDescriptor<T>) descMap.get(entityType.getName());
+    if (desc == null) {
+      throw new IllegalStateException(String.format("%s bean descriptor is null", entityType.getName()));
+    }
+    return desc;
   }
 
   public <T> BeanManager<T> beanManager(Class<T> entityType) {
@@ -137,11 +145,24 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       return null;
     }
     deploy(entityType);
-    return (BeanManager<T>) beanManagerMap.get(entityType.getName());
+    BeanManager<T> desc = (BeanManager<T>) beanManagerMap.get(entityType.getName());
+    if (desc == null) {
+      throw new IllegalStateException(String.format("%s bean manager is null", entityType.getName()));
+    }
+    return desc;
+  }
+
+  public DeployBeanInfo<?> descInfo(Class<?> beanClass) {
+    DeployBeanInfo<?> info = descInfoMap.get(beanClass);
+    if (info != null) {
+      return info;
+    } else {
+      return createDeployBeanInfo(beanClass);
+    }
   }
 
   protected boolean isDeployed(Class<?> entityClass) {
-    return descMap.containsKey(entityClass.getName()) && beanManagerMap.containsKey(entityClass.getName());
+    return descMap.containsKey(entityClass.getName());
   }
 
   public void deploy(Class<?> entityClass) {
@@ -216,7 +237,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected DeployBeanInfo<?> createDeployBeanInfo(final Class<?> beanClass, final XEntity entity) {
-    DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
+    if (entity == null && descInfoMap.get(beanClass) != null) {
+      return descInfoMap.get(beanClass);
+    }
+    DeployBeanInfo<?> info = deployInfoMap.get(beanClass); //这里是从父级集成来的
     Class<?> clazz = beanClass;
     while (info == null && !(clazz.equals(Object.class) || clazz.equals(Model.class))) {
       clazz = clazz.getSuperclass();
@@ -230,9 +254,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     try {
       DeployBeanInfo<?> newInfo;
       if (entity != null) {
-        newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
+        newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations, this);
       } else {
-        newInfo = createProperties.createDeployBeanInfo(beanClass, info, readAnnotations);
+        newInfo = createProperties.createDeployBeanInfo(beanClass, info, readAnnotations, this);
       }
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         BeanManager beanManager = beanDescriptorManager.beanManager(beanClass.getName());
@@ -241,15 +265,21 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
           return null;
         }
       }
+      descInfoMap.put(beanClass, newInfo);
       return newInfo;
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
   }
 
-  protected void readEntityBeanTable(DeployBeanInfo<?> info) {
-    BeanTable beanTable = createBeanTable(info);
+  protected BeanTable readEntityBeanTable(DeployBeanInfo<?> info) {
+    BeanTable beanTable = beanTableMap.get(info.getDescriptor().getBeanType());
+    if (beanTable != null) {
+      return beanTable;
+    }
+    beanTable = createBeanTable(info);
     beanTableMap.put(beanTable.getBeanType(), beanTable);
+    return beanTable;
   }
 
   protected BeanTable createBeanTable(DeployBeanInfo<?> info) {
@@ -297,7 +327,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected void deployDescriptor(BeanDescriptor<?> desc) {
-    //7.loadOtherAssocBeans(desc);
     //7.initialiseAll
     initialiseAll(desc);
     //8.readForeignKeys
@@ -389,8 +418,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     d.initialiseOther(beanDescriptorManager.initContext);
 
     // PASS 4:
+    //@TODO 这一个步骤在循环初始化bean descriptor 时,当前的properties未设置成功,ManyToOne循环依赖的问题
+    //@See io.ebeaninternal.server.deploy.BeanPropertyAssoc:targetDescriptor = descriptor.descriptor(targetType);
     // now initialise document mapping which needs target descriptors
-    d.initialiseDocMapping();
+    //d.initialiseDocMapping();
 
     // create BeanManager for each non-embedded entity bean
     d.initLast();
@@ -420,7 +451,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
     DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
 
-    DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(beanClass, entity, info, readAnnotations, this);
+    DeployBeanInfo<?> newInfo = createProperties.simpleCreateBeanInfo(beanClass, entity, info, readAnnotations, this);
     deploy(newInfo);
     BeanDescriptor desc = new BeanDescriptor<>(this, newInfo.getDescriptor());
     deployDescriptor(desc);

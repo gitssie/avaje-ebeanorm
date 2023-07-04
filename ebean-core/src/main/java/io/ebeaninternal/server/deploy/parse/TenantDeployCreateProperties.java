@@ -125,7 +125,7 @@ public class TenantDeployCreateProperties {
     ManyType manyType = determineManyType.getManyType(propertyType);
     if (manyType != null) {
       // List, Set or Map based object
-      Class<?> targetType = determineTargetType(field);
+      Class<?> targetType = field.getTargetType();
       if (targetType == null) {
         if (field.has(Transient.class)) {
           // not supporting this field (generic type used)
@@ -184,12 +184,12 @@ public class TenantDeployCreateProperties {
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
     XEntity entity = entityProvider.getEntity(beanClass);
-    return createDeployBeanInfo(entity, beanClass, info, readAnnotations);
+    return createDeployBeanInfo(entity, beanClass, info, readAnnotations, factory);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
     if (!isCustomEntity(entity, info.getDescriptor())) {
       return info;
     }
@@ -199,15 +199,16 @@ public class TenantDeployCreateProperties {
     desc.setDbComment(entity.generateEtag());
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
     readAnnotations.readInitial(entity, info); //初始化属性
+//    readAnnotations.readAssociations(info, factory); //读取关联信息
     return info;
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
+  public <T> DeployBeanInfo<T> simpleCreateBeanInfo(Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
     DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
     readAnnotations.readInitial(entity, info); //初始化属性
-    readAnnotations.readAssociations(info, factory);
+    readAnnotations.readAssociations(info, factory); //读取关联信息
     return info;
   }
 

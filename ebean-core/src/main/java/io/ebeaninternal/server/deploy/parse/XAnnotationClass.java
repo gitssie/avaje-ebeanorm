@@ -22,6 +22,12 @@ final class XAnnotationClass {
 
   public void parse() {
     setTableName();
+    read(descriptor.getBeanType());
+
+  }
+
+  private void read(Class<?> cls) {
+    descriptor.setName(cls.getSimpleName());
   }
 
   private void setTableName() {
