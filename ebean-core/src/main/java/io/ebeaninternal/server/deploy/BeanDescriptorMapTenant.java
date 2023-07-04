@@ -3,17 +3,16 @@ package io.ebeaninternal.server.deploy;
 import io.ebean.Model;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.ObjectEntity;
+import io.ebean.config.BeanNotEnhancedException;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.NamingConvention;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebean.core.type.ScalarType;
+import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.cache.SpiCacheManager;
 import io.ebeaninternal.server.deploy.id.IdBinder;
-import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
-import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
-import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
-import io.ebeaninternal.server.deploy.meta.DeployBeanTable;
+import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
@@ -22,18 +21,20 @@ import io.ebeaninternal.server.properties.BeanPropertyGetter;
 import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.properties.BiConsumerPropertyAccess;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class BeanDescriptorMapTenant implements BeanDescriptorMap {
+  protected static final Logger log = CoreLog.internal;
   private final Lock lock = new ReentrantLock();
   private final ThreadLocal<List<BeanDescriptor<?>>> initializeDAG = new ThreadLocal<>();
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;
-
-  protected final Map<Class<?>, BeanTable> beanTableMap = new HashMap<>();
+  protected final List<BeanDescriptor<?>> elementDescriptors = new LinkedList<>();
+  protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
   protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
   protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
   protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
@@ -110,21 +111,21 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public boolean isTableManaged(String tableName) {
-    return beanDescriptorManager.isTableManaged(tableName);
+    return isLocalTableManaged(tableName) || beanDescriptorManager.isTableManaged(tableName);
+  }
+
+  private boolean isLocalTableManaged(String tableName) {
+    return tableToDescMap.get(tableName.toLowerCase()) != null
+      || tableToViewDescMap.get(tableName.toLowerCase()) != null;
   }
 
   @Override
   public BeanTable beanTable(Class<?> type) {
-    BeanTable table = beanTableMap.get(type);
-    table = table != null ? table : beanDescriptorManager.beanTable(type);
-    if (table != null) {
-      return table;
-    } else {
-      DeployBeanInfo<?> info = descInfo(type);
-      table = readEntityBeanTable(info);
-      readDeployAssociations(info);
-      return table;
+    BeanTable table = beanTableMap.get(type.getName());
+    if (table == null) {
+      throw new IllegalStateException(String.format("%s bean table is null", type.getName()));
     }
+    return table;
   }
 
   @Override
@@ -144,7 +145,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (entityType == Object.class) {
       return null;
     }
-    deploy(entityType);
     BeanManager<T> desc = (BeanManager<T>) beanManagerMap.get(entityType.getName());
     if (desc == null) {
       throw new IllegalStateException(String.format("%s bean manager is null", entityType.getName()));
@@ -154,25 +154,24 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   public DeployBeanInfo<?> descInfo(Class<?> beanClass) {
     DeployBeanInfo<?> info = descInfoMap.get(beanClass);
-    if (info != null) {
-      return info;
-    } else {
-      return createDeployBeanInfo(beanClass);
+    if (info == null) {
+      info = deployInfoMap.get(beanClass);
     }
+    return info;
   }
 
-  protected boolean isDeployed(Class<?> entityClass) {
-    return descMap.containsKey(entityClass.getName());
+  protected boolean isDeploying(Class<?> entityClass) {
+    return beanTableMap.containsKey(entityClass.getName());
   }
 
   public void deploy(Class<?> entityClass) {
-    if (isDeployed(entityClass)) {
+    if (isDeploying(entityClass)) {
       return;
     }
     lock.lock();
     try {
-      if (!isDeployed(entityClass)) {
-        deployEntity(entityClass);
+      if (!isDeploying(entityClass)) {
+        deployLocked(entityClass);
       }
     } finally {
       lock.unlock();
@@ -180,13 +179,13 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public boolean redeploy(Class<?> entityClass, XEntity entity) {
-    if (!isDeployed(entityClass)) { //it's a lazy deploy
+    if (!isDeploying(entityClass)) { //it's a lazy deploy
       return false;
     }
     lock.lock();
     try {
       if (isChanged(entityClass, entity)) {
-        deployEntity(entityClass, entity);
+        deployLocked(entityClass, entity);
       }
     } finally {
       lock.unlock();
@@ -200,11 +199,38 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     return !etag.equals(oldEtag);
   }
 
-  protected void deployEntity(Class<?> entityClass) {
-    deployEntity(entityClass, null);
+  protected void deployLocked(Class<?> entityClass) {
+    deployLocked(entityClass, null);
   }
 
-  protected void deployEntity(Class<?> entityClass, XEntity entity) {
+  protected void deployLocked(Class<?> entityClass, XEntity entity) {
+    try {
+      List<BeanDescriptor<?>> descriptors = initializeDAG.get();
+      boolean isInit = false;
+      if (descriptors == null) {
+        descriptors = new LinkedList<>();
+        initializeDAG.set(descriptors);
+        isInit = true;
+      }
+      deployInternal(entityClass, entity, descriptors);
+      if (isInit) {
+        initialise(descriptors);
+        initializeDAG.set(null);
+      }
+    } catch (BeanNotEnhancedException e) {
+      undeploy(entityClass);
+      throw e;
+    } catch (RuntimeException e) {
+      undeploy(entityClass);
+      log.error("Error in deployment", e);
+      throw e;
+    } catch (Throwable e) {
+      undeploy(entityClass);
+      throw e;
+    }
+  }
+
+  protected void deployInternal(Class<?> entityClass, XEntity entity, List<BeanDescriptor<?>> descriptors) {
     //1.createListeners();
     //2.readEntityDeploymentInitial
     DeployBeanInfo<?> info = createDeployBeanInfo(entityClass, entity);
@@ -212,13 +238,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       return;
     }
     deploy(info);
-    //7.initialiseAll
-    registerDescriptor(info);
-//    initialise(info);
-    //8.
-//    readForeignKeys();
-    //9.
-//    readTableToDescriptor();
+
+    BeanDescriptor<?> desc = registerDescriptor(info);
+    descriptors.add(desc);
   }
 
   protected void deploy(DeployBeanInfo<?> info) {
@@ -278,7 +300,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       return beanTable;
     }
     beanTable = createBeanTable(info);
-    beanTableMap.put(beanTable.getBeanType(), beanTable);
+    beanTableMap.put(beanTable.getBeanType().getName(), beanTable);
     return beanTable;
   }
 
@@ -288,9 +310,29 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     return new BeanTable(beanTable, this);
   }
 
+  protected <T> void readDeployAssociations(DeployBeanInfo<T> info, DeployBeanDescriptor<T> desc) {
+    for (DeployBeanProperty prop : desc.propertiesAssocOne()) {
+      DeployBeanPropertyAssoc assoc = (DeployBeanPropertyAssoc) prop;
+      if (assoc.isId() || assoc.isTransient() || assoc.isEmbedded()) {
+        continue;
+      }
+      deploy(assoc.getTargetType());
+    }
+    for (DeployBeanProperty prop : desc.propertiesAssocMany()) {
+      DeployBeanPropertyAssoc assoc = (DeployBeanPropertyAssoc) prop;
+      if (assoc.isId() || assoc.isTransient() || assoc.isEmbedded()) {
+        continue;
+      }
+      deploy(assoc.getTargetType());
+    }
+    readAnnotations.readAssociations(info, this);
+  }
+
   protected <T> void readDeployAssociations(DeployBeanInfo<T> info) {
     DeployBeanDescriptor<T> desc = info.getDescriptor();
-    readAnnotations.readAssociations(info, this);
+    //deploy associations
+    readDeployAssociations(info, desc);
+
     if (BeanDescriptor.EntityType.SQL == desc.getEntityType()) {
       desc.setBaseTable(null, null, null);
     }
@@ -313,26 +355,57 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     beanManagerMap.put(beanClass.getName(), beanManager);
   }
 
-  protected void registerDescriptor(DeployBeanInfo<?> info) {
+  protected BeanDescriptor<?> registerDescriptor(DeployBeanInfo<?> info) {
     BeanDescriptor<?> desc = new BeanDescriptor<>(this, info.getDescriptor());
     descMap.put(desc.type().getName(), desc);
     if (desc.isDocStoreMapped()) {
       descQueueMap.put(desc.docStoreQueueId(), desc);
     }
-    deployDescriptor(desc);
-    //10.ebeanServer
-    // putting mapping bean
-    beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
-    desc.setEbeanServer(beanDescriptorManager.ebeanServer);
+    for (BeanPropertyAssocMany<?> many : desc.propertiesMany()) {
+      if (many.isElementCollection()) {
+        elementDescriptors.add(many.elementDescriptor());
+      }
+    }
+    return desc;
   }
 
-  protected void deployDescriptor(BeanDescriptor<?> desc) {
+  protected void undeploy(Class<?> beanClass) {
+    String key = beanClass.getName();
+    beanTableMap.remove(key);
+    descMap.remove(key);
+    beanManagerMap.remove(key);
+    descInfoMap.remove(beanClass);
+  }
+
+  protected void initialise(List<BeanDescriptor<?>> descriptors) {
+    for (BeanDescriptor<?> desc : descriptors) {
+      initialise(desc);
+      setEbeanServer(desc);
+    }
+  }
+
+  protected void initialise(BeanDescriptor<?> desc) {
     //7.initialiseAll
     initialiseAll(desc);
     //8.readForeignKeys
     readForeignKeys(desc);
     //9.readTableToDescriptor();
     readTableToDescriptor(desc);
+  }
+
+  protected void initialiseOthers(BeanDescriptor<?> desc) {
+    for (BeanProperty prop : desc.propertiesAll()) {
+      if (!prop.isId()) {
+        prop.initialise(beanDescriptorManager.initContext);
+      }
+    }
+  }
+
+  protected void setEbeanServer(BeanDescriptor<?> desc) {
+    //10.ebeanServer
+    // putting mapping bean
+    beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
+    desc.setEbeanServer(beanDescriptorManager.ebeanServer);
   }
 
   protected void readForeignKeys(BeanDescriptor<?> desc) {
@@ -418,10 +491,8 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     d.initialiseOther(beanDescriptorManager.initContext);
 
     // PASS 4:
-    //@TODO 这一个步骤在循环初始化bean descriptor 时,当前的properties未设置成功,ManyToOne循环依赖的问题
-    //@See io.ebeaninternal.server.deploy.BeanPropertyAssoc:targetDescriptor = descriptor.descriptor(targetType);
     // now initialise document mapping which needs target descriptors
-    //d.initialiseDocMapping();
+    d.initialiseDocMapping();
 
     // create BeanManager for each non-embedded entity bean
     d.initLast();
@@ -450,11 +521,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
     DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
-
     DeployBeanInfo<?> newInfo = createProperties.simpleCreateBeanInfo(beanClass, entity, info, readAnnotations, this);
     deploy(newInfo);
     BeanDescriptor desc = new BeanDescriptor<>(this, newInfo.getDescriptor());
-    deployDescriptor(desc);
+    initialise(desc);
     return desc;
   }
 }
