@@ -129,14 +129,18 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   @Override
-  public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
-    if (!EntityBean.class.isAssignableFrom(entityType)) {
-      return null;
+  public <T> BeanDescriptor<T> descriptor(Class<T> beanClass) {
+    if (!isDeployed(beanClass)) {
+      lock.lock();
+      try {
+        deploy(beanClass);
+      } finally {
+        lock.unlock();
+      }
     }
-    deploy(entityType);
-    BeanDescriptor<T> desc = (BeanDescriptor<T>) descMap.get(entityType.getName());
+    BeanDescriptor<T> desc = (BeanDescriptor<T>) descMap.get(beanClass.getName());
     if (desc == null) {
-      throw new IllegalStateException(String.format("%s bean descriptor is null", entityType.getName()));
+      throw new IllegalStateException(String.format("%s bean descriptor is null", beanClass.getName()));
     }
     return desc;
   }
@@ -162,6 +166,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   protected boolean isDeploying(Class<?> entityClass) {
     return beanTableMap.containsKey(entityClass.getName());
+  }
+
+  protected boolean isDeployed(Class<?> entityClass) {
+    return descMap.containsKey(entityClass.getName());
   }
 
   public void deploy(Class<?> entityClass) {
