@@ -190,15 +190,29 @@ public class TenantDeployCreateProperties {
   }
 
   public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
+    if (entity == null) {
+      entity = entityProvider.getEntity(beanClass);
+    }
     if (!isCustomEntity(entity, info.getDescriptor())) {
       return info;
     }
     DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
-    desc.setDbComment(entity.generateEtag());
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
-    readAnnotations.readInitial(entity, info); //初始化属性
+    readAnnotations.readInitial(entity, info); //初始化基本属性
+//    readAnnotations.readAssociations(info, factory); //读取关联信息
+    return info;
+  }
+
+  public <T> DeployBeanInfo<T> copyDescriptor(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
+    if (!isCustomEntity(entity, info.getDescriptor())) {
+      return info;
+    }
+    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
+    setProperties(desc);
+    info = new DeployBeanInfo<>(info.getUtil(), desc);
+    readAnnotations.readInitial(entity, info); //初始化基本属性
 //    readAnnotations.readAssociations(info, factory); //读取关联信息
     return info;
   }
@@ -208,7 +222,7 @@ public class TenantDeployCreateProperties {
     createProperties(desc, entity, desc.getBeanType());
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
     readAnnotations.readInitial(entity, info); //初始化属性
-    readAnnotations.readAssociations(info, factory); //读取关联信息
+//    readAnnotations.readAssociations(info, factory); //初始化基本属性
     return info;
   }
 

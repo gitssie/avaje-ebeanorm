@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
+import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,6 +10,8 @@ import java.lang.annotation.Annotation;
 public class XGeneratedValue implements GeneratedValue {
   private GenerationType strategy = GenerationType.AUTO;
   private String generator = "";
+
+  private GeneratedProperty generatedProperty;
 
   public XGeneratedValue() {
   }
@@ -34,6 +37,14 @@ public class XGeneratedValue implements GeneratedValue {
 
   public void setGenerator(String generator) {
     this.generator = generator;
+  }
+
+  public GeneratedProperty getGeneratedProperty() {
+    return generatedProperty;
+  }
+
+  public void setGeneratedProperty(GeneratedProperty generatedProperty) {
+    this.generatedProperty = generatedProperty;
   }
 
   @Override

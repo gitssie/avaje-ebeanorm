@@ -1,7 +1,6 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.Model;
-import io.ebean.bean.EntityBean;
 import io.ebean.bean.ObjectEntity;
 import io.ebean.config.BeanNotEnhancedException;
 import io.ebean.config.DatabaseConfig;
@@ -31,6 +30,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected static final Logger log = CoreLog.internal;
   private final Lock lock = new ReentrantLock();
   private final ThreadLocal<List<BeanDescriptor<?>>> initializeDAG = new ThreadLocal<>();
+  private final ThreadLocal<BeanDescriptorMapTemporal> deployInstance = new ThreadLocal<>();
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;
   protected final List<BeanDescriptor<?>> elementDescriptors = new LinkedList<>();
@@ -44,14 +44,14 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
-  protected final Map<Class<?>, DeployBeanInfo<?>> deployInfoMap;
+  protected final Map<Class<?>, DeployBeanInfo<?>> rootInfoMap;
 
   public BeanDescriptorMapTenant(Object tenantId, BeanDescriptorManagerTenant beanDescriptorManager) {
     this.tenantId = tenantId;
     this.beanDescriptorManager = beanDescriptorManager;
     this.readAnnotations = beanDescriptorManager.readAnnotations;
     this.createProperties = beanDescriptorManager.tenantCreateProperties;
-    this.deployInfoMap = Collections.unmodifiableMap(beanDescriptorManager.deployInfoMap);
+    this.rootInfoMap = Collections.unmodifiableMap(beanDescriptorManager.deployInfoMap);
   }
 
   @Override
@@ -123,7 +123,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   public BeanTable beanTable(Class<?> type) {
     BeanTable table = beanTableMap.get(type.getName());
     if (table == null) {
-      throw new IllegalStateException(String.format("%s bean table is null", type.getName()));
+      table = createBeanTable(type);
+      if (table == null) {
+        throw new IllegalStateException(String.format("%s bean table is null", type.getName()));
+      }
     }
     return table;
   }
@@ -151,15 +154,23 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     }
     BeanManager<T> desc = (BeanManager<T>) beanManagerMap.get(entityType.getName());
     if (desc == null) {
-      throw new IllegalStateException(String.format("%s bean manager is null", entityType.getName()));
+      deploy(entityType);
+      desc = (BeanManager<T>) beanManagerMap.get(entityType.getName());
+      if (desc == null) {
+        throw new IllegalStateException(String.format("%s bean manager is null", entityType.getName()));
+      }
     }
     return desc;
   }
 
   public DeployBeanInfo<?> descInfo(Class<?> beanClass) {
+    BeanDescriptorMapTemporal descriptorMapTemporal = deployInstance.get();
+    if (descriptorMapTemporal != null) {
+      return descriptorMapTemporal.descInfo(beanClass);
+    }
     DeployBeanInfo<?> info = descInfoMap.get(beanClass);
     if (info == null) {
-      info = deployInfoMap.get(beanClass);
+      info = rootInfoMap.get(beanClass);
     }
     return info;
   }
@@ -212,9 +223,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected void deployLocked(Class<?> entityClass, XEntity entity) {
+    boolean isInit = false;
     try {
       List<BeanDescriptor<?>> descriptors = initializeDAG.get();
-      boolean isInit = false;
       if (descriptors == null) {
         descriptors = new LinkedList<>();
         initializeDAG.set(descriptors);
@@ -223,7 +234,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       deployInternal(entityClass, entity, descriptors);
       if (isInit) {
         initialise(descriptors);
-        initializeDAG.set(null);
       }
     } catch (BeanNotEnhancedException e) {
       undeploy(entityClass);
@@ -235,6 +245,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     } catch (Throwable e) {
       undeploy(entityClass);
       throw e;
+    } finally {
+      if (isInit) {
+        initializeDAG.set(null);
+      }
     }
   }
 
@@ -249,6 +263,15 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
     BeanDescriptor<?> desc = registerDescriptor(info);
     descriptors.add(desc);
+  }
+
+  protected BeanTable createBeanTable(Class<?> entityClass) {
+    DeployBeanInfo<?> info = createDeployBeanInfo(entityClass);
+    if (info == null) {
+      return null;
+    }
+    BeanTable beanTable = createBeanTable(info);
+    return beanTable;
   }
 
   protected void deploy(DeployBeanInfo<?> info) {
@@ -270,11 +293,11 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     if (entity == null && descInfoMap.get(beanClass) != null) {
       return descInfoMap.get(beanClass);
     }
-    DeployBeanInfo<?> info = deployInfoMap.get(beanClass); //这里是从父级集成来的
+    DeployBeanInfo<?> info = rootInfoMap.get(beanClass); //这里是从父级集成来的
     Class<?> clazz = beanClass;
     while (info == null && !(clazz.equals(Object.class) || clazz.equals(Model.class))) {
       clazz = clazz.getSuperclass();
-      info = deployInfoMap.get(clazz);
+      info = rootInfoMap.get(clazz);
     }
     if (info == null) {
       throw new IllegalStateException(
@@ -333,12 +356,13 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       }
       deploy(assoc.getTargetType());
     }
-    readAnnotations.readAssociations(info, this);
   }
 
   protected <T> void readDeployAssociations(DeployBeanInfo<T> info) {
     DeployBeanDescriptor<T> desc = info.getDescriptor();
-    //deploy associations
+
+    readAnnotations.readAssociations(info, this);
+
     readDeployAssociations(info, desc);
 
     if (BeanDescriptor.EntityType.SQL == desc.getEntityType()) {
@@ -386,26 +410,16 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected void initialise(List<BeanDescriptor<?>> descriptors) {
-    for (BeanDescriptor<?> desc : descriptors) {
-      initialise(desc);
-      setEbeanServer(desc);
-    }
-  }
-
-  protected void initialise(BeanDescriptor<?> desc) {
     //7.initialiseAll
-    initialiseAll(desc);
-    //8.readForeignKeys
-    readForeignKeys(desc);
-    //9.readTableToDescriptor();
-    readTableToDescriptor(desc);
-  }
+    initialiseAll(descriptors);
 
-  protected void initialiseOthers(BeanDescriptor<?> desc) {
-    for (BeanProperty prop : desc.propertiesAll()) {
-      if (!prop.isId()) {
-        prop.initialise(beanDescriptorManager.initContext);
-      }
+    for (BeanDescriptor<?> desc : descriptors) {
+      //8.readForeignKeys
+      readForeignKeys(desc);
+      //9.readTableToDescriptor();
+      readTableToDescriptor(desc);
+
+      setEbeanServer(desc);
     }
   }
 
@@ -424,7 +438,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     DeployBeanDescriptor<?> descriptor = info.getDescriptor();
     InheritInfo inheritInfo = descriptor.getInheritInfo();
     if (inheritInfo != null && !inheritInfo.isRoot()) {
-      DeployBeanInfo<?> rootBeanInfo = deployInfoMap.get(inheritInfo.getRoot().getType());
+      DeployBeanInfo<?> rootBeanInfo = rootInfoMap.get(inheritInfo.getRoot().getType());
       PlatformIdGenerator rootIdGen = rootBeanInfo.getDescriptor().getIdGenerator();
       if (rootIdGen != null) {
         descriptor.setIdGenerator(rootIdGen);
@@ -479,31 +493,49 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     beanDescriptorManager.setInheritanceInfo(info);
   }
 
-  protected void initialiseAll(BeanDescriptor<?> d) {
+  protected void initialiseAll(List<BeanDescriptor<?>> descMap) {
     // now that all the BeanDescriptors are in their map
     // we can initialise them which sorts out circular
     // dependencies for OneToMany and ManyToOne etc
+    BeanDescriptorInitContext initContext = beanDescriptorManager.initContext;
 
     // PASS 1:
     // initialise the ID properties of all the beans
     // first (as they are needed to initialise the
     // associated properties in the second pass).
-    d.initialiseId(beanDescriptorManager.initContext);
+    for (BeanDescriptor<?> d : descMap) {
+      d.initialiseId(initContext);
+    }
 
     // PASS 2:
     // now initialise all the inherit info
-    d.initInheritInfo();
+    for (BeanDescriptor<?> d : descMap) {
+      d.initInheritInfo();
+    }
 
     // PASS 3:
     // now initialise all the associated properties
-    d.initialiseOther(beanDescriptorManager.initContext);
+    for (BeanDescriptor<?> d : descMap) {
+      // also look for intersection tables with
+      // associated history support and register them
+      // into the asOfTableMap
+      d.initialiseOther(initContext);
+    }
 
     // PASS 4:
     // now initialise document mapping which needs target descriptors
-    d.initialiseDocMapping();
+    for (BeanDescriptor<?> d : descMap) {
+      d.initialiseDocMapping();
+    }
 
     // create BeanManager for each non-embedded entity bean
-    d.initLast();
+    for (BeanDescriptor<?> d : descMap) {
+      d.initLast();
+      if (!d.isEmbedded()) {
+//        beanManagerMap.put(d.fullName(), beanManagerFactory.create(d));
+//        checkForValidEmbeddedId(d);
+      }
+    }
   }
 
   protected void readTableToDescriptor(BeanDescriptor<?> desc) {
@@ -528,11 +560,18 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
-    DeployBeanInfo<?> info = deployInfoMap.get(beanClass);
-    DeployBeanInfo<?> newInfo = createProperties.simpleCreateBeanInfo(beanClass, entity, info, readAnnotations, this);
-    deploy(newInfo);
-    BeanDescriptor desc = new BeanDescriptor<>(this, newInfo.getDescriptor());
-    initialise(desc);
-    return desc;
+    lock.lock();
+    try {
+      BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap);
+      BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties, rootInfoMap);
+      deployInstance.set(factory);
+      DeployBeanInfo<?> info = rootInfoMap.get(beanClass);
+      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations, factory);
+      BeanDescriptor<?> desc = factory.deployInfo(newInfo);
+      return desc;
+    } finally {
+      deployInstance.set(null);
+      lock.unlock();
+    }
   }
 }

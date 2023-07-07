@@ -11,12 +11,14 @@ import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.DbMigrationInfo;
 import io.ebeaninternal.server.deploy.IndexDefinition;
+import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
+import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
 import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.DefaultGeneratedProperty;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
@@ -89,6 +91,19 @@ final class XAnnotationFields extends AnnotationParser {
       GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
       if (gen != null) {
         readGenValue(field, gen, id, prop);
+      }
+    }
+  }
+
+  private void readPropGenValue(XField field, DeployBeanProperty prop) {
+    if (prop.isId()) {
+      return;
+    }
+    GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
+    if (gen != null && gen instanceof XGeneratedValue) {
+      GeneratedProperty genProp = ((XGeneratedValue) gen).getGeneratedProperty();
+      if (genProp != null) {
+        prop.setGeneratedProperty(genProp);
       }
     }
   }
@@ -180,6 +195,8 @@ final class XAnnotationFields extends AnnotationParser {
     }
     initEncrypt(field, prop);
 
+    readPropGenValue(field, prop);
+
     for (Index index : annotationIndexes(field)) {
       addIndex(field, prop, index);
     }
@@ -202,7 +219,7 @@ final class XAnnotationFields extends AnnotationParser {
   private void initIdentity(XField field, DeployBeanProperty prop) {
     Id id = field.getAnnotation(Id.class);
     GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
-    if (gen != null) {
+    if (gen != null && id != null) {
       readGenValue(field, gen, id, prop);
     }
     if (id != null) {
