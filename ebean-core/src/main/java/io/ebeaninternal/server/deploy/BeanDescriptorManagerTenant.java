@@ -62,19 +62,4 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     ebeanServer = internalEbean;
     internalEbean.config().putServiceObject(beanDescriptorManagerProvider);
   }
-
-  @Override
-  protected DeployBeanDescriptor<?> targetDescriptor(DeployBeanPropertyAssoc<?> prop) {
-    Object tenantId = tenantProvider.currentId();
-    if (ebeanServer == null || tenantId == null) {
-      return super.targetDescriptor(prop);
-    }
-    Class<?> targetType = prop.getTargetType();
-    BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
-    DeployBeanInfo<?> info = mapTenant.descInfo(targetType);
-    if (info == null) {
-      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop.getFullBeanName());
-    }
-    return info.getDescriptor();
-  }
 }
