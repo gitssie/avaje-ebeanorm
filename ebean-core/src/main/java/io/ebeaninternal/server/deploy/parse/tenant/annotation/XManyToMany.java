@@ -9,18 +9,18 @@ import java.lang.annotation.Annotation;
 
 public class XManyToMany implements ManyToMany {
   private Class<?> targetEntity;
-  private CascadeType cascade;
+  private CascadeType[] cascade;
   private FetchType fetch = FetchType.EAGER;
   private String mappedBy;
 
-  public XManyToMany(Class<?> targetEntity, CascadeType cascade, FetchType fetch, String mappedBy) {
+  public XManyToMany(Class<?> targetEntity, CascadeType[] cascade, FetchType fetch, String mappedBy) {
     this.targetEntity = targetEntity;
     this.cascade = cascade;
     this.fetch = fetch;
     this.mappedBy = mappedBy;
   }
 
-  public XManyToMany(Class<?> targetEntity, CascadeType cascade, FetchType fetch) {
+  public XManyToMany(Class<?> targetEntity, CascadeType[] cascade, FetchType fetch) {
     this(targetEntity,cascade,fetch,null);
   }
 
@@ -31,7 +31,7 @@ public class XManyToMany implements ManyToMany {
 
   @Override
   public CascadeType[] cascade() {
-    return cascade == null ? new CascadeType[0] : new CascadeType[]{cascade};
+    return cascade;
   }
 
   @Override

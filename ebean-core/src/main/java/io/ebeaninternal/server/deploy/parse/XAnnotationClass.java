@@ -27,7 +27,7 @@ final class XAnnotationClass {
   }
 
   private void read(Class<?> cls) {
-    descriptor.setName(cls.getSimpleName());
+    descriptor.setName(entity.getName());
   }
 
   private void setTableName() {

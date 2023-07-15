@@ -9,10 +9,10 @@ import java.lang.annotation.Annotation;
 
 public class XManyToOne implements ManyToOne {
   private Class<?> targetEntity;
-  private CascadeType cascade;
+  private CascadeType[] cascade;
   private FetchType fetch = FetchType.EAGER;
 
-  public XManyToOne(Class<?> targetEntity, CascadeType cascade) {
+  public XManyToOne(Class<?> targetEntity, CascadeType[] cascade) {
     this.targetEntity = targetEntity;
     this.cascade = cascade;
   }
@@ -24,7 +24,7 @@ public class XManyToOne implements ManyToOne {
 
   @Override
   public CascadeType[] cascade() {
-    return new CascadeType[]{cascade};
+    return cascade;
   }
 
   @Override

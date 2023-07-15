@@ -9,18 +9,18 @@ import java.lang.annotation.Annotation;
 
 public class XOneToOne implements OneToOne {
   private Class<?> targetEntity;
-  private CascadeType cascade;
+  private CascadeType[] cascade;
   private FetchType fetch = FetchType.EAGER;
   private String mappedBy;
 
-  public XOneToOne(Class<?> targetEntity, CascadeType cascade,String mappedBy) {
+  public XOneToOne(Class<?> targetEntity, CascadeType[] cascade, String mappedBy) {
     this.targetEntity = targetEntity;
     this.cascade = cascade;
     this.mappedBy = mappedBy;
   }
 
-  public XOneToOne(Class<?> targetEntity, CascadeType cascade) {
-    this(targetEntity,cascade,"");
+  public XOneToOne(Class<?> targetEntity, CascadeType[] cascade) {
+    this(targetEntity, cascade, "");
   }
 
   @Override
@@ -30,7 +30,7 @@ public class XOneToOne implements OneToOne {
 
   @Override
   public CascadeType[] cascade() {
-    return new CascadeType[]{cascade};
+    return cascade;
   }
 
   @Override

@@ -9,18 +9,18 @@ import java.lang.annotation.Annotation;
 
 public class XOneToMany implements OneToMany {
   private Class<?> targetEntity;
-  private CascadeType cascade;
+  private CascadeType[] cascade;
   private FetchType fetch = FetchType.EAGER;
   private String mappedBy;
 
-  public XOneToMany(Class<?> targetEntity, CascadeType cascade, FetchType fetch, String mappedBy) {
+  public XOneToMany(Class<?> targetEntity, CascadeType[] cascade, FetchType fetch, String mappedBy) {
     this.targetEntity = targetEntity;
     this.cascade = cascade;
     this.fetch = fetch;
     this.mappedBy = mappedBy;
   }
 
-  public XOneToMany(Class<?> targetEntity, CascadeType cascade, FetchType fetch) {
+  public XOneToMany(Class<?> targetEntity, CascadeType[] cascade, FetchType fetch) {
       this(targetEntity,cascade,fetch,null);
   }
 
@@ -31,7 +31,7 @@ public class XOneToMany implements OneToMany {
 
   @Override
   public CascadeType[] cascade() {
-    return new CascadeType[]{cascade};
+    return cascade;
   }
 
   @Override
