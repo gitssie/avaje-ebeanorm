@@ -199,12 +199,12 @@ final class XAnnotationFields extends AnnotationParser {
   }
 
   private void initIdentity(XField field, DeployBeanProperty prop) {
-    Id id = field.getAnnotation(Id.class);
+    boolean id = prop.isId();
     GeneratedValue gen = field.getAnnotation(GeneratedValue.class);
-    if (gen != null && id != null) {
-      readGenValue(field, gen, id, prop);
+    if (gen != null && id) {
+      readGenValue(field, gen, prop);
     }
-    if (id != null) {
+    if (id) {
       readIdScalar(prop);
     }
     Identity identity = field.getAnnotation(Identity.class);
@@ -531,13 +531,7 @@ final class XAnnotationFields extends AnnotationParser {
     return util.createDataEncryptSupport(table, column);
   }
 
-  private void readGenValue(XField field, GeneratedValue gen, Id id, DeployBeanProperty prop) {
-    if (id == null) {
-      if (UUID.class.equals(prop.getPropertyType())) {
-        generatedPropFactory.setUuid(prop);
-        return;
-      }
-    }
+  private void readGenValue(XField field, GeneratedValue gen, DeployBeanProperty prop) {
     descriptor.setIdGeneratedValue();
     SequenceGenerator seq = field.getAnnotation(SequenceGenerator.class);
     if (seq != null) {

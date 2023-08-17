@@ -170,7 +170,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     lock.lock();
     try {
       if (isChanged(entityClass, entity)) {
-        deployLocked(entityClass, entity);
+        redeployLocked(entityClass, entity);
       }
     } finally {
       lock.unlock();
@@ -182,8 +182,17 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     deployLocked(entityClass, null);
   }
 
+  protected void redeployLocked(Class<?> entityClass, XEntity entity) {
+    BeanDescriptorMapContext context = new BeanDescriptorMapRedeployContext(entityClass, beanTableMap, descMap, descInfoMap, rootInfoMap);
+    deployLocked(context, entityClass, entity);
+  }
+
   protected void deployLocked(Class<?> entityClass, XEntity entity) {
     BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
+    deployLocked(context, entityClass, entity);
+  }
+
+  protected void deployLocked(BeanDescriptorMapContext context, Class<?> entityClass, XEntity entity) {
     BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
     factory.deploy(entityClass, entity);
     factory.initialise();
