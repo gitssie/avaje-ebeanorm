@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Holds property and constructor meta data for a given DTO bean type.
- *
+ * <p>
  * Uses this to map a mapping request (columns) to a 'query plan' (constructor and setters).
  */
 final class DtoMeta {
@@ -53,9 +53,11 @@ final class DtoMeta {
     }
     if (defaultConstructor != null) {
       return matchSetters(request);
+    } else if (dtoType.equals(Map.class)) {
+      return matchHashMap(request);
     }
     String msg = "Unable to map the resultSet columns " + Arrays.toString(cols)
-      + " to the bean type ["+dtoType+"] as the number of columns in the resultSet is less than the constructor"
+      + " to the bean type [" + dtoType + "] as the number of columns in the resultSet is less than the constructor"
       + " (and that there is no default constructor) ?";
     throw new IllegalStateException(msg);
   }
@@ -68,6 +70,11 @@ final class DtoMeta {
   private DtoQueryPlan matchSetters(DtoMappingRequest request) {
     DtoReadSet[] setterProps = request.mapSetters(this);
     return new DtoQueryPlanConSetter(request, defaultConstructor, setterProps);
+  }
+
+  private DtoQueryPlan matchHashMap(DtoMappingRequest request) {
+    DtoColumn[] dtoColumns = request.getColumnMeta();
+    return new DtoQueryPlanConMap(request, dtoColumns);
   }
 
   DtoReadSet findProperty(String label) {
