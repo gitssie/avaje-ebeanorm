@@ -53,11 +53,17 @@ final class BeanChangeJson implements BeanDiffVisitor {
   @Override
   public void visitPush(int position) {
     stack.push(descriptor);
-    BeanPropertyAssocOne<?> embedded = (BeanPropertyAssocOne<?>)descriptor.propertiesIndex[position];
-    descriptor = embedded.targetDescriptor();
-    newJson.writeStartObject(embedded.name());
+    BeanProperty property = descriptor.propertiesIndex[position];
+    if (property instanceof BeanPropertyAssocOne<?>) {
+      BeanPropertyAssocOne<?> embedded = (BeanPropertyAssocOne<?>) property;
+      descriptor = embedded.targetDescriptor();
+    } else {
+      BeanPropertyElement<?> embedded = (BeanPropertyElement<?>) property;
+      descriptor = embedded.targetDescriptor();
+    }
+    newJson.writeStartObject(property.name());
     if (oldJson != null) {
-      oldJson.writeStartObject(embedded.name());
+      oldJson.writeStartObject(property.name());
     }
   }
 

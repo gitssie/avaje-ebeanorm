@@ -24,6 +24,17 @@ final class FactoryProperty {
    * Create a Bindable for the property given the mode and withLobs flag.
    */
   public Bindable create(BeanProperty prop, DmlMode mode, boolean withLobs, boolean allowManyToOne) {
+    Bindable result = createBindable(prop, mode, withLobs, allowManyToOne);
+    if (result != null && prop.isCustom()) {
+      return new BindableObjectProperty(prop, result);
+    }
+    return result;
+  }
+
+  /**
+   * Create a Bindable for the property given the mode and withLobs flag.
+   */
+  public Bindable createBindable(BeanProperty prop, DmlMode mode, boolean withLobs, boolean allowManyToOne) {
     if (DmlMode.INSERT == mode && !prop.isDbInsertable()) {
       return null;
     }
@@ -33,10 +44,6 @@ final class FactoryProperty {
     if (prop.isLob() && !withLobs) {
       // Lob exclusion
       return null;
-    }
-
-    if (prop.isCustom()) { //custom properties
-      return new BindableObjectProperty(prop, mode, bindEncryptDataFirst, allowManyToOne);
     }
 
     if (prop.isDbEncrypted()) {

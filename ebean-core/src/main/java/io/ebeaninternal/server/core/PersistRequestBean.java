@@ -4,33 +4,18 @@ import io.ebean.ValuePair;
 import io.ebean.annotation.DocStoreMode;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
-import io.ebean.bean.ObjectEntity;
 import io.ebean.bean.PreGetterCallback;
 import io.ebean.event.BeanPersistController;
 import io.ebean.event.BeanPersistListener;
 import io.ebean.event.BeanPersistRequest;
 import io.ebean.event.changelog.BeanChange;
-import io.ebeaninternal.api.ConcurrencyMode;
-import io.ebeaninternal.api.SpiEbeanServer;
-import io.ebeaninternal.api.SpiProfileTransactionEvent;
-import io.ebeaninternal.api.SpiTransaction;
-import io.ebeaninternal.api.TransactionEvent;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.cache.CacheChangeSet;
-import io.ebeaninternal.server.deploy.BeanDescriptor;
-import io.ebeaninternal.server.deploy.BeanManager;
-import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
-import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.id.ImportedId;
-import io.ebeaninternal.server.persist.BatchControl;
-import io.ebeaninternal.server.persist.BatchedSqlException;
-import io.ebeaninternal.server.persist.DeleteMode;
-import io.ebeaninternal.server.persist.Flags;
-import io.ebeaninternal.server.persist.PersistExecute;
-import io.ebeaninternal.server.persist.SaveMany;
+import io.ebeaninternal.server.persist.*;
 import io.ebeaninternal.server.transaction.BeanPersistIdMap;
-import io.ebeaninternal.server.util.Md5;
 import io.ebeanservice.docstore.api.DocStoreUpdate;
 import io.ebeanservice.docstore.api.DocStoreUpdateContext;
 import io.ebeanservice.docstore.api.DocStoreUpdates;
@@ -714,7 +699,12 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    * Return true if this property is loaded (full bean or included in partial bean).
    */
   public boolean isLoadedProperty(BeanProperty prop) {
-    return intercept.isLoadedProperty(prop.propertyIndex());
+    if (prop.isCustom()) { //get dynamic element bean
+      EntityBean value = (EntityBean) entityBean._ebean_getField(prop.fieldIndex() % 1000);
+      return value._ebean_getIntercept().isLoadedProperty(prop.fieldIndex() / 1000);
+    } else {
+      return intercept.isLoadedProperty(prop.propertyIndex());
+    }
   }
 
   /**
@@ -893,7 +883,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     }
     // if bean persisted again then should result in an update
     intercept.setLoaded();
-    setCustomPropertiesLoaded();
+
     if (isInsert()) {
       postInsert();
     }
@@ -1173,42 +1163,10 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       }
     }
 
-    updatePlanHashOnCustomProperties(key);
-
     if (publish) {
       key.append('p');
     }
     return key.toString();
-  }
-
-  private void updatePlanHashOnCustomProperties(StringBuilder buf) {
-    if (entityBean instanceof ObjectEntity) {
-      Set<String> dirtyProperties = ((ObjectEntity) entityBean).dirtySet();
-      if (dirtyProperties == null || dirtyProperties.isEmpty()) {
-        return;
-      }
-      int len = buf.length();
-      String[] arr = dirtyProperties.toArray(new String[0]);
-      Arrays.sort(arr);
-      for (String s : arr) {
-        buf.append(s).append(',');
-      }
-      String hash = Md5.hash(buf.toString());
-      buf.setLength(len);
-      buf.append(hash).append(',');
-    }
-  }
-
-  /**
-   * see intercept.setLoaded();
-   */
-  private void setCustomPropertiesLoaded() {
-    if (entityBean instanceof ObjectEntity) {
-      Set<String> dirtyProperties = ((ObjectEntity) entityBean).dirtySet();
-      if (dirtyProperties != null) {
-        dirtyProperties.clear();
-      }
-    }
   }
 
   /**

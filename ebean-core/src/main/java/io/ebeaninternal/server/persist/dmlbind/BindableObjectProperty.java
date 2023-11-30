@@ -1,17 +1,15 @@
 package io.ebeaninternal.server.persist.dmlbind;
 
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
-import io.ebean.bean.ObjectEntity;
+import io.ebean.bean.EntityBeanIntercept;
+import io.ebeaninternal.server.core.PersistRequest;
 import io.ebeaninternal.server.core.PersistRequestBean;
 import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
-import io.ebeaninternal.server.deploy.BeanPropertyJsonMapper;
-import io.ebeaninternal.server.persist.dml.DmlMode;
 import io.ebeaninternal.server.persist.dml.GenerateDmlRequest;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Bindable for a single BeanProperty.
@@ -23,25 +21,6 @@ class BindableObjectProperty implements Bindable {
   BindableObjectProperty(BeanProperty prop, Bindable proxy) {
     this.prop = prop;
     this.proxy = proxy;
-  }
-
-  BindableObjectProperty(BeanProperty prop, DmlMode mode, boolean bindEncryptDataFirst, boolean allowManyToOne) {
-    this.prop = prop;
-    if (prop.isDbEncrypted()) {
-      proxy = new BindableEncryptedProperty(prop, bindEncryptDataFirst);
-    } else if (allowManyToOne && prop instanceof BeanPropertyAssocOne) {
-      proxy = new BindableAssocOne((BeanPropertyAssocOne<?>) prop);
-    } else if (prop instanceof BeanPropertyJsonMapper) {
-      if (DmlMode.INSERT == mode) {
-        proxy = new BindablePropertyJsonInsert(prop);
-      } else if (DmlMode.UPDATE == mode) {
-        proxy = new BindablePropertyJsonUpdate(prop);
-      } else {
-        proxy = new BindableProperty(prop);
-      }
-    } else {
-      proxy = new BindableProperty(prop);
-    }
   }
 
   @Override
@@ -57,10 +36,13 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    if (bean != null && bean instanceof ObjectEntity) {
-      ObjectEntity entity = (ObjectEntity) bean;
-      Set<String> dirtySet = entity.dirtySet();
-      if (dirtySet != null && dirtySet.contains(prop.name())) {
+    Object value = bean._ebean_getField(prop.fieldIndex() % 1000);
+    if (value != null && (value instanceof ElementBean)) {
+      ElementBean ebean = (ElementBean) value;
+      EntityBeanIntercept ei = ebean._ebean_getIntercept();
+      if (request.type() == PersistRequest.Type.UPDATE && ei.isNew()) {
+        list.add(this);
+      } else if (ei.isDirtyProperty(prop.fieldIndex() / 1000)) {
         list.add(this);
       }
     } else {

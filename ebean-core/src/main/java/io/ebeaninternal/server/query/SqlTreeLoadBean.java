@@ -251,6 +251,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
         if (Mode.LAZYLOAD_BEAN == queryMode) {
           // Lazy Load does not reset the dirty state
           ebi.setLoadedLazy();
+          ebi.getOwner()._ebean_setEmbeddedLoaded();
         } else if (readId) {
           // normal bean loading
           ebi.setLoaded();

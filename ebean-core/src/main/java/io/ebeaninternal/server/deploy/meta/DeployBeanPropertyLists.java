@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy.meta;
 
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.*;
@@ -176,6 +177,9 @@ public final class DeployBeanPropertyLists {
       }
       if (prop.isUnmappedJson()) {
         unmappedJson = prop;
+      }
+      if (prop.type() == ElementBean.class){
+        nonManys.add(prop);
       }
       return;
     }
@@ -446,6 +450,9 @@ public final class DeployBeanPropertyLists {
     }
     if (deployProp instanceof DeployBeanPropertyAssocMany) {
       return new BeanPropertyAssocMany(desc, (DeployBeanPropertyAssocMany) deployProp);
+    }
+    if (deployProp.getPropertyType() == ElementBean.class) {
+      return new BeanPropertyElement(desc, deployProp);
     }
     if (deployProp.isJsonMapper()) {
       return new BeanPropertyJsonMapper(desc, deployProp);

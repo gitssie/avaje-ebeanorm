@@ -1,6 +1,6 @@
 package io.ebeaninternal.server.deploy;
 
-import io.ebean.bean.ObjectEntity;
+import io.ebean.bean.ElementBean;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.NamingConvention;
@@ -14,16 +14,11 @@ import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
-import io.ebeaninternal.server.properties.BeanPropertyGetter;
-import io.ebeaninternal.server.properties.BeanPropertySetter;
-import io.ebeaninternal.server.properties.BiConsumerPropertyAccess;
+import io.ebeaninternal.server.properties.BeanElementPropertyAccess;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
   protected static final Logger log = CoreLog.internal;
@@ -38,7 +33,6 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
 
   protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
   protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
-
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
 
@@ -304,31 +298,60 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
     // Set the BeanReflectGetter and BeanReflectSetter that typically
     // use generated code. NB: Due to Bug 166 so now doing this for
     // abstract classes as well.
-    boolean supportCustom = ObjectEntity.class.isAssignableFrom(desc.getBeanType());
-    if (!supportCustom) {
-      return;
-    }
-    DeployBeanProperty customPropMap = null;
+    DeployBeanProperty ccp = null;
+    DeployBeanProperty slot = null;
     for (DeployBeanProperty prop : desc.propertiesAll()) {
-      if (prop.getName().equals(ObjectEntity.KEY_CUSTOM) && prop.isTransient()) {
-        customPropMap = prop;
-        break;
+      if (ccp == null && prop.getPropertyType() == ElementBean.class) {
+        ccp = prop;
+      } else if (slot == null && prop.isTransient() && prop.getPropertyType() == int.class && prop.getName().equals("__slot__")) {
+        slot = prop;
       }
     }
-    if (customPropMap == null) {
+    if (ccp == null || slot == null) {
       return;
     }
-    BiConsumerPropertyAccess customAccess = new BiConsumerPropertyAccess();
+    ccp.setTransient();
+    ccp.setJsonSerialize(false);
+    ccp.setScalarType(proxy.typeManager.getDbMapScalarType());
+    slot.setTransient();
+    slot.setJsonSerialize(false);
+
+    Map<String, Integer> propMap = new HashMap<>();
+    List<DeployBeanProperty> properties = new ArrayList<>();
+    final int propertyIndex = ccp.getPropertyIndex();
+    final int slotIndex = slot.getPropertyIndex();
     for (DeployBeanProperty prop : desc.propertiesAll()) {
       if (prop.getField() == null) {//is custom
-        int customPos = customAccess.addProperties(prop.getName());
-        Object getterSetter = customAccess.getGetter(customPos);
-        prop.setPropertyIndex(customPropMap.getPropertyIndex());
-        prop.setGetter((BeanPropertyGetter) getterSetter);
-        prop.setSetter((BeanPropertySetter) getterSetter);
+        properties.add(prop);
       }
     }
-    desc.removeProperty(customPropMap);
+    String[] propertiesName = new String[properties.size()];
+    for (int i = 0; i < properties.size(); i++) {
+      propertiesName[i] = properties.get(i).getName();
+      propMap.put(propertiesName[i], i);
+    }
+    propMap = Collections.unmodifiableMap(propMap);
+    for (int i = 0; i < properties.size(); i++) {
+      BeanElementPropertyAccess access = new BeanElementPropertyAccess(propertyIndex, slotIndex, propertiesName, propMap, i);
+      DeployBeanProperty prop = properties.get(i);
+      prop.setPropertyIndex(slotIndex);
+      prop.setFieldIndex(i * 1000 + propertyIndex);
+      prop.setGetter(access);
+      prop.setSetter(access);
+    }
+//    desc.removeProperty(slot);
+
+    /*
+    DeployBeanProperty cp = new DeployBeanProperty(desc, ccp.getPropertyType(), ccp.getPropertyType());
+    cp.setName(ccp.getName());
+    cp.setPropertyIndex(ccp.getPropertyIndex());
+    cp.setGetter(ccp.getGetter());
+    cp.setSetter(ccp.getSetter());
+    cp.setTransient();
+    cp.setUnmappedJson();
+    cp.setScalarType(proxy.typeManager.getDbMapScalarType());
+    desc.addBeanProperty(cp);
+    */
   }
 
   protected <T> BeanDescriptor<T> deployInfo(Class<T> beanClass, DeployBeanInfo<?> info) {

@@ -144,7 +144,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
 
   final Class<T> beanType;
   final Class<?> rootBeanType;
-  private final BeanDescriptorMap owner;
+  final BeanDescriptorMap owner;
   final String[] properties;
 
   private final BeanPostLoad beanPostLoad;
@@ -198,7 +198,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * All non transient properties excluding the id properties.
    */
   private final BeanProperty[] propertiesNonTransient;
-  final BeanProperty[] propertiesIndex;
+  BeanProperty[] propertiesIndex;
   private final BeanProperty[] propertiesGenInsert;
   private final BeanProperty[] propertiesGenUpdate;
   private final List<BeanProperty[]> propertiesUnique = new ArrayList<>();
