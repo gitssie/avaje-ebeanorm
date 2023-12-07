@@ -426,58 +426,75 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
     proxy.setDirtyStatus();
   }
 
+  private void setLoadedLazy(boolean intercept) {
+    if (intercept && proxy.isNew()) {
+      proxy.setLoadedLazy();
+    }
+  }
+
   @Override
   public void preSetter(boolean intercept, int propertyIndex, Object oldValue, Object newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, boolean oldValue, boolean newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, int oldValue, int newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, long oldValue, long newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, double oldValue, double newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, float oldValue, float newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, short oldValue, short newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, char oldValue, char newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, byte oldValue, byte newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, char[] oldValue, char[] newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, byte[] oldValue, byte[] newValue) {
+    setLoadedLazy(intercept);
     proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
   }
 

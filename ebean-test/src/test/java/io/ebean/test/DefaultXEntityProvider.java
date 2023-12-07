@@ -32,8 +32,10 @@ public class DefaultXEntityProvider implements XEntityProvider, AutoConfigure {
         entity.addAnnotation(new XTable("o_customer"));
         XField name = new XField("name__c", String.class);
         entity.addField(name);
+        XField name2 = new XField("name2__c", String.class);
+        entity.addField(name2);
         XField oneToOne = new XField("shippingAddress", Address.class);
-        oneToOne.addAnnotation(new XManyToOne(Address.class, CascadeType.ALL));
+//        oneToOne.addAnnotation(new XManyToOne(Address.class, CascadeType.ALL));
         entity.addField(oneToOne);
 
         XField oneToMany = new XField("contactsList", List.class);

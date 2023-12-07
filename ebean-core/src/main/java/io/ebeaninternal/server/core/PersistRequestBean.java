@@ -2,6 +2,7 @@ package io.ebeaninternal.server.core;
 
 import io.ebean.ValuePair;
 import io.ebean.annotation.DocStoreMode;
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.PreGetterCallback;
@@ -700,8 +701,14 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    */
   public boolean isLoadedProperty(BeanProperty prop) {
     if (prop.isCustom()) { //get dynamic element bean
-      EntityBean value = (EntityBean) entityBean._ebean_getField(prop.fieldIndex() % 1000);
-      return value._ebean_getIntercept().isLoadedProperty(prop.fieldIndex() / 1000);
+      ElementBean value = (ElementBean) entityBean._ebean_getField(prop.fieldIndex() % 1000);
+      //if interceptor is uninitialized
+      EntityBeanIntercept ebi = value._ebean_getIntercept();
+      if (ebi.getPropertyLength() == 0) {
+        return value.containsKey(prop.name());
+      } else {
+        return ebi.isLoadedProperty(prop.fieldIndex() / 1000);
+      }
     } else {
       return intercept.isLoadedProperty(prop.propertyIndex());
     }

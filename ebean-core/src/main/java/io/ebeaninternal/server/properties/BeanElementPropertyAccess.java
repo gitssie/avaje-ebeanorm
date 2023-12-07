@@ -28,7 +28,7 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
     if (element == null) {
       return null;
     }
-    element = setInterceptValue(element, bean);
+    setInterceptValue(element, bean);
     return element._ebean_getField(fieldIndex);
   }
 
@@ -38,11 +38,11 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
     if (element == null) {
       return null;
     }
-    element = setInterceptValue(element, bean);
+    setInterceptValue(element, bean);
     return element._ebean_getFieldIntercept(fieldIndex);
   }
 
-  private ElementBean setInterceptValue(ElementBean element, EntityBean owner) {
+  private EntityBeanIntercept setInterceptValue(ElementBean element, EntityBean owner) {
     if (element == null) {
       throw new RuntimeException("element bean is null");
     }
@@ -53,21 +53,24 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
       element._ebean_setIntercept(intercept);
       ownerI.setLoadedProperty(elementFieldIndex);
       intercept.setEmbeddedOwner(owner, elementFieldIndex);
+      return intercept;
     }
-    return element;
+    return element._ebean_getIntercept();
   }
 
   @Override
   public void set(EntityBean bean, Object value) {
     ElementBean element = (ElementBean) bean._ebean_getField(elementFieldIndex);
-    element = setInterceptValue(element, bean);
-    element._ebean_setField(fieldIndex, value);
+    EntityBeanIntercept ebi = setInterceptValue(element, bean);
+    if (!ebi.isDirtyProperty(fieldIndex)) {
+      element._ebean_setField(fieldIndex, value);
+    }
   }
 
   @Override
   public void setIntercept(EntityBean bean, Object value) {
     ElementBean element = (ElementBean) bean._ebean_getField(elementFieldIndex);
-    element = setInterceptValue(element, bean);
+    setInterceptValue(element, bean);
     element._ebean_setFieldIntercept(fieldIndex, value);
   }
 }

@@ -23,10 +23,14 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
 
   public BeanDescriptorManagerTenant(InternalConfiguration config) {
     super(config);
-    this.tenantProvider = config.getConfig().getCurrentTenantProvider();
     String versionsBetweenSuffix = versionsBetweenSuffix(databasePlatform, this.config);
     this.readAnnotations = new XReadAnnotations(config.getGeneratedPropertyFactory(), asOfViewSuffix, versionsBetweenSuffix, this.config);
     XEntityProvider entityProvider = (XEntityProvider) config.getConfig().getServiceObject(XEntityProvider.class.getName());
+    CurrentTenantProvider tenantProvider = entityProvider.tenantProvider();
+    if (tenantProvider == null) {
+      tenantProvider = config.getConfig().getCurrentTenantProvider();
+    }
+    this.tenantProvider = tenantProvider;
     this.tenantCreateProperties = new TenantDeployCreateProperties(createProperties, entityProvider.create());
     this.initContext = new BeanDescriptorInitContext(asOfTableMap, draftTableMap, asOfViewSuffix);
     this.beanDescriptorManagerProvider = new BeanDescriptorManagerProvider(this, tenantProvider);

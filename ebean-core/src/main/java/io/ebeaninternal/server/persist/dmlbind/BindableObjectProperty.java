@@ -42,7 +42,7 @@ class BindableObjectProperty implements Bindable {
       EntityBeanIntercept ei = ebean._ebean_getIntercept();
       if (request.type() == PersistRequest.Type.UPDATE && ei.isNew()) {
         list.add(this);
-      } else if (ei.isDirtyProperty(prop.fieldIndex() / 1000)) {
+      } else if (ei.getPropertyLength() > 0 && ei.isDirtyProperty(prop.fieldIndex() / 1000)) {
         list.add(this);
       }
     } else {

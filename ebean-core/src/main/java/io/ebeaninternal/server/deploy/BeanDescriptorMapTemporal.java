@@ -311,7 +311,8 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
       return;
     }
     ccp.setTransient();
-    ccp.setJsonSerialize(false);
+    ccp.setEmbedded();
+    ccp.setUnmappedJson();
     ccp.setScalarType(proxy.typeManager.getDbMapScalarType());
     slot.setTransient();
     slot.setJsonSerialize(false);
