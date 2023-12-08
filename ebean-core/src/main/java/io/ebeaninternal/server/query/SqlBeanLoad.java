@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.query;
 
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebeaninternal.api.SpiQuery.Mode;
@@ -45,12 +46,26 @@ public final class SqlBeanLoad {
     return ctx;
   }
 
+  private boolean isLoadProperty(BeanProperty prop) {
+    if (prop.isCustom()) {
+      ElementBean value = (ElementBean) bean._ebean_getField(prop.fieldIndex() % 1000);
+      EntityBeanIntercept ebi = value._ebean_getIntercept();
+      if (ebi.getPropertyLength() == 0) {
+        return false;
+      } else {
+        return ebi.isLoadedProperty(prop.fieldIndex() / 1000);
+      }
+    }
+    return false;
+  }
+
   public Object load(BeanProperty prop) {
     if (!rawSql && !prop.isLoadProperty(ctx.isDraftQuery())) {
       return null;
     }
     if ((bean == null)
       || (lazyLoading && ebi.isLoadedProperty(prop.propertyIndex()))
+      || (lazyLoading && isLoadProperty(prop))
       || (type != null && !prop.isAssignableFrom(type))) {
       // ignore this property
       // ... null: bean already in persistence context

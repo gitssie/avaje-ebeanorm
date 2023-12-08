@@ -16,9 +16,15 @@ import java.util.Set;
 final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   private final EntityBeanIntercept proxy;
+  private final EntityBeanIntercept owner;
+  private final int elementIndex;
+  private final int slotIndex;
 
-  public BeanElementPropertyIntercept(EntityBeanIntercept proxy) {
+  public BeanElementPropertyIntercept(EntityBeanIntercept proxy, EntityBeanIntercept owner, int elementIndex, int slotIndex) {
     this.proxy = proxy;
+    this.owner = owner;
+    this.elementIndex = elementIndex;
+    this.slotIndex = slotIndex;
   }
 
   @Override
@@ -184,11 +190,13 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   @Override
   public void setLoaded() {
     proxy.setLoaded();
+    owner.setLoadedProperty(elementIndex);
   }
 
   @Override
   public void setLoadedLazy() {
     proxy.setLoadedLazy();
+    owner.setLoadedProperty(elementIndex);
   }
 
   @Override
@@ -383,7 +391,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   @Override
   public void loadBean(int loadProperty) {
-    proxy.loadBean(loadProperty);
+    owner.preGetter(slotIndex);
+    setLoadedProperty(loadProperty);
   }
 
   @Override
@@ -408,7 +417,13 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   @Override
   public void preGetter(int propertyIndex) {
-    proxy.preGetter(propertyIndex);
+    preGetterCallback(propertyIndex);
+    if (proxy.isNew() || proxy.isDisableLazyLoad()) {
+      return;
+    }
+    if (!isLoadedProperty(propertyIndex)) {
+      loadBean(propertyIndex);
+    }
   }
 
   @Override
@@ -427,8 +442,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   private void setLoadedLazy(boolean intercept) {
-    if (intercept && proxy.isNew()) {
-      proxy.setLoadedLazy();
+    if (intercept && proxy.isNew() && owner.isLoaded()) {
+//      proxy.setLoadedLazy();
     }
   }
 

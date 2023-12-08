@@ -61,11 +61,15 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   public void _ebean_setField(int fieldIndex, Object value) {
     String key = properties[fieldIndex];
     Object oldVal = rawData.put(key, value);
+    if (!this.intercept.isLoadedProperty(fieldIndex)) {
+      oldVal = value;
+    }
     this.intercept.preSetter(false, fieldIndex, oldVal, value);
   }
 
   @Override
   public void _ebean_setFieldIntercept(int fieldIndex, Object value) {
+    this.intercept.preGetter(fieldIndex);
     String key = properties[fieldIndex];
     Object oldVal = rawData.put(key, value);
     this.intercept.preSetter(true, fieldIndex, oldVal, value);
@@ -79,19 +83,39 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
   @Override
   public Object _ebean_getFieldIntercept(int fieldIndex) {
-    intercept.preGetter(fieldIndex);
+    this.intercept.preGetter(fieldIndex);
     return _ebean_getField(fieldIndex);
   }
 
-  public Object set(String key, Object newVal) {
-    Object oldVal = rawData.put(key, newVal);
+  @Override
+  public Object get(Object key) {
     if (properties.length > 0 && propMap != null) {
       Integer fieldIndex = propMap.get(key);
       if (fieldIndex != null) {
-        this.intercept.preSetter(true, fieldIndex, oldVal, newVal);
+        this.intercept.preGetter(fieldIndex);
       }
     }
-    return oldVal;
+    Object res = rawData.get(key);
+    return res;
+  }
+
+  @Override
+  public Object put(String key, Object value) {
+    return set(key, value);
+  }
+
+
+  public Object set(String key, Object newVal) {
+    if (properties.length > 0 && propMap != null) {
+      Integer fieldIndex = propMap.get(key);
+      if (fieldIndex != null) {
+        this.intercept.preGetter(fieldIndex);
+        Object oldVal = rawData.put(key, newVal);
+        this.intercept.preSetter(true, fieldIndex, oldVal, newVal);
+        return oldVal;
+      }
+    }
+    return rawData.put(key, newVal);
   }
 
   public void _ebean_setInterceptProperties(String[] properties, Map<String, Integer> propMap) {
@@ -121,16 +145,6 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   @Override
   public boolean containsValue(Object value) {
     return rawData.containsValue(value);
-  }
-
-  @Override
-  public Object get(Object key) {
-    return rawData.get(key);
-  }
-
-  @Override
-  public Object put(String key, Object value) {
-    return set(key, value);
   }
 
   @Override
