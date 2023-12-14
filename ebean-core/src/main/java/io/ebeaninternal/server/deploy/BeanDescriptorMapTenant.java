@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected static final Logger log = CoreLog.internal;
@@ -28,6 +29,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
   protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
   protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
+  protected final List<BeanDescriptorConsumer> descListeners = new LinkedList<>();
   protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
   protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
   protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
@@ -36,6 +38,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
   protected final Map<Class<?>, DeployBeanInfo<?>> rootInfoMap;
+
 
   public BeanDescriptorMapTenant(Object tenantId, BeanDescriptorManagerTenant beanDescriptorManager) {
     this.tenantId = tenantId;
@@ -197,6 +200,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     factory.deploy(entityClass, entity);
     factory.initialise();
     registerBeanDescriptor(factory);
+    factory.clear();
   }
 
   private void registerBeanDescriptor(BeanDescriptorMapTemporal factory) {
@@ -207,6 +211,22 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     beanTableMap.putAll(factory.beanTableMap);
     tableToDescMap.putAll(factory.tableToDescMap);
     tableToViewDescMap.putAll(factory.tableToViewDescMap);
+    notifyBeanDescriptorConsumer(factory);
+  }
+
+  private void notifyBeanDescriptorConsumer(BeanDescriptorMapTemporal factory) {
+    List<BeanDescriptorConsumer> removed = new LinkedList<>();
+    for (BeanDescriptor<?> desc : factory.descMap.values()) {
+      for (BeanDescriptorConsumer l : descListeners) {
+        if (l.isOwner(desc.type())) {
+          removed.add(l);
+        } else {
+          l.callback(desc);
+        }
+      }
+    }
+    descListeners.removeAll(removed);
+    descListeners.addAll(factory.descListeners);
   }
 
   protected void setEbeanServer(Map<String, BeanDescriptor<?>> descMap, BeanDescriptorMapTemporal factory) {
@@ -225,9 +245,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
       BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
       DeployBeanInfo<?> info = rootInfoMap.get(beanClass);
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations, factory);
+      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
       BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo);
       factory.initialise();
+      factory.clear();
       return desc;
     } finally {
       lock.unlock();
@@ -238,5 +259,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     String etag = entity.generateEtag();
     String oldEtag = getDesc(beanClass).dbComment();
     return !etag.equals(oldEtag);
+  }
+
+  @Override
+  public <T> void listenDescriptor(Class<?> entityType, Class<T> targetClass, Consumer<BeanDescriptor<T>> consumer) {
+    throw new UnsupportedOperationException();
   }
 }

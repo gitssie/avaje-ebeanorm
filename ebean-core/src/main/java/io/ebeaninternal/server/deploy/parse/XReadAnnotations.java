@@ -13,9 +13,11 @@ import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 public class XReadAnnotations {
 
   private final ReadAnnotationConfig readConfig;
+  private final TenantDeployCreateProperties createProperties;
 
-  public XReadAnnotations(GeneratedPropertyFactory generatedPropFactory, String asOfViewSuffix, String versionsBetweenSuffix, DatabaseConfig config) {
+  public XReadAnnotations(GeneratedPropertyFactory generatedPropFactory, String asOfViewSuffix, String versionsBetweenSuffix, DatabaseConfig config, TenantDeployCreateProperties createProperties) {
     this.readConfig = new ReadAnnotationConfig(generatedPropFactory, asOfViewSuffix, versionsBetweenSuffix, config);
+    this.createProperties = createProperties;
   }
 
   /**
@@ -28,7 +30,7 @@ public class XReadAnnotations {
   public void readInitial(XEntity entity, DeployBeanInfo<?> info) {
     try {
       new XAnnotationClass(entity, info, readConfig).parse();
-      new XAnnotationFields(entity, info, readConfig).parse();
+      new XAnnotationFields(entity, info, readConfig, createProperties).parse();
     } catch (RuntimeException e) {
       throw new RuntimeException("Error reading annotations for " + info, e);
     }

@@ -14,9 +14,14 @@ public class BeanDescriptorMapRedeployContext extends BeanDescriptorMapContext {
 
   @Override
   protected boolean isDeploying(Class<?> entityClass) {
-    if (entityClass == beanClass) {
+    if (beanClass.equals(entityClass)) {
       return false;
     }
     return beanTableMap.containsKey(entityClass.getName());
+  }
+
+  @Override
+  protected Class<?> singleDeployBeanClass() {
+    return beanClass;
   }
 }

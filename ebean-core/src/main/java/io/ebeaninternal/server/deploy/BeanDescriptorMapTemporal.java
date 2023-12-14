@@ -1,76 +1,51 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.bean.ElementBean;
-import io.ebean.config.DatabaseConfig;
-import io.ebean.config.EncryptKey;
-import io.ebean.config.NamingConvention;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
-import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.api.CoreLog;
-import io.ebeaninternal.server.cache.SpiCacheManager;
-import io.ebeaninternal.server.deploy.id.IdBinder;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.properties.BeanElementPropertyAccess;
-import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 import org.slf4j.Logger;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
+public class BeanDescriptorMapTemporal {
   protected static final Logger log = CoreLog.internal;
   private final BeanDescriptorManager proxy;
+  private final BeanDescriptorMapTenantProxy proxyMap;
   private final BeanDescriptorMapCheck mapCheck;
   private final BeanDescriptorMapContext context;
   protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
   protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
+  protected final List<BeanDescriptorConsumer> descListeners = new LinkedList<>();
   protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
   protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
   protected final Map<String, BeanTable> beanTableCache = new HashMap<>();
 
   protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
   protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
+
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
 
   protected final BeanDescriptorInitContext initContext;
   private final List<BeanDescriptor<?>> descriptors = new ArrayList<>();
+  private final Map<String, String> withHistoryTables = new HashMap<>();
+  private final Map<String, String> draftTables = new HashMap<>();
 
   public BeanDescriptorMapTemporal(BeanDescriptorManagerTenant proxy, BeanDescriptorMapContext context, XReadAnnotations readAnnotations, TenantDeployCreateProperties createProperties) {
     this.proxy = proxy;
+    this.proxyMap = new BeanDescriptorMapTenantProxy(proxy, this);
     this.context = context;
     this.readAnnotations = readAnnotations;
     this.createProperties = createProperties;
     this.mapCheck = new BeanDescriptorMapCheck(proxy.typeManager, this);
-    this.initContext = new BeanDescriptorInitContext(new HashMap<>(), new HashMap<>(), proxy.asOfViewSuffix);
-  }
-
-  @Override
-  public String name() {
-    return proxy.name();
-  }
-
-  @Override
-  public DatabaseConfig config() {
-    return proxy.config();
-  }
-
-  @Override
-  public SpiCacheManager cacheManager() {
-    return proxy.cacheManager();
-  }
-
-  @Override
-  public NamingConvention namingConvention() {
-    return proxy.namingConvention();
-  }
-
-  @Override
-  public boolean isMultiValueSupported() {
-    return proxy.isMultiValueSupported();
+    this.initContext = new BeanDescriptorInitContext(withHistoryTables, draftTables, proxy.asOfViewSuffix);
   }
 
   protected boolean isDeploying(Class<?> entityClass) {
@@ -131,7 +106,7 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
   }
 
   protected BeanDescriptor<?> registerDescriptor(DeployBeanInfo<?> info) {
-    BeanDescriptor<?> desc = new BeanDescriptor<>(this, info.getDescriptor());
+    BeanDescriptor<?> desc = new BeanDescriptor<>(proxyMap, info.getDescriptor());
     descMap.put(desc.type().getName(), desc);
     /*
     if (desc.isDocStoreMapped()) {
@@ -274,7 +249,7 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
   protected <T> void readDeployAssociations(DeployBeanInfo<T> info) {
     DeployBeanDescriptor<T> desc = info.getDescriptor();
 
-    readAnnotations.readAssociations(info, this);
+    readAnnotations.readAssociations(info, proxyMap);
 
     readDeployAssociations(info, desc);
 
@@ -340,19 +315,6 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
       prop.setGetter(access);
       prop.setSetter(access);
     }
-//    desc.removeProperty(slot);
-
-    /*
-    DeployBeanProperty cp = new DeployBeanProperty(desc, ccp.getPropertyType(), ccp.getPropertyType());
-    cp.setName(ccp.getName());
-    cp.setPropertyIndex(ccp.getPropertyIndex());
-    cp.setGetter(ccp.getGetter());
-    cp.setSetter(ccp.getSetter());
-    cp.setTransient();
-    cp.setUnmappedJson();
-    cp.setScalarType(proxy.typeManager.getDbMapScalarType());
-    desc.addBeanProperty(cp);
-    */
   }
 
   protected <T> BeanDescriptor<T> deployInfo(Class<T> beanClass, DeployBeanInfo<?> info) {
@@ -376,11 +338,10 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
     return context.getDescInfo(beanClass, this::getDescInfo);
   }
 
-  private DeployBeanInfo<?> getDescInfo(Class<?> beaenClass) {
-    return descInfoMap.get(beaenClass);
+  private DeployBeanInfo<?> getDescInfo(Class<?> beanClass) {
+    return descInfoMap.get(beanClass);
   }
 
-  @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> beanClass) {
     if (!isDeployed(beanClass)) {
       deploy(beanClass);
@@ -392,43 +353,6 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
     return desc;
   }
 
-
-  @Override
-  public EncryptKey encryptKey(String tableName, String columnName) {
-    return proxy.encryptKey(tableName, columnName);
-  }
-
-  @Override
-  public IdBinder createIdBinder(BeanProperty id) {
-    return proxy.createIdBinder(id);
-  }
-
-  @Override
-  public <T> DocStoreBeanAdapter<T> createDocStoreBeanAdapter(BeanDescriptor<T> descriptor, DeployBeanDescriptor<T> deploy) {
-    return proxy.createDocStoreBeanAdapter(descriptor, deploy);
-  }
-
-  @Override
-  public ScalarType<?> scalarType(int jdbcType) {
-    return proxy.scalarType(jdbcType);
-  }
-
-  @Override
-  public ScalarType<?> scalarType(String cast) {
-    return proxy.scalarType(cast);
-  }
-
-  @Override
-  public boolean isJacksonCorePresent() {
-    return proxy.isJacksonCorePresent();
-  }
-
-  @Override
-  public boolean isTableManaged(String tableName) {
-    return proxy.isTableManaged(tableName);
-  }
-
-  @Override
   public BeanTable beanTable(Class<?> type) {
     BeanTable table = getBeanTable(type);
     if (table == null) {
@@ -456,12 +380,12 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
 
 
   protected BeanTable readEntityBeanTable(DeployBeanInfo<?> info) {
-    BeanTable beanTable = getBeanTable(info.getDescriptor().getBeanType());
-    if (beanTable != null) {
-      return beanTable;
+    Class<?> beanType = info.getDescriptor().getBeanType();
+    BeanTable beanTable = getBeanTable(beanType);
+    if (beanTable == null) {
+      beanTable = createBeanTable(info);
     }
-    beanTable = createBeanTable(info);
-    beanTableMap.put(beanTable.getBeanType().getName(), beanTable);
+    beanTableMap.put(beanType.getName(), beanTable);
     return beanTable;
   }
 
@@ -470,7 +394,7 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
     return beanTableCache.computeIfAbsent(name, (e) -> {
       DeployBeanDescriptor<?> deployDescriptor = info.getDescriptor();
       DeployBeanTable beanTable = deployDescriptor.createDeployBeanTable();
-      return new BeanTable(beanTable, this);
+      return new BeanTable(beanTable, proxyMap);
     });
   }
 
@@ -496,7 +420,7 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
           "Error - for type " + beanClass);
     }
     try {
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations, this);
+      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         BeanManager beanManager = proxy.beanManager(beanClass.getName());
         return new DeployInfo(beanClass, newInfo, beanManager);
@@ -505,6 +429,28 @@ public class BeanDescriptorMapTemporal implements BeanDescriptorMap {
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public <T> void listenDescriptor(Class<?> entityType, Class<T> targetClass, Consumer<BeanDescriptor<T>> consumer) {
+    descListeners.add(new BeanDescriptorConsumer(entityType, targetClass, consumer));
+  }
+
+  protected void clear() {
+    for (DeployBeanInfo<?> value : descInfoMap.values()) {
+      value.clear();
+    }
+    proxyMap.clear();
+    descMap.clear();
+    descInfoMap.clear();
+    descListeners.clear();
+    beanTableMap.clear();
+    beanManagerMap.clear();
+    beanTableCache.clear();
+    tableToDescMap.clear();
+    tableToViewDescMap.clear();
+    descriptors.clear();
+    withHistoryTables.clear();
+    draftTables.clear();
   }
 
   private class DeployInfo {

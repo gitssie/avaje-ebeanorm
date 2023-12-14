@@ -1,7 +1,10 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.DB;
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
+import io.ebean.bean.EntityBeanIntercept;
+import io.ebean.bean.InterceptReadWrite;
 import io.ebean.plugin.Property;
 import io.ebeaninternal.server.core.CacheOptions;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
@@ -14,6 +17,8 @@ import org.tests.model.bridge.BSite;
 import org.tests.model.bridge.BUser;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,9 +30,84 @@ public class BeanDescriptorTest extends BaseTest {
 
   private BeanDescriptor<Customer> customerDesc = spiEbeanServer().descriptor(Customer.class);
 
+
+  @Test
+  public void createCustomer() {
+    initTables();
+    Customer bean = customerDesc.createBean();
+    bean.setId(42);
+    bean.setName("Jack");
+    bean.getCustom().set("name__c", "新数据1");
+    bean.getCustom().set("name2__c", "新数据2");
+    EntityBeanIntercept ebi = ((EntityBean) bean)._ebean_getIntercept();
+    BeanProperty b1 = (BeanProperty) customerDesc.property("name");
+    BeanProperty b2 = (BeanProperty) customerDesc.property("name__c");
+    b1.setValueIntercept((EntityBean) bean, "Jack");
+    b2.setValueIntercept((EntityBean) bean, "新数据1");
+    System.out.println(ebi.getDirtyPropertyNames());
+    DB.save(bean);
+
+    bean = DB.createQuery(Customer.class)
+      .select("version,name__c")
+      .setId(42)
+      .findOne();
+    System.out.println(bean.getCustom());
+    b2.setValueIntercept((EntityBean) bean, "这是新数据222");
+    bean.set("name2__c", "这是新数据111");
+    System.out.println(bean.getCustom().get("name2__c"));
+    bean.setName("Node");
+
+//    bean.setSmallnote("xxx");
+    ebi = ((EntityBean) bean)._ebean_getIntercept();
+//    EntityBeanIntercept ebi2 = ((EntityBean) bean.getCustom())._ebean_getIntercept();
+    System.out.println(ebi.getDirtyPropertyNames());
+//    System.out.println(bean.getName() + bean.getCustom());
+    DB.update(bean);
+    if (true) {
+      return;
+    }
+    bean = DB.reference(Customer.class, 42);
+    Map<String, Object> custom = bean.getCustom();
+    ebi = ((EntityBean) bean)._ebean_getIntercept();
+    String name__c = (String) bean.getCustom().get("name__c");
+    System.out.println(name__c);
+    bean.setName("CJAK");
+    custom.put("name__c", "01-重新更新1");
+//    custom.put("name2__c","02-重新更新2");
+    System.out.println(ebi.getDirtyPropertyNames());
+    DB.update(bean);
+    if (true) {
+      ElementBean ebean = (ElementBean) custom;
+      EntityBeanIntercept ebi3 = ebean._ebean_getIntercept();
+      // return;
+    }
+    System.out.println(bean.getCustom().size());
+    System.out.println(bean.getCustom().size());
+
+    bean = DB.find(Customer.class, 42);
+    bean.setName("自定义");
+    custom = bean.getCustom();
+    custom.put("name__c", "01-重新更新3");
+    custom.put("name2__c", "02-重新更新3");
+    custom.put("name3__c", "02-重新更新3");
+    System.out.println(((EntityBean) bean)._ebean_getIntercept().getDirtyPropertyNames());
+    DB.update(bean);
+    System.out.println(bean.getCustom().size());
+
+    String json = DB.json().toJson(bean);
+    System.out.println(json);
+    bean = DB.json().toBean(Customer.class, json);
+    System.out.println(bean.getCustom());
+    custom = bean.getCustom();
+
+    bean.setName("这是为什么");
+    custom.put("name__c", "01-重新更新4");
+    System.out.println(((EntityBean) bean)._ebean_getIntercept().getDirtyPropertyNames());
+    DB.update(bean);
+  }
+
   @Test
   public void createReference() {
-
     Customer bean = customerDesc.createReference(null, false, 42, null);
     assertThat(bean.getId()).isEqualTo(42);
     Assertions.assertThat(server().beanState(bean).isReadOnly()).isFalse();

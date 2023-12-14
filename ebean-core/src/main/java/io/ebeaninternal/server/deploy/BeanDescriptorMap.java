@@ -9,6 +9,8 @@ import io.ebeaninternal.server.deploy.id.IdBinder;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 
+import java.util.function.Consumer;
+
 /**
  * Provides a method to find a BeanDescriptor.
  * <p>
@@ -46,6 +48,9 @@ public interface BeanDescriptorMap {
    * Return the BeanDescriptor for a given class.
    */
   <T> BeanDescriptor<T> descriptor(Class<T> entityType);
+
+  default <T> void listenDescriptor(Class<?> entityType, Class<T> targetClass, Consumer<BeanDescriptor<T>> consumer) {
+  }
 
   /**
    * Return the Encrypt key given the table and column name.

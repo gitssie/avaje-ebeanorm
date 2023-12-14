@@ -19,6 +19,7 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
 import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
+import io.ebeaninternal.server.deploy.parse.tenant.annotation.XTenantId;
 import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.DefaultGeneratedProperty;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
@@ -37,7 +38,8 @@ import static io.ebean.util.AnnotationUtil.get;
  * Read the field level deployment annotations.
  */
 final class XAnnotationFields extends AnnotationParser {
-  private final XEntity entity;
+  private final XEntity entity; //transient
+  private final TenantDeployCreateProperties createProperties;
   /**
    * If present read Jackson JsonIgnore.
    */
@@ -48,9 +50,10 @@ final class XAnnotationFields extends AnnotationParser {
    */
   private FetchType defaultLobFetchType = FetchType.LAZY;
 
-  XAnnotationFields(XEntity entity, DeployBeanInfo<?> info, ReadAnnotationConfig readConfig) {
+  XAnnotationFields(XEntity entity, DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, TenantDeployCreateProperties createProperties) {
     super(info, readConfig);
     this.entity = entity;
+    this.createProperties = createProperties;
     this.jacksonAnnotationsPresent = readConfig.isJacksonAnnotations();
     this.generatedPropFactory = readConfig.getGeneratedPropFactory();
     if (readConfig.isEagerFetchLobs()) {
@@ -75,6 +78,25 @@ final class XAnnotationFields extends AnnotationParser {
         readField(field, prop);
       }
     }
+    addTenantProperty();
+  }
+
+  private void addTenantProperty() {
+    if (!entity.isTenant()) {
+      return;
+    }
+    for (DeployBeanProperty property : descriptor.propertiesAll()) {
+      if (property.isTenantId()) {
+        return;
+      }
+    }
+    XField field = new XField(XTenantId.NAME, Long.class);
+    field.addAnnotation(new XTenantId());
+    DeployBeanProperty prop = createProperties.createProp(descriptor, field, descriptor.getBeanType());
+    //prop.setNullable(true);
+    prop.initAnnotations(new HashSet<>(field.getAnnotations()));
+    readField(field, prop);
+    descriptor.addBeanProperty(prop);
   }
 
   private void readPropGenValue(XField field, DeployBeanProperty prop) {
@@ -135,6 +157,9 @@ final class XAnnotationFields extends AnnotationParser {
     }
     if (field.has(WhoCreated.class)) {
       generatedPropFactory.setWhoCreated(prop);
+    }
+    if (field.has(TenantId.class)) {
+      generatedPropFactory.setWhoTenant(prop);
     }
   }
 

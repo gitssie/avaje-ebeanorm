@@ -3,6 +3,7 @@ package io.ebeaninternal.server.deploy;
 import io.ebean.Model;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -49,6 +50,10 @@ public class BeanDescriptorMapContext {
     return info;
   }
 
+  public Collection<DeployBeanInfo<?>> getDescInfoAll() {
+    return descInfoMap.values();
+  }
+
   public DeployBeanInfo<?> getRootDescInfo(Class<?> beanClass) {
     DeployBeanInfo<?> info = rootInfoMap.get(beanClass); //这里是从父级集成来的
     Class<?> clazz = beanClass;
@@ -57,5 +62,9 @@ public class BeanDescriptorMapContext {
       info = rootInfoMap.get(clazz);
     }
     return info;
+  }
+
+  protected Class<?> singleDeployBeanClass(){
+    return null;
   }
 }

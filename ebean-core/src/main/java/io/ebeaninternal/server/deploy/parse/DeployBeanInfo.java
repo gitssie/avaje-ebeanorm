@@ -3,19 +3,23 @@ package io.ebeaninternal.server.deploy.parse;
 import io.ebean.RawSql;
 import io.ebeaninternal.server.deploy.TableJoin;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
+import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Wraps information about a bean during deployment parsing.
  */
 public final class DeployBeanInfo<T> {
-
-  private final DeployUtil util;
   private final DeployBeanDescriptor<T> descriptor;
-  private DeployBeanPropertyAssoc<?> embeddedId;
-  private XEntity entity;
+  private transient DeployUtil util;
+  private transient DeployBeanPropertyAssoc<?> embeddedId;
+  private transient XEntity entity;
+
   /**
    * Create with a DeployUtil and BeanDescriptor.
    */
@@ -24,11 +28,12 @@ public final class DeployBeanInfo<T> {
     this.descriptor = descriptor;
   }
 
-  public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor,XEntity entity) {
+  public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor, XEntity entity) {
     this.util = util;
     this.descriptor = descriptor;
     this.entity = entity;
   }
+
   @Override
   public String toString() {
     return String.valueOf(descriptor);
@@ -52,7 +57,7 @@ public final class DeployBeanInfo<T> {
    * Add named RawSql from ebean.xml.
    */
   public void addRawSql(String name, RawSql rawSql) {
-    descriptor.addRawSql(name, (SpiRawSql)rawSql);
+    descriptor.addRawSql(name, (SpiRawSql) rawSql);
   }
 
   /**
@@ -88,7 +93,19 @@ public final class DeployBeanInfo<T> {
     return entity;
   }
 
-  public void setEntity(XEntity entity) {
-    this.entity = entity;
+  /**
+   * 由于是延迟部署实体,所以需要保存部署对象的属性配置 DeployBeanDescriptor, 由于是常驻内存,需要清除掉一些一次性使用过后的引用
+   */
+  public void clear() {
+    this.util = null;
+    this.entity = null;
+    this.embeddedId = null;
+    List<DeployBeanProperty> properties = new LinkedList<>(descriptor.properties());
+    for (DeployBeanProperty prop : properties) {
+      if (prop instanceof DeployBeanPropertyAssoc<?> || prop.isId()) {
+        continue;
+      }
+      descriptor.removeProperty(prop);
+    }
   }
 }

@@ -16,7 +16,6 @@ import io.ebeaninternal.server.type.TypeManager;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Transient;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -27,10 +26,8 @@ public class TenantDeployCreateProperties {
   private XEntityFinder entityProvider;
   protected final DetermineManyType determineManyType;
   protected final TypeManager typeManager;
-  private final DeployCreateProperties createProperties;
 
   public TenantDeployCreateProperties(DeployCreateProperties createProperties, XEntityFinder entityProvider) {
-    this.createProperties = createProperties;
     this.typeManager = createProperties.typeManager;
     this.determineManyType = createProperties.determineManyType;
     this.entityProvider = entityProvider;
@@ -80,19 +77,7 @@ public class TenantDeployCreateProperties {
         }
         i++;
         DeployBeanProperty prop = createProp(desc, field, beanType);
-        if (prop != null) {
-          // set a order that gives priority to inherited properties
-          // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
-          int sortOverride = prop.getSortOverride();
-          prop.setSortOrder((1 * 10000 + 100 - i + sortOverride));
-
-          DeployBeanProperty replaced = desc.addBeanProperty(prop);
-          if (replaced != null && !replaced.isTransient()) {
-            String msg = "Huh??? property " + prop.getFullBeanName() + " being defined twice";
-            msg += " but replaced property was not transient? This is not expected?";
-            CoreLog.log.warn(msg);
-          }
-        }
+        addProperty(i, desc, prop);
       }
     } catch (PersistenceException ex) {
       throw ex;
@@ -101,7 +86,23 @@ public class TenantDeployCreateProperties {
     }
   }
 
-  private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field, Class<?> beanType) {
+  private void addProperty(int index, DeployBeanDescriptor<?> desc, DeployBeanProperty prop) {
+    if (prop != null) {
+      // set a order that gives priority to inherited properties
+      // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
+      int sortOverride = prop.getSortOverride();
+      prop.setSortOrder((1 * 10000 + 100 - index + sortOverride));
+
+      DeployBeanProperty replaced = desc.addBeanProperty(prop);
+      if (replaced != null && !replaced.isTransient()) {
+        String msg = "Huh??? property " + prop.getFullBeanName() + " being defined twice";
+        msg += " but replaced property was not transient? This is not expected?";
+        CoreLog.log.warn(msg);
+      }
+    }
+  }
+
+  protected DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field, Class<?> beanType) {
     DeployBeanProperty prop = createProp(desc, field);
     if (prop == null) {
       // transient annotation on unsupported type
@@ -184,12 +185,11 @@ public class TenantDeployCreateProperties {
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
-    XEntity entity = entityProvider.getEntity(beanClass);
-    return createDeployBeanInfo(entity, beanClass, info, readAnnotations, factory);
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    return createDeployBeanInfo(null, beanClass, info, readAnnotations);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
     if (entity == null) {
       entity = entityProvider.getEntity(beanClass);
     }
@@ -204,28 +204,6 @@ public class TenantDeployCreateProperties {
 //    readAnnotations.readAssociations(info, factory); //读取关联信息
     return info;
   }
-
-  public <T> DeployBeanInfo<T> copyDescriptor(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
-    if (!isCustomEntity(entity, info.getDescriptor())) {
-      return info;
-    }
-    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
-    setProperties(desc);
-    info = new DeployBeanInfo<>(info.getUtil(), desc);
-    readAnnotations.readInitial(entity, info); //初始化基本属性
-//    readAnnotations.readAssociations(info, factory); //读取关联信息
-    return info;
-  }
-
-  public <T> DeployBeanInfo<T> simpleCreateBeanInfo(Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations, BeanDescriptorMap factory) throws Exception {
-    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
-    createProperties(desc, entity, desc.getBeanType());
-    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
-    readAnnotations.readInitial(entity, info); //初始化属性
-//    readAnnotations.readAssociations(info, factory); //初始化基本属性
-    return info;
-  }
-
 
   protected boolean isCustomEntity(XEntity entity, DeployBeanDescriptor desc) {
     if (entity.getBeanType() != desc.getBeanType()) {

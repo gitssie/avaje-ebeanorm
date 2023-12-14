@@ -13,6 +13,7 @@ public class XEntity {
   private Map<String, XField> fields;
   private XField nameable;
   private Map<Class<? extends Annotation>, Annotation> annotations;
+  private boolean tenant = false; //是为租户实体
   private boolean custom = false;
   private boolean disabled = false;
   private boolean createable = true;
@@ -20,6 +21,7 @@ public class XEntity {
   private boolean updateable = true;
   private boolean queryable = true;
   private boolean feedEnabled = true;
+
 
   public XEntity() {
     this(null);
@@ -72,6 +74,14 @@ public class XEntity {
 
   public XField getNameable() {
     return nameable;
+  }
+
+  public boolean isTenant() {
+    return tenant;
+  }
+
+  public void setTenant(boolean tenant) {
+    this.tenant = tenant;
   }
 
   public boolean isCustom() {

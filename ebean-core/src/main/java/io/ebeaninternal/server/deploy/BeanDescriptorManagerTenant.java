@@ -5,13 +5,8 @@ import io.ebean.config.CurrentTenantProvider;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.server.core.InternalConfiguration;
 import io.ebeaninternal.server.core.ServiceUtil;
-import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
-import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
-import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
-
-import javax.persistence.PersistenceException;
 
 public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   protected final XReadAnnotations readAnnotations;
@@ -24,7 +19,6 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   public BeanDescriptorManagerTenant(InternalConfiguration config) {
     super(config);
     String versionsBetweenSuffix = versionsBetweenSuffix(databasePlatform, this.config);
-    this.readAnnotations = new XReadAnnotations(config.getGeneratedPropertyFactory(), asOfViewSuffix, versionsBetweenSuffix, this.config);
     XEntityProvider entityProvider = (XEntityProvider) config.getConfig().getServiceObject(XEntityProvider.class.getName());
     CurrentTenantProvider tenantProvider = entityProvider.tenantProvider();
     if (tenantProvider == null) {
@@ -32,6 +26,7 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     }
     this.tenantProvider = tenantProvider;
     this.tenantCreateProperties = new TenantDeployCreateProperties(createProperties, entityProvider.create());
+    this.readAnnotations = new XReadAnnotations(config.getGeneratedPropertyFactory(), asOfViewSuffix, versionsBetweenSuffix, this.config, this.tenantCreateProperties);
     this.initContext = new BeanDescriptorInitContext(asOfTableMap, draftTableMap, asOfViewSuffix);
     this.beanDescriptorManagerProvider = new BeanDescriptorManagerProvider(this, tenantProvider);
   }

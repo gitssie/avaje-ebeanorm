@@ -115,6 +115,7 @@ public abstract class BeanPropertyAssoc<T> extends BeanProperty implements STree
 
   void initialiseTargetDescriptor(BeanDescriptorInitContext initContext) {
     targetDescriptor = descriptor.descriptor(targetType);
+    descriptor.owner.listenDescriptor(descriptor.type(), targetType, (e) -> this.targetDescriptor = e);
     if (!isTransient) {
       targetIdBinder = targetDescriptor.idBinder();
       targetInheritInfo = targetDescriptor.inheritInfo();

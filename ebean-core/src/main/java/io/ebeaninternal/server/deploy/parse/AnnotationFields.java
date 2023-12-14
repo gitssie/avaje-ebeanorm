@@ -4,6 +4,7 @@ import io.ebean.annotation.Index;
 import io.ebean.annotation.*;
 import io.ebean.config.EncryptDeploy;
 import io.ebean.config.EncryptDeploy.Mode;
+import io.ebean.config.IdGenerator;
 import io.ebean.config.dbplatform.DbEncrypt;
 import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.IdType;
@@ -11,10 +12,12 @@ import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.DbMigrationInfo;
 import io.ebeaninternal.server.deploy.IndexDefinition;
+import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
+import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
@@ -109,6 +112,9 @@ final class AnnotationFields extends AnnotationParser {
     }
     if (has(prop, WhoCreated.class)) {
       generatedPropFactory.setWhoCreated(prop);
+    }
+    if (has(prop, TenantId.class)) {
+      generatedPropFactory.setWhoTenant(prop);
     }
   }
 
@@ -252,6 +258,7 @@ final class AnnotationFields extends AnnotationParser {
   private void initFormula(DeployBeanProperty prop) {
     DocCode docCode = get(prop, DocCode.class);
     if (docCode != null) {
+      readCodeGenValue(prop, DocCode.class.getSimpleName());
       prop.setDocCode(docCode);
     }
     DocSortable docSortable = get(prop, DocSortable.class);
@@ -436,10 +443,24 @@ final class AnnotationFields extends AnnotationParser {
     return util.createDataEncryptSupport(table, column);
   }
 
+  private void readCodeGenValue(DeployBeanProperty prop, String generatorName) {
+    IdGenerator generator = generatedPropFactory.getIdGeneratorPure(generatorName);
+    if (generator == null) {
+      throw new IllegalStateException("No custom IdGenerator registered with name " + generatorName);
+    }
+    if (generator instanceof GeneratedProperty) {
+      prop.setGeneratedProperty((GeneratedProperty) generator);
+    }
+    return;
+  }
+
   private void readGenValue(GeneratedValue gen, Id id, DeployBeanProperty prop) {
     if (id == null) {
       if (UUID.class.equals(prop.getPropertyType())) {
         generatedPropFactory.setUuid(prop);
+        return;
+      } else {
+        readCodeGenValue(prop, gen.generator());
         return;
       }
     }
