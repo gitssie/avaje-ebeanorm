@@ -16,7 +16,7 @@ import java.util.List;
  */
 public final class DeployBeanInfo<T> {
   private final DeployBeanDescriptor<T> descriptor;
-  private transient DeployUtil util;
+  private final DeployUtil util;
   private transient DeployBeanPropertyAssoc<?> embeddedId;
   private transient XEntity entity;
 
@@ -97,7 +97,6 @@ public final class DeployBeanInfo<T> {
    * 由于是延迟部署实体,所以需要保存部署对象的属性配置 DeployBeanDescriptor, 由于是常驻内存,需要清除掉一些一次性使用过后的引用
    */
   public void clear() {
-    this.util = null;
     this.entity = null;
     this.embeddedId = null;
     List<DeployBeanProperty> properties = new LinkedList<>(descriptor.properties());

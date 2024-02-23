@@ -18,15 +18,19 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
+import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.EmptyGeneratedProperty;
+import io.ebeaninternal.server.properties.BeanPropertyConvertGetter;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
 import io.ebeaninternal.server.type.ScalarTypeEncryptedWrapper;
 
 import javax.persistence.*;
+import java.lang.reflect.Constructor;
 import java.sql.Types;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Read the field level deployment annotations.
@@ -143,6 +147,7 @@ final class AnnotationFields extends AnnotationParser {
     initTenantId(prop);
     initDbJson(prop);
     initFormula(prop);
+    initConvert(prop);
     initVersion(prop);
     initWhen(prop);
     initWhoProperties(prop);
@@ -276,6 +281,20 @@ final class AnnotationFields extends AnnotationParser {
     final Aggregation aggregation = prop.getMetaAnnotation(Aggregation.class);
     if (aggregation != null) {
       prop.setAggregation(aggregation.value().replace("$1", prop.getName()));
+    }
+  }
+
+  private void initConvert(DeployBeanProperty prop) {
+    Convert convert = get(prop, Convert.class);
+    if (convert != null && Function.class.isAssignableFrom(convert.converter())) {
+      try {
+        Constructor<Function> constructor = convert.converter().getDeclaredConstructor();
+        constructor.setAccessible(true);
+        prop.setGetter(new BeanPropertyConvertGetter(constructor.newInstance()));
+        prop.setGeneratedProperty(new EmptyGeneratedProperty());
+      } catch (Exception e) {
+        throw new IllegalArgumentException(e);
+      }
     }
   }
 

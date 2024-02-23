@@ -85,14 +85,20 @@ final class XAnnotationFields extends AnnotationParser {
     if (!entity.isTenant()) {
       return;
     }
+    DeployBeanProperty prop = null;
     for (DeployBeanProperty property : descriptor.propertiesAll()) {
       if (property.isTenantId()) {
         return;
+      } else if (property.getPropertyType() == Long.class && XTenantId.NAME.equals(property.getName())) {
+        prop = property;
+        break;
       }
     }
     XField field = new XField(XTenantId.NAME, Long.class);
     field.addAnnotation(new XTenantId());
-    DeployBeanProperty prop = createProperties.createProp(descriptor, field, descriptor.getBeanType());
+    if(prop == null) {
+      prop = createProperties.createProp(descriptor, field, descriptor.getBeanType());
+    }
     //prop.setNullable(true);
     prop.initAnnotations(new HashSet<>(field.getAnnotations()));
     readField(field, prop);

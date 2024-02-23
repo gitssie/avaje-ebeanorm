@@ -120,6 +120,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   protected Map<Class<?>, DeployBeanInfo<?>> deployInfoMap = new HashMap<>();
   protected Set<Class<?>> embeddedIdTypes = new HashSet<>();
   protected List<DeployBeanInfo<?>> embeddedBeans = new ArrayList<>();
+
   /**
    * Create for a given database dbConfig.
    */
@@ -1310,8 +1311,12 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
       } else {
         final int propertyIndex = pos;
         prop.setPropertyIndex(propertyIndex);
-        prop.setGetter(beanPropertyAccess.getGetter(propertyIndex));
-        prop.setSetter(beanPropertyAccess.getSetter(propertyIndex));
+        if (prop.getGetter() == null) {
+          prop.setGetter(beanPropertyAccess.getGetter(propertyIndex));
+        }
+        if (prop.getSetter() == null) {
+          prop.setSetter(beanPropertyAccess.getSetter(propertyIndex));
+        }
         if (prop.isAggregation()) {
           prop.setAggregationPrefix(DetermineAggPath.manyPath(prop.getRawAggregation(), desc));
         }

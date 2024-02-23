@@ -1,13 +1,18 @@
 package org.tests.model.basic;
 
 import io.ebean.annotation.*;
+import io.ebean.bean.ElementBean;
+import io.ebean.bean.EntityBean;
+import jdk.jfr.Name;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.lang.annotation.Documented;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -28,13 +33,13 @@ import java.util.function.Function;
 @Entity
 @Table(name = "o_customer")
 @DbComment("Holds external customers")
-public class Customer extends BasicDomain implements BiConsumer<String,Object>, Function<String,Object> {
+public class Customer extends BasicDomain implements BiConsumer<String, Object>, Function<String, Object> {
 
   private static final long serialVersionUID = 1L;
 
   @Override
   public void accept(String s, Object o) {
-    System.out.println(s+":"+o);
+    System.out.println(s + ":" + o);
   }
 
   @Override
@@ -102,6 +107,14 @@ public class Customer extends BasicDomain implements BiConsumer<String,Object>, 
 
   @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
   List<Contact> contacts;
+
+
+  @Embedded
+  @DbJson
+  @Convert(converter = Status.class)
+  private ElementBean custom = new ElementBean();
+  @Transient
+  private final int __slot__ = 0;
 
   @Override
   public String toString() {
@@ -219,5 +232,13 @@ public class Customer extends BasicDomain implements BiConsumer<String,Object>, 
       contacts = new ArrayList<>();
     }
     contacts.add(contact);
+  }
+
+  public ElementBean getCustom() {
+    return custom;
+  }
+
+  public void set(String key, Object value) {
+    custom.set(key, value);
   }
 }

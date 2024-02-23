@@ -209,7 +209,7 @@ public class TenantDeployCreateProperties {
     if (entity.getBeanType() != desc.getBeanType()) {
       return true;
     }
-    return entity.getFields().size() > 0;
+    return entity.getFields().size() > 0 || entity.isCustom();
   }
 
   public boolean isChanged(Class<?> entityClass) {
