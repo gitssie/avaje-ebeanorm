@@ -311,7 +311,7 @@ public class BeanDescriptorMapTemporal {
       BeanElementPropertyAccess access = new BeanElementPropertyAccess(propertyIndex, slotIndex, propertiesName, propMap, i);
       DeployBeanProperty prop = properties.get(i);
       prop.setPropertyIndex(slotIndex);
-      prop.setFieldIndex(i * 1000 + propertyIndex);
+      prop.setFieldIndex(new int[]{propertyIndex, i});
       prop.setGetter(access);
       prop.setSetter(access);
     }

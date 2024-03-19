@@ -125,6 +125,12 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
   public void _ebean_setIntercept(EntityBeanIntercept intercept) {
     this.intercept = intercept;
+    for (String key : rawData.keySet()) {
+      Integer fieldIndex = propMap.get(key);
+      if (fieldIndex != null) {
+        this.intercept.setLoadedProperty(fieldIndex);
+      }
+    }
   }
 
   @Override

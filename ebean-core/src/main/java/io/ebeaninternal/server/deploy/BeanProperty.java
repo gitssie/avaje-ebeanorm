@@ -110,7 +110,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    */
   final String name;
   final int propertyIndex;
-  final int fieldIndex;
+  final int[] fieldIndex;
   private final Field field;
   private final Class<?> propertyType;
   private final String dbBind;
@@ -826,7 +826,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     return propertyIndex;
   }
 
-  public int fieldIndex() {
+  public int[] fieldIndex() {
     return fieldIndex;
   }
 

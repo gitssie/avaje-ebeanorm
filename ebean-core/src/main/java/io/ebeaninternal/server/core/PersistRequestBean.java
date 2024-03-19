@@ -701,13 +701,13 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    */
   public boolean isLoadedProperty(BeanProperty prop) {
     if (prop.isCustom()) { //get dynamic element bean
-      ElementBean value = (ElementBean) entityBean._ebean_getField(prop.fieldIndex() % 1000);
+      ElementBean value = (ElementBean) entityBean._ebean_getField(prop.fieldIndex()[0]);
       //if interceptor is uninitialized
       EntityBeanIntercept ebi = value._ebean_getIntercept();
       if (ebi.getPropertyLength() == 0) {
         return value.containsKey(prop.name());
       } else {
-        return ebi.isLoadedProperty(prop.fieldIndex() / 1000);
+        return ebi.isLoadedProperty(prop.fieldIndex()[1]);
       }
     } else {
       return intercept.isLoadedProperty(prop.propertyIndex());

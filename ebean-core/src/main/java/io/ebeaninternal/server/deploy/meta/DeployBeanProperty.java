@@ -144,7 +144,7 @@ public class DeployBeanProperty {
   private int dbType;
   private final DeployDocPropertyOptions docMapping = new DeployDocPropertyOptions();
   private int propertyIndex;
-  private int fieldIndex;
+  private int[] fieldIndex = new int[0];
   private BeanPropertyGetter getter;
   private BeanPropertySetter setter;
   /**
@@ -385,11 +385,11 @@ public class DeployBeanProperty {
     this.propertyIndex = propertyIndex;
   }
 
-  public int getFieldIndex() {
+  public int[] getFieldIndex() {
     return fieldIndex;
   }
 
-  public void setFieldIndex(int fieldIndex) {
+  public void setFieldIndex(int[] fieldIndex) {
     this.fieldIndex = fieldIndex;
   }
 

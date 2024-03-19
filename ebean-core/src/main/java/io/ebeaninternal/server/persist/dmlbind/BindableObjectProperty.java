@@ -36,13 +36,13 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    Object value = bean._ebean_getField(prop.fieldIndex() % 1000);
+    Object value = bean._ebean_getField(prop.fieldIndex()[0]);
     if (value != null && (value instanceof ElementBean)) {
       ElementBean ebean = (ElementBean) value;
       EntityBeanIntercept ei = ebean._ebean_getIntercept();
       if (request.type() == PersistRequest.Type.UPDATE && ei.isNew()) {
         list.add(this);
-      } else if (ei.getPropertyLength() > 0 && ei.isDirtyProperty(prop.fieldIndex() / 1000)) {
+      } else if (ei.getPropertyLength() > 0 && ei.isDirtyProperty(prop.fieldIndex()[1])) {
         list.add(this);
       }
     } else {

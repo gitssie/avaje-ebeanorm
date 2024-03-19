@@ -48,12 +48,12 @@ public final class SqlBeanLoad {
 
   private boolean isLoadProperty(BeanProperty prop) {
     if (prop.isCustom()) {
-      ElementBean value = (ElementBean) bean._ebean_getField(prop.fieldIndex() % 1000);
+      ElementBean value = (ElementBean) bean._ebean_getField(prop.fieldIndex()[0]);
       EntityBeanIntercept ebi = value._ebean_getIntercept();
       if (ebi.getPropertyLength() == 0) {
         return false;
       } else {
-        return ebi.isLoadedProperty(prop.fieldIndex() / 1000);
+        return ebi.isLoadedProperty(prop.fieldIndex()[1]);
       }
     }
     return false;
