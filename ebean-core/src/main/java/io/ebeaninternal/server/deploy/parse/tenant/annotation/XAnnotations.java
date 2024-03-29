@@ -12,13 +12,23 @@ public class XAnnotations {
   }
 
   private void initClassMap() {
+    annotationClass.put("XColumn", XColumn.class);
     annotationClass.put("DbDefault", XDbDefault.class);
-    annotationClass.put("Index", XIndex.class);
-    annotationClass.put("Transient", XTransient.class);
-    annotationClass.put("Version", XVersion.class);
     annotationClass.put("DBJson", XDbJson.class);
     annotationClass.put("DBMap", XDbMap.class);
     annotationClass.put("GeneratedValue", XGeneratedValue.class);
+    annotationClass.put("Index", XIndex.class);
+    annotationClass.put("JoinColumn", XJoinColumn.class);
+    annotationClass.put("Lob", XLob.class);
+    annotationClass.put("TenantId", XTenantId.class);
+    annotationClass.put("Transient", XTransient.class);
+    annotationClass.put("Version", XVersion.class);
+
+    annotationClass.put("ManyToMany", XManyToMany.class);
+    annotationClass.put("ManyToOne", XManyToOne.class);
+    annotationClass.put("OneToMany", XOneToMany.class);
+    annotationClass.put("OneToOne", XOneToOne.class);
+
   }
 
   public Class<?> getClass(String name) {

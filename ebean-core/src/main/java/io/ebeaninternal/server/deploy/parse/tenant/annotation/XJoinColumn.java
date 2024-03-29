@@ -7,7 +7,7 @@ import javax.persistence.JoinColumn;
 import java.lang.annotation.Annotation;
 
 public class XJoinColumn implements JoinColumn {
-  private String name;
+  private String name = "";
   private String referencedColumnName = "";
   private boolean unique = false;
   private boolean nullable = true;
@@ -15,7 +15,10 @@ public class XJoinColumn implements JoinColumn {
   private boolean updatable = true;
   private String columnDefinition = "";
   private String table = "";
-  private ForeignKey foreignKey;
+  private XForeignKey foreignKey = new XForeignKey();
+
+  public XJoinColumn() {
+  }
 
   public XJoinColumn(String name) {
     this.name = name;
@@ -69,6 +72,74 @@ public class XJoinColumn implements JoinColumn {
   @Override
   public Class<? extends Annotation> annotationType() {
     return JoinColumn.class;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getReferencedColumnName() {
+    return referencedColumnName;
+  }
+
+  public void setReferencedColumnName(String referencedColumnName) {
+    this.referencedColumnName = referencedColumnName;
+  }
+
+  public boolean isUnique() {
+    return unique;
+  }
+
+  public void setUnique(boolean unique) {
+    this.unique = unique;
+  }
+
+  public boolean isNullable() {
+    return nullable;
+  }
+
+  public void setNullable(boolean nullable) {
+    this.nullable = nullable;
+  }
+
+  public boolean isInsertable() {
+    return insertable;
+  }
+
+  public void setInsertable(boolean insertable) {
+    this.insertable = insertable;
+  }
+
+  public boolean isUpdatable() {
+    return updatable;
+  }
+
+  public void setUpdatable(boolean updatable) {
+    this.updatable = updatable;
+  }
+
+  public String getColumnDefinition() {
+    return columnDefinition;
+  }
+
+  public void setColumnDefinition(String columnDefinition) {
+    this.columnDefinition = columnDefinition;
+  }
+
+  public String getTable() {
+    return table;
+  }
+
+  public void setTable(String table) {
+    this.table = table;
+  }
+
+  public void setForeignKey(XForeignKey foreignKey) {
+    this.foreignKey = foreignKey;
   }
 
   @Override

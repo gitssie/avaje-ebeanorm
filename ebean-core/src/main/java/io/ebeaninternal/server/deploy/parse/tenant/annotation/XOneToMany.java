@@ -8,10 +8,13 @@ import javax.persistence.OneToMany;
 import java.lang.annotation.Annotation;
 
 public class XOneToMany implements OneToMany {
-  private Class<?> targetEntity;
-  private CascadeType[] cascade;
-  private FetchType fetch = FetchType.EAGER;
-  private String mappedBy;
+  private Class<?> targetEntity = void.class;
+  private CascadeType[] cascade = new CascadeType[0];
+  private FetchType fetch = FetchType.LAZY;
+  private String mappedBy = "";
+
+  public XOneToMany() {
+  }
 
   public XOneToMany(Class<?> targetEntity, CascadeType[] cascade, FetchType fetch, String mappedBy) {
     this.targetEntity = targetEntity;
@@ -52,6 +55,38 @@ public class XOneToMany implements OneToMany {
   @Override
   public Class<? extends Annotation> annotationType() {
     return OneToMany.class;
+  }
+
+  public Class<?> getTargetEntity() {
+    return targetEntity;
+  }
+
+  public void setTargetEntity(Class<?> targetEntity) {
+    this.targetEntity = targetEntity;
+  }
+
+  public CascadeType[] getCascade() {
+    return cascade;
+  }
+
+  public void setCascade(CascadeType[] cascade) {
+    this.cascade = cascade;
+  }
+
+  public FetchType getFetch() {
+    return fetch;
+  }
+
+  public void setFetch(FetchType fetch) {
+    this.fetch = fetch;
+  }
+
+  public String getMappedBy() {
+    return mappedBy;
+  }
+
+  public void setMappedBy(String mappedBy) {
+    this.mappedBy = mappedBy;
   }
 
   @Override

@@ -1,9 +1,6 @@
 package io.ebeaninternal.server.deploy.meta;
 
-import io.ebean.annotation.Cache;
-import io.ebean.annotation.DocStore;
-import io.ebean.annotation.DocStoreMode;
-import io.ebean.annotation.Identity;
+import io.ebean.annotation.*;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
 import io.ebean.config.dbplatform.IdType;
@@ -695,7 +692,7 @@ public class DeployBeanDescriptor<T> {
     return propMap.values();
   }
 
-  public void removeProperty(DeployBeanProperty prop){
+  public void removeProperty(DeployBeanProperty prop) {
     propMap.remove(prop.getName());
   }
 
@@ -986,7 +983,9 @@ public class DeployBeanDescriptor<T> {
       // all good
       return;
     }
-    if (parent.isAnnotationPresent(Entity.class)) {
+    if (beanType.isAnnotationPresent(View.class)) {
+      // all good
+    } else if (parent.isAnnotationPresent(Entity.class)) {
       String msg = "Checking " + getBeanType() + " and found " + parent + " that has @Entity annotation rather than MappedSuperclass?";
       throw new IllegalStateException(msg);
     }

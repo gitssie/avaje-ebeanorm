@@ -6,7 +6,10 @@ import javax.persistence.Column;
 import java.lang.annotation.Annotation;
 
 public class XColumn implements Column {
-  private String name;
+  private String name = "";
+
+  public XColumn() {
+  }
 
   public XColumn(String name) {
     this.name = name;
@@ -65,6 +68,14 @@ public class XColumn implements Column {
   @Override
   public Class<? extends Annotation> annotationType() {
     return Column.class;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override

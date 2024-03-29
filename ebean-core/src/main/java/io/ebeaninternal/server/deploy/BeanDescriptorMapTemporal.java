@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.bean.ElementBean;
+import io.ebean.bean.StaticEntity;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.meta.*;
@@ -11,6 +12,7 @@ import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.properties.BeanElementPropertyAccess;
 import org.slf4j.Logger;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -37,6 +39,7 @@ public class BeanDescriptorMapTemporal {
   private final List<BeanDescriptor<?>> descriptors = new ArrayList<>();
   private final Map<String, String> withHistoryTables = new HashMap<>();
   private final Map<String, String> draftTables = new HashMap<>();
+  private final Class<StaticEntity> staticEntityClass = StaticEntity.class;
 
   public BeanDescriptorMapTemporal(BeanDescriptorManagerTenant proxy, BeanDescriptorMapContext context, XReadAnnotations readAnnotations, TenantDeployCreateProperties createProperties) {
     this.proxy = proxy;
@@ -49,7 +52,7 @@ public class BeanDescriptorMapTemporal {
   }
 
   protected boolean isDeploying(Class<?> entityClass) {
-    return context.isDeploying(entityClass) || beanTableMap.containsKey(entityClass.getName());
+    return context.isDeploying(entityClass) || beanTableMap.containsKey(entityClass.getName()) || descMap.containsKey(entityClass.getName());
   }
 
   protected boolean isDeployed(Class<?> entityClass) {
@@ -101,11 +104,10 @@ public class BeanDescriptorMapTemporal {
     //2.readEntityDeploymentInitial
     deploy(info);
 
-    BeanDescriptor<?> desc = registerDescriptor(info);
-    descriptors.add(desc);
+    registerDescriptor(info, descriptors);
   }
 
-  protected BeanDescriptor<?> registerDescriptor(DeployBeanInfo<?> info) {
+  protected BeanDescriptor<?> registerDescriptor(DeployBeanInfo<?> info, List<BeanDescriptor<?>> descriptors) {
     BeanDescriptor<?> desc = new BeanDescriptor<>(proxyMap, info.getDescriptor());
     descMap.put(desc.type().getName(), desc);
     /*
@@ -117,6 +119,7 @@ public class BeanDescriptorMapTemporal {
         elementDescriptors.add(many.elementDescriptor());
       }
     }*/
+    descriptors.add(desc);
     return desc;
   }
 
@@ -229,7 +232,7 @@ public class BeanDescriptorMapTemporal {
     }
   }
 
-  protected <T> void readDeployAssociations(DeployBeanInfo<T> info, DeployBeanDescriptor<T> desc) {
+  protected <T> void readDeployAssociations(DeployBeanDescriptor<T> desc) {
     for (DeployBeanProperty prop : desc.propertiesAssocOne()) {
       DeployBeanPropertyAssoc assoc = (DeployBeanPropertyAssoc) prop;
       if (assoc.isId() || assoc.isTransient() || assoc.isEmbedded()) {
@@ -251,7 +254,7 @@ public class BeanDescriptorMapTemporal {
 
     readAnnotations.readAssociations(info, proxyMap);
 
-    readDeployAssociations(info, desc);
+    readDeployAssociations(desc);
 
     if (BeanDescriptor.EntityType.SQL == desc.getEntityType()) {
       desc.setBaseTable(null, null, null);
@@ -466,7 +469,12 @@ public class BeanDescriptorMapTemporal {
 
     public boolean initialise() {
       if (beanManager != null) {
-        registerBeanManager(beanManager);
+        if (staticEntityClass.isAssignableFrom(beanClass)) { //这里先认为StaticEntity子类本身不是、且不依赖动态类
+          registerBeanManager(beanManager);
+        } else {
+          registerDescriptor(info, descriptors);
+          readDeployAssociations(info.getDescriptor());
+        }
         return true;
       } else {
         descInfoMap.put(beanClass, info);

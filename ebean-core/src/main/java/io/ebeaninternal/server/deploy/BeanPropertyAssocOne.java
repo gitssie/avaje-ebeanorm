@@ -131,8 +131,12 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
           String foreignJoinColumn = columns[0].getForeignDbColumn();
           String foreignIdColumn = targetDescriptor.idProperty().dbColumn();
           if (!foreignJoinColumn.equalsIgnoreCase(foreignIdColumn)) {
-            throw new PersistenceException("Mapping limitation - @JoinColumn on " + fullName() + " needs to map to a primary key as per Issue #529 "
-              + " - joining to " + foreignJoinColumn + " and not " + foreignIdColumn);
+            if(isCustom()){
+              //pass by custom property
+            } else if (descriptor.entityType() != BeanDescriptor.EntityType.VIEW) {
+              throw new PersistenceException("Mapping limitation - @JoinColumn on " + fullName() + " needs to map to a primary key as per Issue #529 "
+                + " - joining to " + foreignJoinColumn + " and not " + foreignIdColumn);
+            }
           }
         }
       } else {

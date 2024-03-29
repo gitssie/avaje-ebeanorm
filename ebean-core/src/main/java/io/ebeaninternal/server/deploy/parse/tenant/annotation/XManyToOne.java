@@ -8,9 +8,12 @@ import javax.persistence.ManyToOne;
 import java.lang.annotation.Annotation;
 
 public class XManyToOne implements ManyToOne {
-  private Class<?> targetEntity;
-  private CascadeType[] cascade;
-  private FetchType fetch = FetchType.EAGER;
+  private Class<?> targetEntity = void.class;
+  private CascadeType[] cascade = new CascadeType[0];
+  private FetchType fetch = FetchType.LAZY;
+
+  public XManyToOne() {
+  }
 
   public XManyToOne(Class<?> targetEntity, CascadeType[] cascade) {
     this.targetEntity = targetEntity;
@@ -40,6 +43,31 @@ public class XManyToOne implements ManyToOne {
   @Override
   public Class<? extends Annotation> annotationType() {
     return ManyToOne.class;
+  }
+
+
+  public Class<?> getTargetEntity() {
+    return targetEntity;
+  }
+
+  public void setTargetEntity(Class<?> targetEntity) {
+    this.targetEntity = targetEntity;
+  }
+
+  public CascadeType[] getCascade() {
+    return cascade;
+  }
+
+  public void setCascade(CascadeType[] cascade) {
+    this.cascade = cascade;
+  }
+
+  public FetchType getFetch() {
+    return fetch;
+  }
+
+  public void setFetch(FetchType fetch) {
+    this.fetch = fetch;
   }
 
   @Override
