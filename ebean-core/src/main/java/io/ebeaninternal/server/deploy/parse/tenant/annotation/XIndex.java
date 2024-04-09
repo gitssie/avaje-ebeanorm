@@ -8,10 +8,10 @@ import java.lang.annotation.Annotation;
 
 public class XIndex implements Index {
 
-  private String name;
-  private boolean unique;
-  private boolean concurrent;
-  private String definition;
+  private String name = "";
+  private boolean unique = false;
+  private boolean concurrent = false;
+  private String definition = "";
   private String[] columnNames = new String[0];
   private Platform[] platforms = new Platform[0];
 
@@ -25,7 +25,7 @@ public class XIndex implements Index {
 
   @Override
   public String name() {
-    return name == null ? "" : name;
+    return name;
   }
 
   @Override

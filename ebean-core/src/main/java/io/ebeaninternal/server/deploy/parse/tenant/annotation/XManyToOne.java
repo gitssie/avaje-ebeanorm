@@ -11,6 +11,7 @@ public class XManyToOne implements ManyToOne {
   private Class<?> targetEntity = void.class;
   private CascadeType[] cascade = new CascadeType[0];
   private FetchType fetch = FetchType.LAZY;
+  private boolean optional = true;
 
   public XManyToOne() {
   }
@@ -37,7 +38,7 @@ public class XManyToOne implements ManyToOne {
 
   @Override
   public boolean optional() {
-    return true;
+    return optional;
   }
 
   @Override

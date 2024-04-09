@@ -12,6 +12,7 @@ public class XOneToMany implements OneToMany {
   private CascadeType[] cascade = new CascadeType[0];
   private FetchType fetch = FetchType.LAZY;
   private String mappedBy = "";
+  private boolean orphanRemoval = false;
 
   public XOneToMany() {
   }
@@ -49,7 +50,7 @@ public class XOneToMany implements OneToMany {
 
   @Override
   public boolean orphanRemoval() {
-    return false;
+    return orphanRemoval;
   }
 
   @Override

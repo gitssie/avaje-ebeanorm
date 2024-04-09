@@ -8,9 +8,9 @@ import javax.persistence.UniqueConstraint;
 import java.lang.annotation.Annotation;
 
 public class XTable implements Table {
-  private String name;
-  private String catalog;
-  private String schema;
+  private String name = "";
+  private String catalog = "";
+  private String schema = "";
 
   public XTable(String name) {
     this(name, "", "");

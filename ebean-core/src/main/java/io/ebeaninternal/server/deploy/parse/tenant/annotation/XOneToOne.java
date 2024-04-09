@@ -12,7 +12,8 @@ public class XOneToOne implements OneToOne {
   private CascadeType[] cascade = new CascadeType[0];
   private FetchType fetch = FetchType.LAZY;
   private String mappedBy = "";
-
+  private boolean optional = true;
+  private boolean orphanRemoval = false;
   public XOneToOne() {
   }
 
@@ -43,7 +44,7 @@ public class XOneToOne implements OneToOne {
 
   @Override
   public boolean optional() {
-    return true;
+    return optional;
   }
 
   @Override
@@ -53,7 +54,7 @@ public class XOneToOne implements OneToOne {
 
   @Override
   public boolean orphanRemoval() {
-    return false;
+    return orphanRemoval;
   }
 
   @Override
