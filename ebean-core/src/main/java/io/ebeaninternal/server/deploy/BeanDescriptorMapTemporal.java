@@ -456,7 +456,7 @@ public class BeanDescriptorMapTemporal {
     draftTables.clear();
   }
 
-  private class DeployInfo {
+  protected class DeployInfo {
     protected final Class<?> beanClass;
     protected final DeployBeanInfo<?> info;
     protected final BeanManager beanManager;

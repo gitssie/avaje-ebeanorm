@@ -244,9 +244,8 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     try {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
       BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
-      DeployBeanInfo<?> info = rootInfoMap.get(beanClass);
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
-      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo);
+      BeanDescriptorMapTemporal.DeployInfo newInfo = factory.createDeployBeanInfo(beanClass, entity);
+      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo.info);
       factory.initialise();
       factory.clear();
       return desc;
