@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.dto;
 
+import io.ebean.SqlRow;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +57,8 @@ final class DtoMeta {
       return matchSetters(request);
     } else if (dtoType.equals(Map.class)) {
       return matchHashMap(request);
+    } else if(dtoType.equals(SqlRow.class)){
+      return matchSqlRow(request);
     }
     String msg = "Unable to map the resultSet columns " + Arrays.toString(cols)
       + " to the bean type [" + dtoType + "] as the number of columns in the resultSet is less than the constructor"
@@ -76,6 +80,12 @@ final class DtoMeta {
     DtoColumn[] dtoColumns = request.getColumnMeta();
     return new DtoQueryPlanConMap(request, dtoColumns);
   }
+
+  private DtoQueryPlan matchSqlRow(DtoMappingRequest request) {
+    DtoColumn[] dtoColumns = request.getColumnMeta();
+    return new DtoQueryPlanConSqlRow(request, dtoColumns);
+  }
+
 
   DtoReadSet findProperty(String label) {
     String upperLabel = label.toUpperCase();
