@@ -5,7 +5,6 @@ import java.util.Map;
 
 public class XAnnotations {
   private Map<String, Class<?>> annotationClass = new HashMap<>();
-  private Map<String, Class<?>> annotationEntityClass = new HashMap<>();
 
   public XAnnotations() {
     this.initClassMap();
@@ -38,6 +37,6 @@ public class XAnnotations {
   }
 
   public Class<?> getEntityAnnotationClass(String name) {
-    return annotationEntityClass.get(name);
+    return annotationClass.get(name);
   }
 }

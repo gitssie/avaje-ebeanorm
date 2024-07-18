@@ -1143,4 +1143,8 @@ public class DeployBeanDescriptor<T> {
     }
     return jacksonAnnotatedClass;
   }
+
+  public DatabaseConfig getConfig() {
+    return config;
+  }
 }

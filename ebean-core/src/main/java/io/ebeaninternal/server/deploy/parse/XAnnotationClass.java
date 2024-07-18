@@ -1,6 +1,9 @@
 package io.ebeaninternal.server.deploy.parse;
 
+import io.ebean.annotation.ChangeLog;
 import io.ebean.config.TableName;
+import io.ebean.event.changelog.ChangeLogFilter;
+import io.ebeaninternal.server.changelog.DefaultChangeLogRegister;
 import io.ebeaninternal.server.deploy.InheritInfo;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
@@ -28,6 +31,14 @@ final class XAnnotationClass {
 
   private void read(Class<?> cls) {
     descriptor.setName(entity.getName());
+
+    //changelog
+    boolean includeInserts = descriptor.getConfig().isChangeLogIncludeInserts();
+    DefaultChangeLogRegister changeLogRegister = new DefaultChangeLogRegister(includeInserts);
+    ChangeLogFilter changeLogFilter = changeLogRegister.getChangeFilter(entity.getAnnotation(ChangeLog.class));
+    if (changeLogFilter != null) {
+      descriptor.setChangeLogFilter(changeLogFilter);
+    }
   }
 
   private void setTableName() {
