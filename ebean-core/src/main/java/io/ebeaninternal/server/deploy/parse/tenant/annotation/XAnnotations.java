@@ -29,6 +29,8 @@ public class XAnnotations {
     annotationClass.put("OneToMany", XOneToMany.class);
     annotationClass.put("OneToOne", XOneToOne.class);
 
+    annotationClass.put("ChangeLog", XChangeLog.class);
+
   }
 
   public Class<?> getClass(String name) {
