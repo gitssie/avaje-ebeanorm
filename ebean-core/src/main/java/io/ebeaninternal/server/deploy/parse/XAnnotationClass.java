@@ -33,11 +33,14 @@ final class XAnnotationClass {
     descriptor.setName(entity.getName());
 
     //changelog
-    boolean includeInserts = descriptor.getConfig().isChangeLogIncludeInserts();
-    DefaultChangeLogRegister changeLogRegister = new DefaultChangeLogRegister(includeInserts);
-    ChangeLogFilter changeLogFilter = changeLogRegister.getChangeFilter(entity.getAnnotation(ChangeLog.class));
-    if (changeLogFilter != null) {
-      descriptor.setChangeLogFilter(changeLogFilter);
+    ChangeLog changeLog = entity.getAnnotation(ChangeLog.class);
+    if (changeLog != null) {
+      boolean includeInserts = descriptor.getConfig().isChangeLogIncludeInserts();
+      DefaultChangeLogRegister changeLogRegister = new DefaultChangeLogRegister(includeInserts);
+      ChangeLogFilter changeLogFilter = changeLogRegister.getChangeFilter(changeLog);
+      if (changeLogFilter != null) {
+        descriptor.setChangeLogFilter(changeLogFilter);
+      }
     }
   }
 
