@@ -29,7 +29,7 @@ public class XEntity {
 
   public XEntity(Class<?> beanType) {
     this.beanType = beanType;
-    this.fields = new HashMap<>();
+    this.fields = new LinkedHashMap<>();
     this.annotations = new HashMap<>();
   }
 
