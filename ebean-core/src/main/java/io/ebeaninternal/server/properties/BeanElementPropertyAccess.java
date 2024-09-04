@@ -5,6 +5,7 @@ import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.InterceptReadWrite;
 
+import javax.persistence.PersistenceException;
 import java.util.Map;
 
 public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanPropertySetter {
@@ -44,7 +45,7 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
 
   private EntityBeanIntercept setInterceptValue(ElementBean element, EntityBean owner) {
     if (element == null) {
-      throw new RuntimeException("element bean is null");
+      throw new PersistenceException("element bean is null");
     }
     if (element._ebean_getPropertyNames().length != properties.length) {
       EntityBeanIntercept ownerI = owner._ebean_getIntercept();

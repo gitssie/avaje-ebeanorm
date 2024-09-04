@@ -443,7 +443,7 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   private void setLoadedLazy(boolean intercept) {
     if (intercept && proxy.isNew() && owner.isLoaded()) {
-//      proxy.setLoadedLazy();
+      proxy.setLoadedLazy();
     }
   }
 

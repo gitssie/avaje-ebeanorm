@@ -8,6 +8,7 @@ import io.ebeaninternal.server.core.PersistRequestBean;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.persist.dml.GenerateDmlRequest;
 
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -36,17 +37,17 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    Object value = bean._ebean_getField(prop.fieldIndex()[0]);
-    if (value != null && (value instanceof ElementBean)) {
-      ElementBean ebean = (ElementBean) value;
-      EntityBeanIntercept ei = ebean._ebean_getIntercept();
-      if (request.type() == PersistRequest.Type.UPDATE && ei.isNew()) {
+    ElementBean value = (ElementBean) bean._ebean_getField(prop.fieldIndex()[0]);
+    if (value != null) {
+      EntityBeanIntercept ebi = bean._ebean_getIntercept();
+      EntityBeanIntercept ei = value._ebean_getIntercept();
+      if (request.type() == PersistRequest.Type.UPDATE && ebi.isNew()) {
         list.add(this);
       } else if (ei.getPropertyLength() > 0 && ei.isDirtyProperty(prop.fieldIndex()[1])) {
         list.add(this);
       }
     } else {
-      proxy.addToUpdate(request, list);
+      throw new PersistenceException("ElementBean is null in bean:" + bean);
     }
   }
 
