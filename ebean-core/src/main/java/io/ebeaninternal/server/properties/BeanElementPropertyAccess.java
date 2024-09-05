@@ -2,7 +2,6 @@ package io.ebeaninternal.server.properties;
 
 import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
-import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.InterceptReadWrite;
 
 import javax.persistence.PersistenceException;
@@ -26,9 +25,6 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
   @Override
   public Object get(EntityBean bean) {
     ElementBean element = (ElementBean) bean._ebean_getField(elementFieldIndex);
-    if (element == null) {
-      return null;
-    }
     setInterceptValue(element, bean);
     return element._ebean_getField(fieldIndex);
   }
@@ -36,9 +32,6 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
   @Override
   public Object getIntercept(EntityBean bean) {
     ElementBean element = (ElementBean) bean._ebean_getFieldIntercept(elementFieldIndex);
-    if (element == null) {
-      return null;
-    }
     setInterceptValue(element, bean);
     return element._ebean_getFieldIntercept(fieldIndex);
   }
