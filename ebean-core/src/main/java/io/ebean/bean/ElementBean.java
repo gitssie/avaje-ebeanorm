@@ -17,6 +17,7 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
   public ElementBean(Map<String, Object> rawData) {
     this.rawData = rawData;
+    this.propMap = Collections.EMPTY_MAP;
     this.intercept = new InterceptReadWrite(this);
   }
 
@@ -82,11 +83,9 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
   @Override
   public Object get(Object key) {
-    if (properties.length > 0 && propMap != null) {
-      Integer fieldIndex = propMap.get(key);
-      if (fieldIndex != null) {
-        this.intercept.preGetter(fieldIndex);
-      }
+    Integer fieldIndex = propMap.get(key);
+    if (fieldIndex != null) {
+      this.intercept.preGetter(fieldIndex);
     }
     return rawData.get(key);
   }
@@ -98,14 +97,12 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
 
   public Object set(String key, Object newVal) {
-    if (properties.length > 0 && propMap != null) {
-      Integer fieldIndex = propMap.get(key);
-      if (fieldIndex != null) {
-        this.intercept.preGetter(fieldIndex);
-        Object oldVal = rawData.put(key, newVal);
-        this.intercept.preSetter(true, fieldIndex, oldVal, newVal);
-        return oldVal;
-      }
+    Integer fieldIndex = propMap.get(key);
+    if (fieldIndex != null) {
+      this.intercept.preGetter(fieldIndex);
+      Object oldVal = rawData.put(key, newVal);
+      this.intercept.preSetter(true, fieldIndex, oldVal, newVal);
+      return oldVal;
     }
     return rawData.put(key, newVal);
   }
