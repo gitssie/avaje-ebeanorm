@@ -10,6 +10,8 @@ import io.ebeaninternal.server.persist.dml.GenerateDmlRequest;
 
 import javax.persistence.PersistenceException;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,13 +39,16 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    ElementBean value = (ElementBean) bean._ebean_getField(prop.fieldIndex()[0]);
+    int[] fieldIndex = prop.fieldIndex();
+    ElementBean value = (ElementBean) bean._ebean_getField(fieldIndex[0]);
     if (value != null) {
-      EntityBeanIntercept ebi = bean._ebean_getIntercept();
-      EntityBeanIntercept ei = value._ebean_getIntercept();
-      if (request.type() == PersistRequest.Type.UPDATE && ebi.isNew()) {
+      if (value._ebean_getPropertyNames().length == 0) {
+        prop.value(bean);
+      }
+      EntityBeanIntercept ebi = value._ebean_getIntercept();
+      if (ebi.isDirtyProperty(fieldIndex[1])) {
         list.add(this);
-      } else if (ei.getPropertyLength() > 0 && ei.isDirtyProperty(prop.fieldIndex()[1])) {
+      } else if (ebi.isNew() && ebi.isLoadedProperty(fieldIndex[1])) {
         list.add(this);
       }
     } else {

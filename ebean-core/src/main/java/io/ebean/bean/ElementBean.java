@@ -8,10 +8,9 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public final class ElementBean implements EntityBean, Map<String, Object> {
-
   private static final long serialVersionUID = 8742536671024715601L;
-
-  private String[] properties = new String[0];
+  private static final String[] EMPTY_PROP = new String[0];
+  private String[] properties = EMPTY_PROP;
   private EntityBeanIntercept intercept;
   private Map<String, Integer> propMap;
   private Map<String, Object> rawData;
@@ -126,13 +125,16 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   }
 
   public void _ebean_setIntercept(EntityBeanIntercept intercept) {
-    this.intercept = intercept;
     for (String key : rawData.keySet()) {
       Integer fieldIndex = propMap.get(key);
       if (fieldIndex != null) {
-        this.intercept.setLoadedProperty(fieldIndex);
+        intercept.setLoadedProperty(fieldIndex);
       }
     }
+    if (this.intercept.isLoaded()) {
+      intercept.setLoadedLazy();
+    }
+    this.intercept = intercept;
   }
 
   @Override

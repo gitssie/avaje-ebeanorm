@@ -43,19 +43,14 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
     return element._ebean_getFieldIntercept(fieldIndex);
   }
 
-  private EntityBeanIntercept setInterceptValue(ElementBean element, EntityBean owner) {
+  private void setInterceptValue(ElementBean element, EntityBean owner) {
     if (element == null) {
       throw new PersistenceException("element bean is null");
     }
-    if (element._ebean_getPropertyNames().length != properties.length) {
-      EntityBeanIntercept ownerI = owner._ebean_getIntercept();
+    if (element._ebean_getPropertyNames() != properties) {
       element._ebean_setInterceptProperties(properties, propMap);
-      EntityBeanIntercept intercept = new BeanElementPropertyIntercept(new InterceptReadWrite(element), ownerI, elementFieldIndex, slotIndex);
-      element._ebean_setIntercept(intercept);
-      intercept.setEmbeddedOwner(owner, elementFieldIndex);
-      return intercept;
+      element._ebean_setIntercept(new BeanElementPropertyIntercept(new InterceptReadWrite(element), owner, elementFieldIndex, slotIndex));
     }
-    return element._ebean_getIntercept();
   }
 
   @Override
