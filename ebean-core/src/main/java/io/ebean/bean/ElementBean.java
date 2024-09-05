@@ -60,18 +60,13 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
 
   @Override
   public void _ebean_setField(int fieldIndex, Object value) {
-    Object oldVal = rawData.put(properties[fieldIndex], value);
-    if (!intercept.isLoadedProperty(fieldIndex)) {
-      oldVal = value;
-    }
-    this.intercept.preSetter(false, fieldIndex, oldVal, value);
+    this.intercept.preSetter(false, fieldIndex, rawData.put(properties[fieldIndex], value), value);
   }
 
   @Override
   public void _ebean_setFieldIntercept(int fieldIndex, Object value) {
     this.intercept.preGetter(fieldIndex);
-    Object oldVal = rawData.put(properties[fieldIndex], value);
-    this.intercept.preSetter(true, fieldIndex, oldVal, value);
+    this.intercept.preSetter(true, fieldIndex, rawData.put(properties[fieldIndex], value), value);
   }
 
   @Override
@@ -93,8 +88,7 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
         this.intercept.preGetter(fieldIndex);
       }
     }
-    Object res = rawData.get(key);
-    return res;
+    return rawData.get(key);
   }
 
   @Override

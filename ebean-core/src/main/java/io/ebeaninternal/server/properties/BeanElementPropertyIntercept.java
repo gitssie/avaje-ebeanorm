@@ -444,7 +444,12 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, Object oldValue, Object newValue) {
-    proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
+    int lazyIndex = owner.getLazyLoadPropertyIndex();
+    if (intercept == false && (lazyIndex == elementIndex || lazyIndex == slotIndex)) {
+      proxy.setLoadedProperty(propertyIndex);
+    } else {
+      proxy.preSetter(intercept, propertyIndex, oldValue, newValue);
+    }
   }
 
   @Override
