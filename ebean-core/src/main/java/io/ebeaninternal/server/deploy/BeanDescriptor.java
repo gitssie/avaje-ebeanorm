@@ -59,13 +59,13 @@ import org.slf4j.Logger;
 import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.ebeaninternal.server.persist.DmlUtil.isNullOrZero;
@@ -233,6 +233,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private boolean docStoreEmbeddedInvalidation;
   private final String defaultSelectClause;
   private SpiEbeanServer ebeanServer;
+  //dynamic element bean
+  private Function<EntityBean, EntityBean> elementBean;
 
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
@@ -279,6 +281,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.partitionMeta = deploy.getPartitionMeta();
     this.tablespaceMeta = deploy.getTablespaceMeta();
     this.storageEngine = deploy.getStorageEngine();
+    this.elementBean = deploy.getElementBean();
     this.autoTunable = beanFinder == null && (entityType == EntityType.ORM || entityType == EntityType.VIEW);
     // helper object used to derive lists of properties
     DeployBeanPropertyLists listHelper = new DeployBeanPropertyLists(owner, this, deploy);
@@ -3425,5 +3428,9 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     if (hasInheritance()) {
       inheritInfo().visitChildren(info -> visitor.accept(info.desc()));
     }
+  }
+
+  public EntityBean elementBean(EntityBean bean){
+    return elementBean == null ? null : elementBean.apply(bean);
   }
 }

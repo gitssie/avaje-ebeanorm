@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy.meta;
 
 import io.ebean.annotation.*;
+import io.ebean.bean.EntityBean;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
 import io.ebean.config.dbplatform.IdType;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Describes Beans including their deployment information.
@@ -150,6 +152,9 @@ public class DeployBeanDescriptor<T> {
   private DeployBeanProperty idProperty;
   private TableJoin primaryKeyJoin;
   private Object jacksonAnnotatedClass;
+
+  //dynamic element bean
+  private Function<EntityBean, EntityBean> elementBean;
 
   /**
    * Construct the BeanDescriptor.
@@ -1142,6 +1147,14 @@ public class DeployBeanDescriptor<T> {
       jacksonAnnotatedClass = new DeployBeanObtainJackson(config, beanType).obtain();
     }
     return jacksonAnnotatedClass;
+  }
+
+  public Function<EntityBean, EntityBean> getElementBean() {
+    return elementBean;
+  }
+
+  public void setElementBean(Function<EntityBean, EntityBean> elementBean) {
+    this.elementBean = elementBean;
   }
 
   public DatabaseConfig getConfig() {

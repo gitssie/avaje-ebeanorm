@@ -113,16 +113,13 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   }
 
   public void _ebean_setIntercept(EntityBeanIntercept intercept) {
+    this.intercept = intercept;
     for (String key : rawData.keySet()) {
       Integer fieldIndex = propMap.get(key);
       if (fieldIndex != null) {
         intercept.setLoadedProperty(fieldIndex);
       }
     }
-    if (this.intercept.isLoaded()) {
-      intercept.setLoadedLazy();
-    }
-    this.intercept = intercept;
   }
 
   @Override

@@ -29,11 +29,7 @@ public final class FactoryAssocOnes {
             }
             break;
         }
-        if (one.isCustom()) {
-          list.add(new BindableObjectProperty(one, new BindableAssocOne(one)));
-        } else {
-          list.add(new BindableAssocOne(one));
-        }
+        list.add(new BindableAssocOne(one));
       }
     }
   }

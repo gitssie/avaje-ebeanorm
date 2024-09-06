@@ -1,6 +1,8 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.bean.ElementBean;
+import io.ebean.bean.EntityBean;
+import io.ebean.bean.InterceptReadWrite;
 import io.ebean.bean.StaticEntity;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebeaninternal.api.CoreLog;
@@ -12,9 +14,9 @@ import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.properties.BeanElementPropertyAccess;
 import org.slf4j.Logger;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class BeanDescriptorMapTemporal {
   protected static final Logger log = CoreLog.internal;
@@ -310,14 +312,35 @@ public class BeanDescriptorMapTemporal {
       propMap.put(propertiesName[i], i);
     }
     propMap = Collections.unmodifiableMap(propMap);
+    Function<EntityBean, EntityBean> elementBean = elementBeanSupplier(propertyIndex, slotIndex, propertiesName, propMap);
     for (int i = 0; i < properties.size(); i++) {
-      BeanElementPropertyAccess access = new BeanElementPropertyAccess(propertyIndex, slotIndex, propertiesName, propMap, i);
+      BeanElementPropertyAccess access = new BeanElementPropertyAccess(elementBean, i);
       DeployBeanProperty prop = properties.get(i);
       prop.setPropertyIndex(slotIndex);
       prop.setFieldIndex(new int[]{propertyIndex, i});
       prop.setGetter(access);
       prop.setSetter(access);
     }
+    desc.setElementBean(elementBean);
+  }
+
+  /**
+   * supply an element bean
+   * @param elementFieldIndex
+   * @param slotIndex
+   * @param properties
+   * @param propMap
+   * @return
+   */
+  private Function<EntityBean, EntityBean> elementBeanSupplier(int elementFieldIndex, int slotIndex, String[] properties, Map<String, Integer> propMap) {
+    return (bean) -> {
+      ElementBean element = (ElementBean) bean._ebean_getField(elementFieldIndex);
+      if (element._ebean_getPropertyNames() != properties) {
+        element._ebean_setInterceptProperties(properties, propMap);
+        element._ebean_setIntercept(new BeanElementPropertyIntercept(new InterceptReadWrite(element), bean, elementFieldIndex, slotIndex));
+      }
+      return element;
+    };
   }
 
   protected <T> BeanDescriptor<T> deployInfo(Class<T> beanClass, DeployBeanInfo<?> info) {

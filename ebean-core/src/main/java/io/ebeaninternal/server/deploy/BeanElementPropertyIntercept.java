@@ -1,4 +1,4 @@
-package io.ebeaninternal.server.properties;
+package io.ebeaninternal.server.deploy;
 
 import io.ebean.ValuePair;
 import io.ebean.bean.*;

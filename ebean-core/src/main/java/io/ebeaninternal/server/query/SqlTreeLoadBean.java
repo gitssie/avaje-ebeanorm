@@ -207,7 +207,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
     private void initSqlLoadBean() {
       ctx.setCurrentPrefix(prefix, pathMap);
       ctx.propagateState(localBean);
-      sqlBeanLoad = new SqlBeanLoad(ctx, localType, localBean, queryMode);
+      sqlBeanLoad = new SqlBeanLoad(desc, ctx, localType, localBean, queryMode);
     }
 
     void loadProperties() {
