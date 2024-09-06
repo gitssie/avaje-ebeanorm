@@ -20,10 +20,12 @@ import java.util.List;
 class BindableObjectProperty implements Bindable {
   private final BeanProperty prop;
   private final Bindable proxy;
+  private final int[] fieldIndex;
 
   BindableObjectProperty(BeanProperty prop, Bindable proxy) {
     this.prop = prop;
     this.proxy = proxy;
+    this.fieldIndex = prop.fieldIndex();
   }
 
   @Override
@@ -39,16 +41,12 @@ class BindableObjectProperty implements Bindable {
   @Override
   public void addToUpdate(PersistRequestBean<?> request, List<Bindable> list) {
     EntityBean bean = request.entityBean();
-    int[] fieldIndex = prop.fieldIndex();
     ElementBean value = (ElementBean) bean._ebean_getField(fieldIndex[0]);
     if (value != null) {
       if (value._ebean_getPropertyNames().length == 0) {
         prop.value(bean);
       }
-      EntityBeanIntercept ebi = value._ebean_getIntercept();
-      if (ebi.isDirtyProperty(fieldIndex[1])) {
-        list.add(this);
-      } else if (ebi.isNew() && ebi.isLoadedProperty(fieldIndex[1])) {
+      if (value._ebean_getIntercept().isDirtyProperty(fieldIndex[1])) {
         list.add(this);
       }
     } else {
