@@ -412,7 +412,7 @@ public final class SqlTreeBuilder {
     }
 
     int basePos = propName.indexOf('.');
-    if (basePos > -1) {
+    if (basePos > -1 && !propName.contains(" as ")) {
       // property on an embedded bean. Embedded beans do not yet
       // support being partially populated so we include the
       // 'base' property and make sure we only do that once

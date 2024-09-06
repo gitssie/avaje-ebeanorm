@@ -38,7 +38,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
   private final BeanPersistController controller;
   private final T bean;
   private final EntityBean entityBean;
-  private final EntityBean elementBean;
+  private final BeanElementHelper helper;
   private final EntityBeanIntercept intercept;
   /**
    * The parent bean for unidirectional save.
@@ -137,7 +137,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     this.beanPersistListener = beanDescriptor.persistListener();
     this.bean = bean;
     this.parentBean = parentBean;
-    this.elementBean = beanDescriptor.elementBean(entityBean);
+    this.helper = new BeanElementHelper(beanDescriptor, entityBean);
     this.controller = beanDescriptor.persistController();
     this.type = type;
     this.docStoreMode = calcDocStoreMode(transaction, type);
@@ -149,11 +149,8 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       if (intercept.isNew()) {
         // 'stateless update' - set loaded properties as dirty
         intercept.setNewBeanForUpdate();
+        helper.setNewBeanForUpdate();
         statelessUpdate = true;
-        // 'element bean stateless update' - set loaded properties as dirty
-        if(elementBean != null){
-          elementBean._ebean_getIntercept().setNewBeanForUpdate();
-        }
       }
       // Mark Mutable scalar properties (like Hstore) as dirty where necessary
       beanDescriptor.checkMutableProperties(intercept);
@@ -593,9 +590,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     if (statelessUpdate && controller != null) {
       // 'stateless update' - set dirty properties modified in controller preUpdate
       intercept.setNewBeanForUpdate();
-      if(elementBean != null){
-        elementBean._ebean_getIntercept().setNewBeanForUpdate();
-      }
+      helper.setNewBeanForUpdate();
     }
   }
 
@@ -708,32 +703,14 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    * Return true if this property is loaded (full bean or included in partial bean).
    */
   public boolean isLoadedProperty(BeanProperty prop) {
-    int propertyIndex = prop.propertyIndex();
-    EntityBeanIntercept intercept = this.intercept;
-    if (prop.isCustom()) { //get dynamic element bean
-      if(elementBean == null){
-        return false;
-      }
-      propertyIndex = prop.fieldIndex()[1];
-      intercept = elementBean._ebean_getIntercept();
-    }
-    return intercept.isLoadedProperty(propertyIndex);
+    return prop.isCustom() ? helper.isLoadedProperty(prop) : intercept.isLoadedProperty(prop.propertyIndex());
   }
 
   /**
    * Return true if the property is dirty.
    */
   public boolean isDirtyProperty(BeanProperty prop) {
-    int propertyIndex = prop.propertyIndex();
-    EntityBeanIntercept intercept = this.intercept;
-    if (prop.isCustom()) { //get dynamic element bean
-      if(elementBean == null){
-        return false;
-      }
-      propertyIndex = prop.fieldIndex()[1];
-      intercept = elementBean._ebean_getIntercept();
-    }
-    return intercept.isDirtyProperty(propertyIndex);
+    return prop.isCustom() ? helper.isDirtyProperty(prop) : intercept.isDirtyProperty(prop.propertyIndex());
   }
 
   /**
@@ -994,19 +971,10 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    * Return true if the property should be included in the update.
    */
   public boolean isAddToUpdate(BeanProperty prop) {
-    int propertyIndex = prop.propertyIndex();
-    EntityBeanIntercept ebi = intercept;
-    if(prop.isCustom()){
-      if(elementBean == null){
-        return false;
-      }
-      propertyIndex = prop.fieldIndex()[1];
-      ebi = elementBean._ebean_getIntercept();
-    }
     if (requestUpdateAllLoadedProps) {
-      return ebi.isLoadedProperty(propertyIndex);
+      return prop.isCustom() ? helper.isLoadedProperty(prop) : intercept.isLoadedProperty(prop.propertyIndex());
     } else {
-      return ebi.isDirtyProperty(propertyIndex);
+      return prop.isCustom() ? helper.isDirtyProperty(prop) : intercept.isDirtyProperty(prop.propertyIndex());
     }
   }
 
