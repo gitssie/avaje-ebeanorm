@@ -94,8 +94,7 @@ public class BeanPropertyElement<T> extends BeanProperty {
         }
       }
     }
-    ElementBean elementBean = (ElementBean) getValue(bean);
-    elementBean._ebean_getIntercept().setLoadedLazy();
+    desc.setElementBeanLoadedLazy(bean);
   }
 
   private void loadProperty(EntityBean bean, CachedBeanData cacheBeanData, EntityBeanIntercept ebi, BeanProperty prop, PersistenceContext context) {

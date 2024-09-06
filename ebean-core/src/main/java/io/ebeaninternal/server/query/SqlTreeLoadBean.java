@@ -7,6 +7,7 @@ import io.ebean.bean.PersistenceContext;
 import io.ebean.core.type.ScalarDataReader;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.SpiQuery.Mode;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.DbReadContext;
 import io.ebeaninternal.server.deploy.InheritInfo;
 import io.ebeaninternal.server.deploy.id.IdBinder;
@@ -246,12 +247,23 @@ class SqlTreeLoadBean implements SqlTreeLoad {
         }
         localDesc.postLoad(localBean);
 
+        EntityBeanIntercept ebi2 = null;
         EntityBeanIntercept ebi = localBean._ebean_getIntercept();
         ebi.setPersistenceContext(persistenceContext);
+        if (localDesc instanceof BeanDescriptor){
+          EntityBean elementBean = ((BeanDescriptor<?>) localDesc).elementBean(localBean);
+          if(elementBean != null) {
+            ebi2 = elementBean._ebean_getIntercept();
+          }
+        }
+
         if (Mode.LAZYLOAD_BEAN == queryMode) {
           // Lazy Load does not reset the dirty state
           ebi.setLoadedLazy();
-//          ebi.getOwner()._ebean_setEmbeddedLoaded();
+          // Lazy load on dynamic bean
+          if (ebi2 != null) {
+            ebi2.setLoadedLazy();
+          }
         } else if (readId) {
           // normal bean loading
           ebi.setLoaded();
@@ -260,6 +272,10 @@ class SqlTreeLoadBean implements SqlTreeLoad {
         if (disableLazyLoad) {
           // bean does not have an Id or is SqlSelect based
           ebi.setDisableLazyLoad(true);
+          // Lazy load on dynamic bean
+          if (ebi2 != null) {
+            ebi2.setDisableLazyLoad(true);
+          }
         } else if (partialObject) {
           if (readId) {
             // register for lazy loading
@@ -267,6 +283,10 @@ class SqlTreeLoadBean implements SqlTreeLoad {
           }
         } else {
           ebi.setFullyLoadedBean(true);
+          // Lazy load on dynamic bean
+          if (ebi2 != null) {
+            ebi2.setFullyLoadedBean(true);
+          }
         }
 
         if (ctx.isAutoTuneProfiling() && !disableLazyLoad) {

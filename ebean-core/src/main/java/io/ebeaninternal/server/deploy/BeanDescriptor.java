@@ -3433,4 +3433,11 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   public EntityBean elementBean(EntityBean bean){
     return elementBean == null ? null : elementBean.apply(bean);
   }
+
+  public void setElementBeanLoadedLazy(EntityBean bean){
+    bean = elementBean(bean);
+    if (bean != null){
+      bean._ebean_getIntercept().setLoadedLazy();
+    }
+  }
 }
