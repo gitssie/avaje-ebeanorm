@@ -249,29 +249,26 @@ class SqlTreeLoadBean implements SqlTreeLoad {
 
         EntityBeanIntercept ebi = localBean._ebean_getIntercept();
         ebi.setPersistenceContext(persistenceContext);
-        BeanElementHelper bbi = new BeanElementHelper(localDesc,localBean);
+        BeanElementHelper helper = new BeanElementHelper(localDesc,localBean,ebi);
 
         if (Mode.LAZYLOAD_BEAN == queryMode) {
           // Lazy Load does not reset the dirty state
-          ebi.setLoadedLazy();
-          bbi.setLoadedLazy();
+          helper.setLoadedLazy();
         } else if (readId) {
           // normal bean loading
-          ebi.setLoaded();
+          helper.setLoaded();
         }
 
         if (disableLazyLoad) {
           // bean does not have an Id or is SqlSelect based
-          ebi.setDisableLazyLoad(true);
-          bbi.setDisableLazyLoad(true);
+          helper.setDisableLazyLoad(true);
         } else if (partialObject) {
           if (readId) {
             // register for lazy loading
             ctx.register(null, ebi);
           }
         } else {
-          ebi.setFullyLoadedBean(true);
-          bbi.setFullyLoadedBean(true);
+          helper.setFullyLoadedBean(true);
         }
 
         if (ctx.isAutoTuneProfiling() && !disableLazyLoad) {

@@ -3,7 +3,7 @@ package io.ebeaninternal.server.query;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebeaninternal.api.SpiQuery.Mode;
-import io.ebeaninternal.server.deploy.BeanDescriptor;
+import io.ebeaninternal.server.deploy.BeanElementHelper;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.DbReadContext;
 
@@ -18,7 +18,7 @@ public final class SqlBeanLoad {
   private final DbReadContext ctx;
   private final EntityBean bean;
   private final EntityBeanIntercept ebi;
-  private EntityBeanIntercept ebiElement;
+  private final BeanElementHelper helper;
   private final Class<?> type;
   private final boolean lazyLoading;
   private final boolean rawSql;
@@ -30,12 +30,7 @@ public final class SqlBeanLoad {
     this.lazyLoading = queryMode == Mode.LAZYLOAD_BEAN;
     this.bean = bean;
     this.ebi = bean == null ? null : bean._ebean_getIntercept();
-    if(bean != null && desc instanceof BeanDescriptor){
-      EntityBean elementBean = ((BeanDescriptor<?>) desc).elementBean(bean);
-      if(elementBean != null){
-        ebiElement = elementBean._ebean_getIntercept();
-      }
-    }
+    this.helper = new BeanElementHelper(desc, bean, ebi);
   }
 
   /**
@@ -52,20 +47,12 @@ public final class SqlBeanLoad {
     return ctx;
   }
 
-  private boolean isLoadedProperty(BeanProperty prop) {
-    if (prop.isCustom()) {
-      return ebiElement == null ? false : ebiElement.isLoadedProperty(prop.fieldIndex()[1]);
-    }else{
-      return ebi.isLoadedProperty(prop.propertyIndex());
-    }
-  }
-
   public Object load(BeanProperty prop) {
     if (!rawSql && !prop.isLoadProperty(ctx.isDraftQuery())) {
       return null;
     }
     if ((bean == null)
-      || (lazyLoading && isLoadedProperty(prop))
+      || (lazyLoading && helper.isLoadedProperty(prop))
       || (type != null && !prop.isAssignableFrom(type))) {
       // ignore this property
       // ... null: bean already in persistence context
