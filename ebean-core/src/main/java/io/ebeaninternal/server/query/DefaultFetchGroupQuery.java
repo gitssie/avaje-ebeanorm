@@ -48,9 +48,7 @@ import java.util.stream.Stream;
 final class DefaultFetchGroupQuery<T> implements SpiFetchGroupQuery<T>, SpiQueryFetch {
 
   private static final FetchConfig FETCH_CACHE = FetchConfig.ofCache();
-
   private static final FetchConfig FETCH_QUERY = FetchConfig.ofQuery();
-
   private static final FetchConfig FETCH_LAZY = FetchConfig.ofLazy();
 
   private OrmQueryDetail detail = new OrmQueryDetail();
@@ -283,6 +281,11 @@ final class DefaultFetchGroupQuery<T> implements SpiFetchGroupQuery<T>, SpiQuery
 
   @Override
   public <A> List<A> findSingleAttributeList() {
+    throw new RuntimeException("EB102: Only select() and fetch() clause is allowed on FetchGroup");
+  }
+
+  @Override
+  public <A> Set<A> findSingleAttributeSet() {
     throw new RuntimeException("EB102: Only select() and fetch() clause is allowed on FetchGroup");
   }
 

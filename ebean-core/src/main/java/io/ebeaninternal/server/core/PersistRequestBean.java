@@ -78,8 +78,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    */
   private List<BeanPropertyAssocMany<?>> updatedManys;
   /**
-   * Need to get and store the updated properties because the persist listener is notified
-   * later on a different thread and the bean has been reset at that point.
+   * Store the updated properties to notify persist listener.
    */
   private Set<String> updatedProperties;
   /**
@@ -123,7 +122,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    */
   private boolean complete;
   /**
-   * Many to many intersection table changes that are held for later batch processing.
+   * Many-to-many intersection table changes that are held for later batch processing.
    */
   private List<SaveMany> saveMany;
 
@@ -150,9 +149,10 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
         // 'stateless update' - set loaded properties as dirty
         helper.setNewBeanForUpdate();
         statelessUpdate = true;
+      } else if (!intercept.isDirty()) {
+        // check if any mutable scalar properties are dirty
+        beanDescriptor.checkAnyMutableProperties(intercept);
       }
-      // Mark Mutable scalar properties (like Hstore) as dirty where necessary
-      beanDescriptor.checkMutableProperties(intercept);
     }
     this.concurrencyMode = beanDescriptor.concurrencyMode(intercept);
     this.publish = Flags.isPublish(flags);
@@ -728,10 +728,6 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
         executeInsert();
         return -1;
       case UPDATE:
-        if (beanPersistListener != null) {
-          // store the updated properties for sending later
-          updatedProperties = updatedProperties();
-        }
         executeUpdate();
         return -1;
       case DELETE_SOFT:
@@ -939,16 +935,16 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     String name = beanDescriptor.name();
     switch (type) {
       case INSERT:
-        transaction.logSummary("Inserted [" + name + "] [" + idValue + "]" + draft);
+        transaction.logSummary("Inserted [{0}] [{1}]{2}", name, (idValue == null ? "" : idValue), draft);
         break;
       case UPDATE:
-        transaction.logSummary("Updated [" + name + "] [" + idValue + "]" + draft);
+        transaction.logSummary("Updated [{0}] [{1}]{2}", name, idValue , draft);
         break;
       case DELETE:
-        transaction.logSummary("Deleted [" + name + "] [" + idValue + "]" + draft);
+        transaction.logSummary("Deleted [{0}] [{1}]{2}", name, idValue , draft);
         break;
       case DELETE_SOFT:
-        transaction.logSummary("SoftDelete [" + name + "] [" + idValue + "]" + draft);
+        transaction.logSummary("SoftDelete [{0}] [{1}]{2}", name, idValue , draft);
         break;
       default:
         break;
@@ -1212,6 +1208,11 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
   private void executeUpdate() {
     setTenantId();
     if (controller == null || controller.preUpdate(this)) {
+      // check dirty state for all mutable scalar properties (like DbJson, Hstore)
+      beanDescriptor.checkAllMutableProperties(intercept);
+      if (beanPersistListener != null) {
+        updatedProperties = updatedProperties();
+      }
       postControllerPrepareUpdate();
       beanManager.getBeanPersister().update(this);
     }

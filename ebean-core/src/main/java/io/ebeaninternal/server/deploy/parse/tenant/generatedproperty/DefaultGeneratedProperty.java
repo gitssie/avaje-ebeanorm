@@ -1,7 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.generatedproperty;
 
 import io.ebean.bean.EntityBean;
-import io.ebeaninternal.server.core.BasicTypeConverter;
+import io.ebean.core.type.BasicTypeConverter;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 
@@ -12,7 +12,7 @@ public class DefaultGeneratedProperty implements GeneratedProperty {
     if(currVal != null){
       return currVal;
     }
-    return BasicTypeConverter.convert(prop.dbColumnDefault(), prop.scalarType().getJdbcType());
+    return BasicTypeConverter.convert(prop.dbColumnDefault(), prop.scalarType().jdbcType());
   }
 
   @Override

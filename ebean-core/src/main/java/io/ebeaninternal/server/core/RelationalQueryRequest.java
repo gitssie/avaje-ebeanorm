@@ -22,9 +22,6 @@ public final class RelationalQueryRequest extends AbstractSqlQueryRequest {
   private int estimateCapacity;
   private int rows;
 
-  /**
-   * Create the BeanFindRequest.
-   */
   RelationalQueryRequest(SpiEbeanServer server, RelationalQueryEngine engine, SqlQuery q, Transaction t) {
     super(server, (SpiSqlBinding) q, t);
     this.queryEngine = engine;
@@ -126,7 +123,7 @@ public final class RelationalQueryRequest extends AbstractSqlQueryRequest {
   public void logSummary() {
     if (transaction.isLogSummary()) {
       long micros = (System.nanoTime() - startNano) / 1000L;
-      transaction.logSummary("SqlQuery  rows[" + rows + "] micros[" + micros + "] bind[" + bindLog + "]");
+      transaction.logSummary("SqlQuery  rows[{0}] micros[{1}] bind[{2}]", rows, micros, bindLog);
     }
   }
 

@@ -4,32 +4,13 @@ import io.ebean.annotation.Platform;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.DbConstraintNaming;
 import io.ebean.config.NamingConvention;
-import io.ebean.config.dbplatform.IdType;
 import io.ebean.util.StringHelper;
 import io.ebeaninternal.dbmigration.ddlgeneration.DdlBuffer;
 import io.ebeaninternal.dbmigration.ddlgeneration.DdlOptions;
 import io.ebeaninternal.dbmigration.ddlgeneration.DdlWrite;
 import io.ebeaninternal.dbmigration.ddlgeneration.TableDdl;
-import io.ebeaninternal.dbmigration.migration.AddColumn;
-import io.ebeaninternal.dbmigration.migration.AddHistoryTable;
-import io.ebeaninternal.dbmigration.migration.AddTableComment;
-import io.ebeaninternal.dbmigration.migration.AddUniqueConstraint;
-import io.ebeaninternal.dbmigration.migration.AlterColumn;
-import io.ebeaninternal.dbmigration.migration.AlterForeignKey;
-import io.ebeaninternal.dbmigration.migration.AlterTable;
-import io.ebeaninternal.dbmigration.migration.Column;
-import io.ebeaninternal.dbmigration.migration.CreateIndex;
-import io.ebeaninternal.dbmigration.migration.CreateTable;
-import io.ebeaninternal.dbmigration.migration.DdlScript;
-import io.ebeaninternal.dbmigration.migration.DropColumn;
-import io.ebeaninternal.dbmigration.migration.DropHistoryTable;
-import io.ebeaninternal.dbmigration.migration.DropIndex;
-import io.ebeaninternal.dbmigration.migration.DropTable;
-import io.ebeaninternal.dbmigration.migration.ForeignKey;
-import io.ebeaninternal.dbmigration.migration.UniqueConstraint;
+import io.ebeaninternal.dbmigration.migration.*;
 import io.ebeaninternal.dbmigration.model.MTable;
-import io.ebeaninternal.dbmigration.model.MTableIdentity;
-import io.ebeaninternal.server.deploy.IdentityMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,8 +108,9 @@ public class BaseTableDdl implements TableDdl {
       // altered columns will be in the alterTable buffers.
       // 'after' goes to the post-alter-buffer
       if (!after.isEmpty()) {
-        writer.applyPostAlter().append("-- NOTE: table has @History - special migration may be necessary").newLine();
-
+        if (withHistory) {
+          writer.applyPostAlter().append("-- NOTE: table has @History - special migration may be necessary").newLine();
+        }
         // here we run post migration scripts
         for (String ddlScript : after) {
           writer.applyPostAlter().appendStatement(translate(ddlScript, tableName, columnName, defaultValue));
@@ -139,7 +121,7 @@ public class BaseTableDdl implements TableDdl {
     }
 
     private List<String> getScriptsForPlatform(List<DdlScript> scripts) {
-      Platform searchPlatform = platformDdl.getPlatform().getPlatform();
+      Platform searchPlatform = platformDdl.getPlatform().platform();
       for (DdlScript script : scripts) {
         if (matchPlatform(searchPlatform, script.getPlatforms())) {
           // just returns the first match (rather than appends them)
@@ -195,6 +177,11 @@ public class BaseTableDdl implements TableDdl {
     externalCompoundUnique.clear();
   }
 
+  @Override
+  public void generate(DdlWrite writer, CreateSchema createSchema) {
+    platformDdl.createSchema(writer, createSchema);
+  }
+
   /**
    * Generate the appropriate 'create table' and matching 'drop table' statements
    * and add them to the appropriate 'apply' and 'rollback' buffers.
@@ -204,32 +191,18 @@ public class BaseTableDdl implements TableDdl {
     reset();
 
     String tableName = createTable.getName();
-    List<Column> columns = createTable.getColumn();
-    List<Column> pk = determinePrimaryKeyColumns(columns);
 
-    DdlIdentity identity = DdlIdentity.NONE;
-    if ((pk.size() == 1)) {
-      final IdentityMode identityMode = MTableIdentity.fromCreateTable(createTable);
-      IdType idType = platformDdl.useIdentityType(identityMode.getIdType());
-      String sequenceName = identityMode.getSequenceName();
-      if (IdType.SEQUENCE == idType && (sequenceName == null || sequenceName.isEmpty())) {
-        sequenceName = sequenceName(createTable, pk);
-      }
-      identity = new DdlIdentity(idType, identityMode, sequenceName);
-    }
-
-    String partitionMode = createTable.getPartitionMode();
+    BaseTableIdentity baseTableIdentity = new BaseTableIdentity(createTable, platformDdl, namingConvention);
+    DdlIdentity identity = baseTableIdentity.identity();
 
     DdlBuffer apply = writer.apply();
     apply.append(platformDdl.getCreateTableCommandPrefix()).append(" ").append(platformDdl.quote(tableName)).append(" (");
-    writeTableColumns(apply, columns, identity);
+    writeTableColumns(apply, createTable.getColumn(), identity);
     writeUniqueConstraints(apply, createTable);
     writeCompoundUniqueConstraints(apply, createTable);
-    if (!pk.isEmpty()) {
+    if (baseTableIdentity.hasPrimaryKey()) {
       // defined on the columns
-      if (partitionMode == null || !platformDdl.suppressPrimaryKeyOnPartition()) {
-        writePrimaryKeyConstraint(apply, createTable.getPkName(), toColumnNames(pk));
-      }
+      writePrimaryKeyConstraint(apply, createTable.getPkName(), toColumnNames(baseTableIdentity.pkColumns()));
     }
     if (platformDdl.isInlineForeignKeys()) {
       writeInlineForeignKeys(apply, createTable);
@@ -238,8 +211,11 @@ public class BaseTableDdl implements TableDdl {
     addTableTableSpaces(apply, createTable);
     addTableStorageEngine(apply, createTable);
     addTableCommentInline(apply, createTable);
+    String partitionMode = createTable.getPartitionMode();
     if (partitionMode != null) {
       platformDdl.addTablePartition(apply, partitionMode, createTable.getPartitionColumn());
+      apply.endOfStatement().newLine();
+      platformDdl.addDefaultTablePartition(apply, createTable.getName());
     }
     apply.endOfStatement();
 
@@ -265,12 +241,6 @@ public class BaseTableDdl implements TableDdl {
     if (!platformDdl.isInlineForeignKeys()) {
       writeAddForeignKeys(writer, createTable);
     }
-  }
-
-
-
-  private String sequenceName(CreateTable createTable, List<Column> pk) {
-    return namingConvention.getSequenceName(createTable.getName(), pk.get(0).getName());
   }
 
   /**
@@ -474,7 +444,7 @@ public class BaseTableDdl implements TableDdl {
   }
 
   private boolean platformInclude(String platforms) {
-    return matchPlatform(platformDdl.getPlatform().getPlatform(), platforms);
+    return matchPlatform(platformDdl.getPlatform().platform(), platforms);
   }
 
   /**
@@ -527,19 +497,6 @@ public class BaseTableDdl implements TableDdl {
       cols[i] = columns.get(i).getName();
     }
     return cols;
-  }
-
-  /**
-   * Return the list of columns that make the primary key.
-   */
-  protected List<Column> determinePrimaryKeyColumns(List<Column> columns) {
-    List<Column> pk = new ArrayList<>(3);
-    for (Column column : columns) {
-      if (isTrue(column.isPrimaryKey())) {
-        pk.add(column);
-      }
-    }
-    return pk;
   }
 
   @Override
@@ -653,7 +610,7 @@ public class BaseTableDdl implements TableDdl {
   public void generate(DdlWrite writer, DropTable dropTable) {
     dropTable(writer.applyPostAlter(), dropTable.getName());
     if (hasValue(dropTable.getSequenceCol())
-        && platformDdl.getPlatform().getDbIdentity().isSupportsSequence()) {
+        && platformDdl.getPlatform().dbIdentity().isSupportsSequence()) {
       String sequenceName = dropTable.getSequenceName();
       if (!hasValue(sequenceName)) {
         sequenceName = namingConvention.getSequenceName(dropTable.getName(), dropTable.getSequenceCol());
@@ -737,18 +694,15 @@ public class BaseTableDdl implements TableDdl {
     }
 
     boolean alterCheckConstraint = hasValue(alterColumn.getCheckConstraint());
-
     if (alterCheckConstraint) {
       // drop constraint before altering type etc
       dropCheckConstraint(writer, alterColumn, alterColumn.getCheckConstraintName());
     }
-
     if (typeChange(alterColumn)
       || hasValue(alterColumn.getDefaultValue())
       || alterColumn.isNotnull() != null) {
       alterColumn(writer, alterColumn);
     }
-
     if (alterCheckConstraint) {
       // add constraint last (after potential type change)
       addCheckConstraint(writer, alterColumn);

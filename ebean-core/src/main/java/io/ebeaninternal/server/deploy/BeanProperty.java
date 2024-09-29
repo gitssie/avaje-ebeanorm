@@ -22,6 +22,7 @@ import io.ebeaninternal.api.json.SpiJsonReader;
 import io.ebeaninternal.api.json.SpiJsonWriter;
 import io.ebeaninternal.server.core.EncryptAlias;
 import io.ebeaninternal.server.core.InternString;
+import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedWhenCreated;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedWhenModified;
@@ -51,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * Description of a property of a bean. Includes its deployment information such
  * as database column mapping information.
@@ -62,7 +65,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   /**
    * Flag to mark this is the id property.
    */
-  private final boolean id;
+  protected final boolean id;
   private final boolean importedPrimaryKey;
   /**
    * Flag to make this as a dummy property for unidirecitonal relationships.
@@ -417,7 +420,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    * Return true if the underlying type is mutable.
    */
   public boolean isMutableScalarType() {
-    return scalarType != null && scalarType.isMutable();
+    return scalarType != null && scalarType.mutable();
   }
 
   /**
@@ -458,7 +461,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     if (formula && sqlFormulaJoin != null) {
       ctx.appendFormulaJoin(sqlFormulaJoin, joinType, manyWhere);
     } else if (secondaryTableJoin != null) {
-      String relativePrefix = ctx.getRelativePrefix(secondaryTableJoinPrefix);
+      String relativePrefix = ctx.relativePrefix(secondaryTableJoinPrefix);
       secondaryTableJoin.addJoin(joinType, relativePrefix, ctx);
     }
   }
@@ -484,7 +487,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
       ctx.appendFormulaSelect(sqlFormulaSelect);
     } else if (!isTransient && !ignoreDraftOnlyProperty(ctx.isDraftQuery())) {
       if (secondaryTableJoin != null) {
-        ctx.pushTableAlias(ctx.getRelativePrefix(secondaryTableJoinPrefix));
+        ctx.pushTableAlias(ctx.relativePrefix(secondaryTableJoinPrefix));
       }
       if (dbEncrypted) {
         ctx.appendRawColumn(decryptSqlWithColumnAlias(ctx.peekTableAlias()));
@@ -509,7 +512,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
 
   @Override
   public void loadIgnore(DbReadContext ctx) {
-    scalarType.loadIgnore(ctx.getDataReader());
+    ctx.dataReader().incrementPos(1);
   }
 
   @Override
@@ -544,11 +547,11 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   public Object read(DbReadContext ctx) throws SQLException {
-    return scalarType.read(ctx.getDataReader());
+    return scalarType.read(ctx.dataReader());
   }
 
   public Object readSet(DbReadContext ctx, EntityBean bean) throws SQLException {
-    return readSet(ctx.getDataReader(), bean);
+    return readSet(ctx.dataReader(), bean);
   }
 
   @SuppressWarnings("unchecked")
@@ -704,7 +707,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   private Object cacheDataConvert(Object value) {
-    if (value == null || scalarType.isBinaryType()) {
+    if (value == null || scalarType.binary()) {
       return value;
     } else {
       // convert to string as an optimisation for java object serialisation
@@ -931,6 +934,10 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     return alreadyDirty || value != null && scalarType.isDirty(value);
   }
 
+  public boolean isArrayType() {
+    return scalarType instanceof ScalarTypeArray;
+  }
+
   /**
    * Return the scalarType.
    */
@@ -946,18 +953,8 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   @Override
-  public boolean isDateTimeCapable() {
-    return scalarType != null && scalarType.isDateTimeCapable();
-  }
-
-  @Override
   public int jdbcType() {
-    return scalarType == null ? 0 : scalarType.getJdbcType();
-  }
-
-  @Override
-  public Object parseDateTime(long systemTimeMillis) {
-    return scalarType.convertFromMillis(systemTimeMillis);
+    return scalarType == null ? 0 : scalarType.jdbcType();
   }
 
   /**
@@ -1421,13 +1418,17 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     JsonToken event = ctx.nextToken();
     if (JsonToken.VALUE_NULL == event) {
       if (jsonDeserialize) {
-        setValue(bean, null);
+        if (ctx.intercept()) {
+          setValueIntercept(bean, null);
+        } else {
+          setValue(bean, null);
+        }
       }
     } else {
       // expect to read non-null json value
       Object objValue;
       if (scalarType != null) {
-        objValue = scalarType.jsonRead(ctx.getParser());
+        objValue = scalarType.jsonRead(ctx.parser());
       } else {
         try {
           objValue = ctx.readValueUsingObjectMapper(propertyType);
@@ -1436,11 +1437,15 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
           objValue = null;
           String msg = "Error trying to use Jackson ObjectMapper to read transient property "
             + fullName() + " - consider marking this property with @JsonIgnore";
-          CoreLog.log.error(msg, e);
+          CoreLog.log.log(ERROR, msg, e);
         }
       }
       if (jsonDeserialize) {
-        setValue(bean, objValue);
+        if (ctx.intercept()) {
+          setValueIntercept(bean, objValue);
+        } else {
+          setValue(bean, objValue);
+        }
       }
     }
   }
@@ -1469,7 +1474,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    */
   public void docStoreMapping(DocMappingBuilder mapping, String prefix) {
     if (mapping.includesProperty(prefix, name)) {
-      DocPropertyType type = scalarType.getDocType();
+      DocPropertyType type = scalarType.docType();
       DocPropertyOptions options = docOptions.copy();
       if (isKeywordType(type, options)) {
         type = DocPropertyType.KEYWORD;

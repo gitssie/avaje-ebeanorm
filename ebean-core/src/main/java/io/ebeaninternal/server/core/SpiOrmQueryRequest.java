@@ -7,6 +7,7 @@ import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeanservice.docstore.api.DocQueryRequest;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,9 +121,9 @@ public interface SpiOrmQueryRequest<T> extends BeanQueryRequest<T>, DocQueryRequ
   <K> Map<K, T> findMap();
 
   /**
-   * Execute the findSingleAttributeList query.
+   * Execute the findSingleAttributeCollection query.
    */
-  <A> List<A> findSingleAttributeList();
+  <A extends Collection<?>> A findSingleAttributeCollection(A collection);
 
   /**
    * Execute returning the ResultSet.
@@ -137,7 +138,7 @@ public interface SpiOrmQueryRequest<T> extends BeanQueryRequest<T>, DocQueryRequ
   /**
    * Maybe hit the bean cache returning true if everything was obtained from the
    * cache (that there were no misses).
-   *
+   * <p>
    * Do this for findList() on many natural keys or many Ids.
    */
   boolean getFromBeanCache();
@@ -151,6 +152,11 @@ public interface SpiOrmQueryRequest<T> extends BeanQueryRequest<T>, DocQueryRequ
    * Return the bean cache hits for findMap (when all hits / no misses).
    */
   <K> Map<K,T> beanCacheHitsAsMap();
+
+  /**
+   * Return the bean cache hits for findMap (when all hits / no misses).
+   */
+  Set<T> beanCacheHitsAsSet();
 
   /**
    * Reset Bean cache mode AUTO - require explicit setting for bean cache use with findList().

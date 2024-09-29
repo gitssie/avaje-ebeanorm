@@ -29,6 +29,7 @@ import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.core.timezone.*;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
+import io.ebeaninternal.server.deploy.BeanDescriptorManagerTenant;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.parse.DeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.DeployInherit;
@@ -46,7 +47,7 @@ import io.ebeaninternal.server.persist.platform.PostgresMultiValueBind;
 import io.ebeaninternal.server.query.*;
 import io.ebeaninternal.server.readaudit.DefaultReadAuditLogger;
 import io.ebeaninternal.server.readaudit.DefaultReadAuditPrepare;
-import io.ebeaninternal.server.text.json.DJsonContext;
+import io.ebeaninternal.server.json.DJsonContext;
 import io.ebeaninternal.server.transaction.*;
 import io.ebeaninternal.server.type.DefaultTypeManager;
 import io.ebeaninternal.server.type.TypeManager;
@@ -56,51 +57,55 @@ import io.ebeanservice.docstore.api.DocStoreFactory;
 import io.ebeanservice.docstore.api.DocStoreIntegration;
 import io.ebeanservice.docstore.api.DocStoreUpdateProcessor;
 import io.ebeanservice.docstore.none.NoneDocStoreFactory;
-import org.slf4j.Logger;
 
 import java.util.*;
+
+import static java.lang.System.Logger.Level.*;
 
 /**
  * Used to extend the DatabaseConfig with additional objects used to configure and
  * construct an Database.
  */
-public class InternalConfiguration {
+public final class InternalConfiguration {
 
-  protected static final Logger log = CoreLog.internal;
+  private static final System.Logger log = CoreLog.internal;
 
-  protected final TableModState tableModState;
-  protected final boolean online;
-  protected final DatabaseConfig config;
-  protected final BootupClasses bootupClasses;
-  protected final DatabasePlatform databasePlatform;
-  protected final DeployInherit deployInherit;
-  protected final TypeManager typeManager;
-  protected DtoBeanManager dtoBeanManager;
-  protected final ClockService clockService;
-  protected DataTimeZone dataTimeZone;
-  protected Binder binder;
-  protected DeployCreateProperties deployCreateProperties;
-  protected final DeployUtil deployUtil;
-  protected BeanDescriptorManager beanDescriptorManager;
-  protected CQueryEngine cQueryEngine;
-  protected final ClusterManager clusterManager;
-  protected final SpiCacheManager cacheManager;
-  protected final ServerCachePlugin serverCachePlugin;
-  protected final boolean jacksonCorePresent;
-  protected final ExpressionFactory expressionFactory;
-  protected final SpiBackgroundExecutor backgroundExecutor;
-  protected final JsonFactory jsonFactory;
-  protected final DocStoreFactory docStoreFactory;
-  protected final List<Plugin> plugins = new ArrayList<>();
-  protected final MultiValueBind multiValueBind;
-  protected final SpiLogManager logManager;
-  protected final ExtraMetrics extraMetrics = new ExtraMetrics();
-  protected ServerCacheNotify cacheNotify;
-  protected boolean localL2Caching;
+  private final TableModState tableModState;
+  private final boolean online;
+  private final DatabaseConfig config;
+  private final BootupClasses bootupClasses;
+  private final DatabasePlatform databasePlatform;
+  private final DeployInherit deployInherit;
+  private final TypeManager typeManager;
+  private final DtoBeanManager dtoBeanManager;
+  private final ClockService clockService;
+  private final DataTimeZone dataTimeZone;
+  private final Binder binder;
+  private final DeployCreateProperties deployCreateProperties;
+  private final DeployUtil deployUtil;
+  private final BeanDescriptorManager beanDescriptorManager;
+  private final CQueryEngine cQueryEngine;
+  private final ClusterManager clusterManager;
+  private final SpiCacheManager cacheManager;
+  private final ServerCachePlugin serverCachePlugin;
+  private final boolean jacksonCorePresent;
+  private final ExpressionFactory expressionFactory;
+  private final SpiBackgroundExecutor backgroundExecutor;
+  private final JsonFactory jsonFactory;
+  private final DocStoreFactory docStoreFactory;
+  private final List<Plugin> plugins = new ArrayList<>();
+  private final MultiValueBind multiValueBind;
+  private final SpiLogManager logManager;
+  private final ExtraMetrics extraMetrics = new ExtraMetrics();
+  private ServerCacheNotify cacheNotify;
+  private boolean localL2Caching;
 
-  InternalConfiguration(boolean online, ClusterManager clusterManager, SpiBackgroundExecutor backgroundExecutor,
+  private boolean isTenant = false;
+
+  InternalConfiguration(boolean isTenant, boolean online, ClusterManager clusterManager, SpiBackgroundExecutor backgroundExecutor,
                         DatabaseConfig config, BootupClasses bootupClasses) {
 
+    this.isTenant = isTenant;
     this.online = online;
     this.config = config;
     this.jacksonCorePresent = config.getClassLoadConfig().isJacksonCorePresent();
@@ -115,20 +120,16 @@ public class InternalConfiguration {
     this.databasePlatform = config.getDatabasePlatform();
     this.expressionFactory = initExpressionFactory(config);
     this.typeManager = new DefaultTypeManager(config, bootupClasses);
-    this.multiValueBind = createMultiValueBind(databasePlatform.getPlatform());
+    this.multiValueBind = createMultiValueBind(databasePlatform.platform());
     this.deployInherit = new DeployInherit(bootupClasses);
+    this.deployCreateProperties = new DeployCreateProperties(typeManager);
     this.deployUtil = new DeployUtil(typeManager, config);
     this.serverCachePlugin = initServerCachePlugin();
     this.cacheManager = initCacheManager();
 
-    this.beanDescriptorManager();
-  }
-
-  protected void beanDescriptorManager(){
-    this.deployCreateProperties = new DeployCreateProperties(typeManager);
     final InternalConfigXmlMap xmlMap = initExternalMapping();
     this.dtoBeanManager = new DtoBeanManager(typeManager, xmlMap.readDtoMapping());
-    this.beanDescriptorManager = new BeanDescriptorManager(this);
+    this.beanDescriptorManager = isTenant ? new BeanDescriptorManagerTenant(this) : new BeanDescriptorManager(this);
     Map<String, String> asOfTableMapping = beanDescriptorManager.deploy(xmlMap.xmlDeployment());
     Map<String, String> draftTableMap = beanDescriptorManager.draftTableMap();
     beanDescriptorManager.scheduleBackgroundTrim();
@@ -141,16 +142,21 @@ public class InternalConfiguration {
     return jacksonCorePresent;
   }
 
-  protected InternalConfigXmlMap initExternalMapping() {
+  private InternalConfigXmlMap initExternalMapping() {
     final List<XmapEbean> xmEbeans = readExternalMapping();
     return new InternalConfigXmlMap(xmEbeans, config.getClassLoadConfig().getClassLoader());
   }
 
-  protected <S> S service(Class<S> cls) {
-    return ServiceUtil.service(cls);
+  private <S> S service(Class<S> cls) {
+    S service = config.getServiceObject(cls);
+    if (service != null) {
+      return service;
+    } else {
+      return ServiceUtil.service(cls);
+    }
   }
 
-  protected List<XmapEbean> readExternalMapping() {
+  private List<XmapEbean> readExternalMapping() {
     final XmapService xmapService = service(XmapService.class);
     if (xmapService == null) {
       return Collections.emptyList();
@@ -158,7 +164,7 @@ public class InternalConfiguration {
     return xmapService.read(config.getClassLoadConfig().getClassLoader(), config.getMappingLocations());
   }
 
-  protected SpiLogManager initLogManager() {
+  private SpiLogManager initLogManager() {
     // allow plugin - i.e. capture executed SQL for testing/asserts
     SpiLoggerFactory loggerFactory = service(SpiLoggerFactory.class);
     if (loggerFactory == null) {
@@ -173,12 +179,12 @@ public class InternalConfiguration {
   /**
    * Create and return the ExpressionFactory based on configuration and database platform.
    */
-  protected ExpressionFactory initExpressionFactory(DatabaseConfig config) {
-    boolean nativeIlike = config.isExpressionNativeIlike() && databasePlatform.isSupportsNativeIlike();
+  private ExpressionFactory initExpressionFactory(DatabaseConfig config) {
+    boolean nativeIlike = config.isExpressionNativeIlike() && databasePlatform.supportsNativeIlike();
     return new DefaultExpressionFactory(config.isExpressionEqualsWithNullAsNoop(), nativeIlike);
   }
 
-  protected DocStoreFactory initDocStoreFactory(DocStoreFactory service) {
+  private DocStoreFactory initDocStoreFactory(DocStoreFactory service) {
     return service == null ? new NoneDocStoreFactory() : service;
   }
 
@@ -250,7 +256,7 @@ public class InternalConfiguration {
    */
   ReadAuditLogger getReadAuditLogger() {
     ReadAuditLogger found = bootupClasses.getReadAuditLogger();
-    return plugin(found != null ? found : jacksonCorePresent? new DefaultReadAuditLogger(): null);
+    return plugin(found != null ? found : jacksonCorePresent ? new DefaultReadAuditLogger() : null);
   }
 
   /**
@@ -264,11 +270,11 @@ public class InternalConfiguration {
   /**
    * For 'As Of' queries return the number of bind variables per predicate.
    */
-  protected Binder getBinder(TypeManager typeManager, DatabasePlatform databasePlatform, DataTimeZone dataTimeZone) {
+  private Binder getBinder(TypeManager typeManager, DatabasePlatform databasePlatform, DataTimeZone dataTimeZone) {
 
     DbExpressionHandler jsonHandler = getDbExpressionHandler(databasePlatform);
 
-    DbHistorySupport historySupport = databasePlatform.getHistorySupport();
+    DbHistorySupport historySupport = databasePlatform.historySupport();
     if (historySupport == null) {
       return new Binder(typeManager, logManager, 0, false, jsonHandler, dataTimeZone, multiValueBind);
     }
@@ -278,11 +284,11 @@ public class InternalConfiguration {
   /**
    * Return the JSON expression handler for the given database platform.
    */
-  protected DbExpressionHandler getDbExpressionHandler(DatabasePlatform databasePlatform) {
+  private DbExpressionHandler getDbExpressionHandler(DatabasePlatform databasePlatform) {
     return DbExpressionHandlerFactory.from(databasePlatform);
   }
 
-  protected MultiValueBind createMultiValueBind(Platform platform) {
+  private MultiValueBind createMultiValueBind(Platform platform) {
     // only Postgres at this stage
     if (platform.base() == Platform.POSTGRES || platform.base() == Platform.YUGABYTE || platform.base() == Platform.COCKROACH) {
       return new PostgresMultiValueBind();
@@ -323,8 +329,8 @@ public class InternalConfiguration {
     return bootupClasses;
   }
 
-  protected Platform getPlatform() {
-    return getDatabasePlatform().getPlatform();
+  private Platform getPlatform() {
+    return getDatabasePlatform().platform();
   }
 
   public DatabasePlatform getDatabasePlatform() {
@@ -398,7 +404,7 @@ public class InternalConfiguration {
     return new TransactionManager(options);
   }
 
-  protected SpiProfileHandler profileHandler() {
+  private SpiProfileHandler profileHandler() {
 
     ProfilingConfig profilingConfig = config.getProfilingConfig();
     if (!profilingConfig.isEnabled()) {
@@ -414,7 +420,7 @@ public class InternalConfiguration {
   /**
    * Return the DataSource supplier based on the tenancy mode.
    */
-  protected DataSourceSupplier dataSource() {
+  private DataSourceSupplier dataSource() {
     switch (config.getTenantMode()) {
       case DB:
       case DB_WITH_MASTER:
@@ -431,13 +437,13 @@ public class InternalConfiguration {
   /**
    * Create the TransactionScopeManager taking into account JTA or external transaction manager.
    */
-  protected TransactionScopeManager createTransactionScopeManager() {
+  private TransactionScopeManager createTransactionScopeManager() {
     ExternalTransactionManager externalTransactionManager = config.getExternalTransactionManager();
     if (externalTransactionManager == null && config.isUseJtaTransactionManager()) {
       externalTransactionManager = new JtaTransactionManager();
     }
     if (externalTransactionManager != null) {
-      log.info("Using Transaction Manager [" + externalTransactionManager.getClass() + "]");
+      log.log(INFO, "Using Transaction Manager {0}", externalTransactionManager.getClass());
       return new ExternalTransactionScopeManager(externalTransactionManager);
     } else {
       return new DefaultTransactionScopeManager();
@@ -447,7 +453,7 @@ public class InternalConfiguration {
   /**
    * Create the DataTimeZone implementation to use.
    */
-  protected DataTimeZone initDataTimeZone() {
+  private DataTimeZone initDataTimeZone() {
     String tz = config.getDataTimeZone();
     if (tz == null) {
       if (isMySql(getPlatform())) {
@@ -462,7 +468,7 @@ public class InternalConfiguration {
     }
   }
 
-  protected boolean isMySql(Platform platform) {
+  private boolean isMySql(Platform platform) {
     return platform.base() == Platform.MYSQL;
   }
 
@@ -515,7 +521,7 @@ public class InternalConfiguration {
     return logManager;
   }
 
-  protected ServerCachePlugin initServerCachePlugin() {
+  private ServerCachePlugin initServerCachePlugin() {
     if (config.isLocalOnlyL2Cache()) {
       localL2Caching = true;
       return new DefaultServerCachePlugin();
@@ -527,7 +533,7 @@ public class InternalConfiguration {
       if (iterator.hasNext()) {
         // use the cacheFactory (via classpath service loader)
         plugin = iterator.next();
-        log.debug("using ServerCacheFactory {}", plugin.getClass());
+        log.log(DEBUG, "using ServerCacheFactory {0}", plugin.getClass());
       } else {
         // use the built in default l2 caching which is local cache based
         localL2Caching = true;
@@ -540,7 +546,7 @@ public class InternalConfiguration {
   /**
    * Create and return the CacheManager.
    */
-  protected SpiCacheManager initCacheManager() {
+  private SpiCacheManager initCacheManager() {
 
     if (!online || config.isDisableL2Cache()) {
       // use local only L2 cache implementation as placeholder
@@ -580,7 +586,7 @@ public class InternalConfiguration {
       return QueryPlanManager.NOOP;
     }
     long threshold = config.getQueryPlanThresholdMicros();
-    return new CQueryPlanManager(transactionManager, threshold, queryPlanLogger(databasePlatform.getPlatform()), extraMetrics);
+    return new CQueryPlanManager(transactionManager, threshold, queryPlanLogger(databasePlatform.platform()), extraMetrics);
   }
 
   /**
@@ -607,8 +613,9 @@ public class InternalConfiguration {
     return service == null ? new NoopDdl(server.config().isDdlRun()) : service.generator(server);
   }
 
-  protected static class NoopDdl implements SpiDdlGenerator {
-    protected final boolean ddlRun;
+  private static class NoopDdl implements SpiDdlGenerator {
+    private final boolean ddlRun;
+
     NoopDdl(boolean ddlRun) {
       this.ddlRun = ddlRun;
     }
@@ -616,7 +623,7 @@ public class InternalConfiguration {
     @Override
     public void execute(boolean online) {
       if (online && ddlRun) {
-        CoreLog.log.error("Configured to run DDL but ebean-ddl-generator is not in the classpath (or ebean-test in the test classpath?)");
+        CoreLog.log.log(ERROR, "Configured to run DDL but ebean-ddl-generator is not in the classpath (or ebean-test in the test classpath?)");
       }
     }
   }

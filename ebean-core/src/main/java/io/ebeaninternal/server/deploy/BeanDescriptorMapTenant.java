@@ -4,7 +4,6 @@ import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.NamingConvention;
 import io.ebean.core.type.ScalarType;
-import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.cache.SpiCacheManager;
 import io.ebeaninternal.server.deploy.id.IdBinder;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
@@ -13,7 +12,6 @@ import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -21,7 +19,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class BeanDescriptorMapTenant implements BeanDescriptorMap {
-  protected static final Logger log = CoreLog.internal;
   private final Lock lock = new ReentrantLock();
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;

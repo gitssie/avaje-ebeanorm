@@ -233,8 +233,13 @@ public abstract class TQRootBean<T, R> {
   }
 
   /**
-   * Tune the query by specifying the properties to be loaded on the
-   * 'main' root level entity bean (aka partial object).
+   * Specify the properties to be loaded on the 'main' root level entity bean.
+   * <p>
+   * The resulting entities with be "partially loaded" aka partial objects.
+   * <p>
+   * Alternatively we can use a {@link #select(FetchGroup)} to specify all properties
+   * to load on all parts of the graph.
+   *
    * <pre>{@code
    *
    *   // alias for the customer properties in select()
@@ -245,12 +250,12 @@ public abstract class TQRootBean<T, R> {
    *
    *   List<Customer> customers =
    *     new QCustomer()
-   *       // tune query
+   *       // specify the parts of the graph we want to load
    *       .select(cust.id, cust.name)
    *       .contacts.fetch(contact.firstName, contact.lastName, contact.email)
    *
    *       // predicates
-   *       .id.greaterThan(1)
+   *       .id.gt(1)
    *       .findList();
    *
    * }</pre>
@@ -258,17 +263,28 @@ public abstract class TQRootBean<T, R> {
    * @param properties the list of properties to fetch
    */
   @SafeVarargs
-  public final R select(TQProperty<R>... properties) {
+  public final R select(TQProperty<R, ?>... properties) {
     ((SpiQueryFetch) query).selectProperties(properties(properties));
     return root;
   }
 
-  private Set<String> properties(TQProperty<R>[] properties) {
+  private Set<String> properties(Query.Property<?>[] properties) {
     Set<String> props = new LinkedHashSet<>();
-    for (TQProperty<R> property : properties) {
-      props.add(property.propertyName());
+    for (Query.Property<?> property : properties) {
+      props.add(property.toString());
     }
     return props;
+  }
+
+  /**
+   * Specify the properties to be loaded on the 'main' root level entity bean
+   * also allowing for functions to be used like {@link StdOperators#max(Query.Property)}.
+   *
+   * @param properties the list of properties to fetch
+   */
+  public final R select(Query.Property<?>... properties) {
+    ((SpiQueryFetch) query).selectProperties(properties(properties));
+    return root;
   }
 
   /**
@@ -500,6 +516,14 @@ public abstract class TQRootBean<T, R> {
   }
 
   /**
+   * Add an expression to the WHERE or HAVING clause.
+   */
+  public R add(Expression expression) {
+    peekExprList().add(expression);
+    return root;
+  }
+
+  /**
    * Set root table alias.
    */
   public R alias(String alias) {
@@ -694,6 +718,22 @@ public abstract class TQRootBean<T, R> {
   }
 
   /**
+   * Add EXISTS sub-query predicate.
+   */
+  public R exists(Query<?> subQuery) {
+    query.where().exists(subQuery);
+    return root;
+  }
+
+  /**
+   * Add NOT EXISTS sub-query predicate.
+   */
+  public R notExists(Query<?> subQuery) {
+    query.where().notExists(subQuery);
+    return root;
+  }
+
+  /**
    * Execute using "for update" clause which results in the DB locking the record.
    */
   public R forUpdate() {
@@ -852,9 +892,11 @@ public abstract class TQRootBean<T, R> {
   }
 
   /**
-   * When set to true all the beans from this query are loaded into the bean
-   * cache.
+   * Deprecated migrate to setBeanCacheMode() or setUseCache().
+   * <p>
+   * When set to true all the beans from this query are loaded into the bean cache.
    */
+  @Deprecated
   public R setLoadBeanCache(boolean loadBeanCache) {
     query.setLoadBeanCache(loadBeanCache);
     return root;
@@ -888,7 +930,7 @@ public abstract class TQRootBean<T, R> {
   /**
    * Specify the PersistenceContextScope to use for this query.
    * <p>
-   * When this is not set the 'default' configured on {@link io.ebean.config.ServerConfig#setPersistenceContextScope(PersistenceContextScope)}
+   * When this is not set the 'default' configured on {@link io.ebean.config.DatabaseConfig#setPersistenceContextScope(PersistenceContextScope)}
    * is used - this value defaults to {@link io.ebean.PersistenceContextScope#TRANSACTION}.
    * <p>
    * Note that the same persistence Context is used for subsequent lazy loading and query join queries.
@@ -1765,7 +1807,7 @@ public abstract class TQRootBean<T, R> {
   }
 
   /**
-   * Execute the query returning a single value for a single property.
+   * Execute the query returning a single value or null for a single property.
    * <p>
    * <h3>Example</h3>
    * <pre>{@code
@@ -1777,8 +1819,9 @@ public abstract class TQRootBean<T, R> {
    *
    * }</pre>
    *
-   * @return the list of values for the selected property
+   * @return a single value or null for the selected property
    */
+  @Nullable
   public <A> A findSingleAttribute() {
     return query.findSingleAttribute();
   }
@@ -2074,12 +2117,10 @@ public abstract class TQRootBean<T, R> {
    * Return the current expression list that expressions should be added to.
    */
   protected ExpressionList<T> peekExprList() {
-
     if (textMode) {
       // return the current text expression list
       return _peekText();
     }
-
     if (whereStack == null) {
       whereStack = new ArrayStack<>();
       whereStack.push(query.where());

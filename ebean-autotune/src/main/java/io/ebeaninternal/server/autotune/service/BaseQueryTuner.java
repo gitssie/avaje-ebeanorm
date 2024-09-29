@@ -143,11 +143,12 @@ public class BaseQueryTuner {
     switch (type) {
       case COUNT:
       case ATTRIBUTE:
+      case ATTRIBUTE_SET:
       case ID_LIST:
       case UPDATE:
       case DELETE:
       case SQ_EXISTS:
-      case SQ_IN:
+      case SQ_EX:
         return false;
       default:
         // not using autoTune when explicitly loading the l2 bean cache

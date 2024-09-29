@@ -1,15 +1,16 @@
 package main;
 
-import io.ebean.docker.commands.MariaDBContainer;
+import io.ebean.test.containers.MariaDBContainer;
 
 public class StartMariaDb {
 
   public static void main(String[] args) {
-    MariaDBContainer.builder("10.5")
+    MariaDBContainer.builder("10.6")
       .dbName("unit")
       .user("unit")
       .password("unit")
+      .port(5306)
       .build()
-      .startWithDropCreate();
+      .start();
   }
 }

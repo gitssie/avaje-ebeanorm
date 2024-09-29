@@ -3,6 +3,7 @@ package io.ebean.querybean.generator;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
@@ -18,13 +19,12 @@ import java.util.TreeSet;
 class SimpleQueryBeanWriter {
 
   private final Set<String> importTypes = new TreeSet<>();
-
   private final List<PropertyMeta> properties = new ArrayList<>();
-
   private final TypeElement element;
-
+  private final TypeElement implementsInterface;
+  private String implementsInterfaceFullName;
+  private String implementsInterfaceShortName;
   private final ProcessingContext processingContext;
-
   private final String dbName;
   private final String beanFullName;
   private final boolean isEntity;
@@ -33,20 +33,36 @@ class SimpleQueryBeanWriter {
 
   private String destPackage;
   private String origDestPackage;
-
   private String shortName;
-  private String origShortName;
+  private final String shortInnerName;
+  private final String origShortName;
   private Append writer;
 
   SimpleQueryBeanWriter(TypeElement element, ProcessingContext processingContext) {
     this.element = element;
     this.processingContext = processingContext;
     this.beanFullName = element.getQualifiedName().toString();
-    this.destPackage = derivePackage(beanFullName) + ".query";
-    this.shortName = deriveShortName(beanFullName);
+    boolean nested = element.getNestingKind().isNested();
+    this.destPackage = Util.packageOf(nested, beanFullName) + ".query";
+    String sn = Util.shortName(nested, beanFullName);
+    this.shortInnerName = Util.shortName(false, sn);
+    this.shortName = sn.replace('.', '$');
+    this.origShortName = shortName;
     this.isEntity = processingContext.isEntity(element);
     this.embeddable = processingContext.isEmbeddable(element);
     this.dbName = findDbName();
+    this.implementsInterface = initInterface(element);
+  }
+
+  private TypeElement initInterface(TypeElement element) {
+    for (TypeMirror anInterface : element.getInterfaces()) {
+      TypeElement e = (TypeElement)processingContext.asElement(anInterface);
+      String name = e.getQualifiedName().toString();
+      if (!name.startsWith("java") && !name.startsWith("io.ebean")) {
+        return e;
+      }
+    }
+    return null;
   }
 
   private String findDbName() {
@@ -70,7 +86,11 @@ class SimpleQueryBeanWriter {
     importTypes.add(Constants.FETCHGROUP);
     importTypes.add(Constants.QUERY);
     importTypes.add(Constants.TRANSACTION);
-
+    if (implementsInterface != null) {
+      implementsInterfaceFullName = implementsInterface.getQualifiedName().toString();
+      boolean nested = implementsInterface.getNestingKind().isNested();
+      implementsInterfaceShortName = Util.shortName(nested, implementsInterfaceFullName);
+    }
     if (dbName != null) {
       importTypes.add(Constants.DB);
     }
@@ -125,7 +145,6 @@ class SimpleQueryBeanWriter {
     writingAssocBean = true;
     origDestPackage = destPackage;
     destPackage = destPackage + ".assoc";
-    origShortName = shortName;
     shortName = "Assoc" + shortName;
 
     prepareAssocBeanImports();
@@ -155,6 +174,11 @@ class SimpleQueryBeanWriter {
     if (isEntity()) {
       importTypes.add(Constants.TQPROPERTY);
       importTypes.add(origDestPackage + ".Q" + origShortName);
+      if (implementsInterface != null)  {
+        importTypes.add(Constants.AVAJE_LANG_NULLABLE);
+        importTypes.add(Constants.JAVA_COLLECTION);
+        importTypes.add(implementsInterfaceFullName);
+      }
     }
 
     // remove imports for the same package
@@ -268,7 +292,32 @@ class SimpleQueryBeanWriter {
       writeAssocBeanFetch("Query", "Eagerly fetch this association using a 'query join' loading the specified properties.");
       writeAssocBeanFetch("Cache", "Eagerly fetch this association using L2 cache.");
       writeAssocBeanFetch("Lazy", "Use lazy loading for this association loading the specified properties.");
+      if (implementsInterface != null) {
+        writeAssocBeanExpression(false, "eq", "Is equal to by ID property.");
+        writeAssocBeanExpression(true, "eqIfPresent", "Is equal to by ID property if the value is not null, if null no expression is added.");
+        writeAssocBeanExpression(false, "in", "IN the given values.", implementsInterfaceShortName + "...", "in");
+        writeAssocBeanExpression(false, "inBy", "IN the given interface values.", "Collection<? extends " + implementsInterfaceShortName + ">", "in");
+        writeAssocBeanExpression(true, "inOrEmptyBy", "IN the given interface values if the collection is not empty. No expression is added if the collection is empty..", "Collection<? extends " + implementsInterfaceShortName + ">", "inOrEmpty");
+      }
     }
+  }
+
+  private void writeAssocBeanExpression(boolean nullable,String expression, String comment) {
+    writeAssocBeanExpression(nullable, expression, comment, implementsInterfaceShortName, expression);
+  }
+
+  private void writeAssocBeanExpression(boolean nullable, String expression, String comment, String param, String actualExpression) {
+    final String nullableAnnotation = nullable ? "@Nullable " : "";
+    String values = expression.startsWith("in") ? "values" : "value";
+    String castVarargs = expression.equals("in") ? "(Object[])" : "";
+    writer.append("  /**").eol();
+    writer.append("   * ").append(comment).eol();
+    writer.append("   */").eol();
+    writer.append("  public final R %s(%s%s %s) {", expression, nullableAnnotation, param, values).eol();
+    writer.append("    expr().%s(_name, %s%s);", actualExpression, castVarargs, values).eol();
+    writer.append("    return _root;").eol();
+    writer.append("  }").eol();
+    writer.eol();
   }
 
   private void writeAssocBeanFetch(String fetchType, String comment) {
@@ -276,7 +325,7 @@ class SimpleQueryBeanWriter {
     writer.append("   * ").append(comment).eol();
     writer.append("   */").eol();
     writer.append("  @SafeVarargs @SuppressWarnings(\"varargs\")").eol();
-    writer.append("  public final R fetch%s(TQProperty<Q%s>... properties) {", fetchType, origShortName).eol();
+    writer.append("  public final R fetch%s(TQProperty<Q%s,?>... properties) {", fetchType, origShortName).eol();
     writer.append("    return fetch%sProperties(properties);", fetchType).eol();
     writer.append("  }").eol();
     writer.eol();
@@ -318,7 +367,7 @@ class SimpleQueryBeanWriter {
       writer.append(" */").eol();
       writer.append(Constants.AT_GENERATED).eol();
       writer.append(Constants.AT_TYPEQUERYBEAN).eol();
-      writer.append("public class Q%s<R> extends TQAssocBean<%s,R> {", shortName, origShortName).eol();
+      writer.append("public class Q%s<R> extends TQAssocBean<%s,R> {", shortName, shortInnerName).eol();
 
     } else {
       writer.append("/**").eol();
@@ -388,19 +437,4 @@ class SimpleQueryBeanWriter {
     return jfo.openWriter();
   }
 
-  private String derivePackage(String name) {
-    int pos = name.lastIndexOf('.');
-    if (pos == -1) {
-      return "";
-    }
-    return name.substring(0, pos);
-  }
-
-  private String deriveShortName(String name) {
-    int pos = name.lastIndexOf('.');
-    if (pos == -1) {
-      return name;
-    }
-    return name.substring(pos + 1);
-  }
 }

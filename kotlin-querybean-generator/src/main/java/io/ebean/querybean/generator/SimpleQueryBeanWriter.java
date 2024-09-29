@@ -3,6 +3,7 @@ package io.ebean.querybean.generator;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -63,13 +64,12 @@ class SimpleQueryBeanWriter {
   );
 
   private final Set<String> importTypes = new TreeSet<>();
-
   private final List<PropertyMeta> properties = new ArrayList<>();
-
   private final TypeElement element;
-
+  private final TypeElement implementsInterface;
+  private String implementsInterfaceFullName;
+  private String implementsInterfaceShortName;
   private final ProcessingContext processingContext;
-
   private final boolean isEntity;
   private final boolean embeddable;
   private final String dbName;
@@ -80,10 +80,9 @@ class SimpleQueryBeanWriter {
 
   private String destPackage;
   private String origDestPackage;
-
   private String shortName;
-  private String origShortName;
-
+  private final String shortInnerName;
+  private final String origShortName;
   private Append writer;
 
   SimpleQueryBeanWriter(TypeElement element, ProcessingContext processingContext) {
@@ -92,11 +91,27 @@ class SimpleQueryBeanWriter {
     this.element = element;
     this.processingContext = processingContext;
     this.beanFullName = element.getQualifiedName().toString();
-    this.destPackage = derivePackage(beanFullName) + ".query";
-    this.shortName = deriveShortName(beanFullName);
+    boolean nested = element.getNestingKind().isNested();
+    this.destPackage = Util.packageOf(nested, beanFullName) + ".query";
+    String sn = Util.shortName(nested, beanFullName);
+    this.shortInnerName = Util.shortName(false, sn);
+    this.shortName = sn.replace(".", "");
+    this.origShortName = shortName;
     this.isEntity = processingContext.isEntity(element);
     this.embeddable = processingContext.isEmbeddable(element);
     this.dbName = findDbName();
+    this.implementsInterface = initInterface(element);
+  }
+
+  private TypeElement initInterface(TypeElement element) {
+    for (TypeMirror anInterface : element.getInterfaces()) {
+      TypeElement e = (TypeElement)processingContext.asElement(anInterface);
+      String name = e.getQualifiedName().toString();
+      if (!name.startsWith("java") && !name.startsWith("io.ebean")) {
+        return e;
+      }
+    }
+    return null;
   }
 
   private String findDbName() {
@@ -116,6 +131,11 @@ class SimpleQueryBeanWriter {
     importTypes.add(Constants.FETCHGROUP);
     importTypes.add(Constants.QUERY);
     importTypes.add(Constants.TRANSACTION);
+    if (implementsInterface != null) {
+      implementsInterfaceFullName = implementsInterface.getQualifiedName().toString();
+      boolean nested = implementsInterface.getNestingKind().isNested();
+      implementsInterfaceShortName = Util.shortName(nested, implementsInterfaceFullName);
+    }
     if (dbName != null) {
       importTypes.add(Constants.DB);
     }
@@ -129,10 +149,7 @@ class SimpleQueryBeanWriter {
    * </p>
    */
   private void addClassProperties() {
-
-    List<VariableElement> fields = processingContext.allFields(element);
-
-    for (VariableElement field : fields) {
+    for (VariableElement field : processingContext.allFields(element)) {
       PropertyType type = processingContext.getPropertyType(field);
       if (type != null) {
         type.addImports(importTypes);
@@ -145,9 +162,7 @@ class SimpleQueryBeanWriter {
    * Write the type query bean (root bean).
    */
   void writeRootBean() throws IOException {
-
     gatherPropertyDetails();
-
     if (isEmbeddable()) {
       processingContext.addEntity(beanFullName, dbName);
     } else if (isEntity()) {
@@ -193,15 +208,12 @@ class SimpleQueryBeanWriter {
    * Write the type query assoc bean.
    */
   void writeAssocBean() throws IOException {
-
     writingAssocBean = true;
     origDestPackage = destPackage;
     destPackage = destPackage + ".assoc";
-    origShortName = shortName;
     shortName = "Assoc" + shortName;
 
     prepareAssocBeanImports();
-
     writer = new Append(createFileWriter());
 
     writePackage();
@@ -228,6 +240,11 @@ class SimpleQueryBeanWriter {
     if (isEntity()) {
       importTypes.add(Constants.TQPROPERTY);
       importTypes.add(origDestPackage + ".Q" + origShortName);
+      //if (implementsInterface != null)  {
+      //  importTypes.add(Constants.AVAJE_LANG_NULLABLE);
+      //  importTypes.add(Constants.JAVA_COLLECTION);
+      //  importTypes.add(implementsInterfaceFullName);
+      //}
     }
 
     // remove imports for the same package
@@ -264,7 +281,31 @@ class SimpleQueryBeanWriter {
   private void writeAssocBeanFetch() {
     if (isEntity()) {
       lang().fetch(writer, origShortName);
+      //if (implementsInterface != null) {
+      //  writeAssocBeanExpression(false, "eq", "Is equal to by ID property.");
+      //  writeAssocBeanExpression(true, "eqIfPresent", "Is equal to by ID property if the value is not null, if null no expression is added.");
+      //  writeAssocBeanExpression(false, "in", "IN the given values.", implementsInterfaceShortName + "...", "in");
+      //  writeAssocBeanExpression(false, "inBy", "IN the given interface values.", "Collection<" + implementsInterfaceShortName + ">", "in");
+      //  writeAssocBeanExpression(true, "inOrEmptyBy", "IN the given interface values if the collection is not empty. No expression is added if the collection is empty..", "Collection<" + implementsInterfaceShortName + ">", "inOrEmpty");
+      //}
     }
+  }
+
+  private void writeAssocBeanExpression(boolean nullable,String expression, String comment) {
+    writeAssocBeanExpression(nullable, expression, comment, implementsInterfaceShortName, expression);
+  }
+
+  private void writeAssocBeanExpression(boolean nullable, String expression, String comment, String param, String actualExpression) {
+    final String nullableAnnotation = nullable ? "@Nullable " : "";
+    String values = expression.startsWith("in") ? "values" : "value";
+    writer.append("  /**").eol();
+    writer.append("   * ").append(comment).eol();
+    writer.append("   */").eol();
+    writer.append("  fun %s(%s%s %s): R {", expression, nullableAnnotation, param, values).eol();
+    writer.append("    expr().%s(_name, %s);", actualExpression, values).eol();
+    writer.append("    return _root;").eol();
+    writer.append("  }").eol();
+    writer.eol();
   }
 
   /**
@@ -279,7 +320,6 @@ class SimpleQueryBeanWriter {
    * Write all the fields.
    */
   private void writeFields() {
-
     for (PropertyMeta property : properties) {
       String typeDefn = property.getTypeDefn(shortName, writingAssocBean);
       lang().fieldDefn(writer, property.getName(), typeDefn);
@@ -292,7 +332,6 @@ class SimpleQueryBeanWriter {
    * Write the class definition.
    */
   private void writeClass() {
-
     if (writingAssocBean) {
       writer.append("/**").eol();
       writer.append(" * Association query bean for %s.", shortName).eol();
@@ -301,7 +340,7 @@ class SimpleQueryBeanWriter {
       writer.append(" */").eol();
       writer.append(Constants.AT_GENERATED).eol();
       writer.append(Constants.AT_TYPEQUERYBEAN).eol();
-      lang().beginAssocClass(writer, shortName, origShortName);
+      lang().beginAssocClass(writer, shortName, shortInnerName);
 
     } else {
       writer.append("/**").eol();
@@ -331,7 +370,6 @@ class SimpleQueryBeanWriter {
    * Write all the imports.
    */
   private void writeImports() {
-
     for (String importType : importTypes) {
       writer.append("import %s;", importType).eol();
     }
@@ -343,9 +381,7 @@ class SimpleQueryBeanWriter {
   }
 
   private Writer createFileWriter() throws IOException {
-
     String relPath = destPackage.replace('.', '/');
-
     File absDir = new File(generatedSourcesDir, relPath);
     if (!absDir.exists() && !absDir.mkdirs()) {
       processingContext.logNote("failed to create directories for:" + absDir.getAbsolutePath());
@@ -356,19 +392,4 @@ class SimpleQueryBeanWriter {
     return new FileWriter(absFile);
   }
 
-  private String derivePackage(String name) {
-    int pos = name.lastIndexOf('.');
-    if (pos == -1) {
-      return "";
-    }
-    return name.substring(0, pos);
-  }
-
-  private String deriveShortName(String name) {
-    int pos = name.lastIndexOf('.');
-    if (pos == -1) {
-      return name;
-    }
-    return name.substring(pos + 1);
-  }
 }

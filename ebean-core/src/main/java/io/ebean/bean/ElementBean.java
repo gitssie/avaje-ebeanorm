@@ -1,6 +1,7 @@
 package io.ebean.bean;
 
-import io.ebeaninternal.server.core.BasicTypeConverter;
+
+import io.ebean.core.type.BasicTypeConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -231,7 +232,7 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   }
 
   public BigInteger getBigInteger(String name) {
-    return BasicTypeConverter.toMathBigInteger(get(name));
+    return BasicTypeConverter.toBigInteger(get(name));
   }
 
   public BigInteger getBigIntegerValue(String name) {
@@ -239,7 +240,7 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   }
 
   public BigInteger getBigIntegerValue(String name, BigInteger val) {
-    BigInteger bigVal = BasicTypeConverter.toMathBigInteger(get(name));
+    BigInteger bigVal = BasicTypeConverter.toBigInteger(get(name));
     return bigVal == null ? val : bigVal;
   }
 

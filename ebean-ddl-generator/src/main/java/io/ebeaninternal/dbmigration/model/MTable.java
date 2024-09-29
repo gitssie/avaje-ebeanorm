@@ -1,16 +1,16 @@
 package io.ebeaninternal.dbmigration.model;
 
+import io.avaje.applog.AppLog;
 import io.ebeaninternal.dbmigration.ddlgeneration.platform.DdlHelp;
 import io.ebeaninternal.dbmigration.migration.*;
 import io.ebeaninternal.server.deploy.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 import static io.ebeaninternal.dbmigration.ddlgeneration.platform.SplitColumns.split;
 import static io.ebeaninternal.dbmigration.model.MTableIdentity.fromCreateTable;
 import static io.ebeaninternal.dbmigration.model.MTableIdentity.toCreateTable;
+import static java.lang.System.Logger.Level.TRACE;
 
 /**
  * Holds the logical model for a given Table and everything associated to it.
@@ -26,9 +26,9 @@ import static io.ebeaninternal.dbmigration.model.MTableIdentity.toCreateTable;
  */
 public class MTable {
 
-  private static final Logger logger = LoggerFactory.getLogger(MTable.class);
+  private static final System.Logger logger = AppLog.getLogger(MTable.class);
 
-  private final String name;
+  private String name;
   private MTable draftTable;
   /**
    * Marked true for draft tables. These need to have their FK references adjusted
@@ -298,7 +298,7 @@ public class MTable {
         diffDropColumn(modelDiff, existingColumn);
       } else if (newColumn.isDraftOnly() && !draft) {
         // effectively a drop column (draft only column on a non-draft table)
-        logger.trace("... drop column {} from table {} as now draftOnly", newColumn.getName(), name);
+        logger.log(TRACE, "... drop column {0} from table {1} as now draftOnly", newColumn.getName(), name);
         diffDropColumn(modelDiff, existingColumn);
       }
     }
@@ -406,6 +406,14 @@ public class MTable {
       throw new IllegalStateException("Column [" + renameColumn.getOldName() + "] does not exist for RenameColumn change on table [" + renameColumn.getTableName() + "]?");
     }
     addColumn(column.rename(renameColumn.getNewName()));
+  }
+
+  /**
+   * Apply table rename to the model.
+   */
+  public void apply(RenameTable renameTable) {
+    checkTableName(renameTable.getOldName());
+    this.name = renameTable.getNewName();
   }
 
   public String getName() {
@@ -547,7 +555,7 @@ public class MTable {
 
   private void checkTableName(String tableName) {
     if (!name.equals(tableName)) {
-      throw new IllegalArgumentException("addColumn tableName [" + tableName + "] does not match [" + name + "]");
+      throw new IllegalArgumentException("tableName [" + tableName + "] does not match [" + name + "]");
     }
   }
 

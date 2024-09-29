@@ -1,9 +1,11 @@
 package io.ebeaninternal.server.deploy.parse;
 
-import io.ebean.annotation.*;
+import io.ebean.annotation.DbForeignKey;
+import io.ebean.annotation.FetchPreference;
+import io.ebean.annotation.TenantId;
+import io.ebean.annotation.Where;
 import io.ebean.config.NamingConvention;
 import io.ebeaninternal.api.CoreLog;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
 import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.BeanTable;
 import io.ebeaninternal.server.deploy.PropertyForeignKey;
@@ -14,8 +16,8 @@ import io.ebeaninternal.server.deploy.parse.tenant.XField;
 import io.ebeaninternal.server.query.SqlJoinType;
 
 import javax.persistence.*;
-import javax.persistence.ConstraintMode;
-import java.lang.annotation.Annotation;
+
+import static java.lang.System.Logger.Level.INFO;
 
 /**
  * Read the deployment annotations for Associated One beans.
@@ -87,7 +89,7 @@ final class XAnnotationAssocOnes extends XAnnotationAssoc {
       prop.setForeignKey(new PropertyForeignKey(dbForeignKey));
     }
 
-    Where where = getMetaAnnotationWhere(field,platform);
+    Where where = getMetaAnnotationWhere(field, platform);
     if (where != null) {
       // not expecting this to be used on assoc one properties
       prop.setExtraWhere(processFormula(where.clause()));
@@ -221,10 +223,10 @@ final class XAnnotationAssocOnes extends XAnnotationAssoc {
     prop.setPrimaryKeyJoin(true);
 
     if (!primaryKeyJoin.name().isEmpty()) {
-      CoreLog.internal.info("Automatically determining join columns for @PrimaryKeyJoinColumn - ignoring PrimaryKeyJoinColumn.name attribute [{}] on {}", primaryKeyJoin.name(), prop.getFullBeanName());
+      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - ignoring PrimaryKeyJoinColumn.name attribute [{}] on {}", primaryKeyJoin.name(), prop.getFullBeanName());
     }
     if (!primaryKeyJoin.referencedColumnName().isEmpty()) {
-      CoreLog.internal.info("Automatically determining join columns for @PrimaryKeyJoinColumn - Ignoring PrimaryKeyJoinColumn.referencedColumnName attribute [{}] on {}", primaryKeyJoin.referencedColumnName(), prop.getFullBeanName());
+      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - Ignoring PrimaryKeyJoinColumn.referencedColumnName attribute [{}] on {}", primaryKeyJoin.referencedColumnName(), prop.getFullBeanName());
     }
     BeanTable baseBeanTable = factory.beanTable(info.getDescriptor().getBeanType());
     String localPrimaryKey = baseBeanTable.getIdColumn();

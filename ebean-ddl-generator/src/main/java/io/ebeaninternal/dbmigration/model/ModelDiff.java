@@ -1,23 +1,12 @@
 package io.ebeaninternal.dbmigration.model;
 
-import io.ebeaninternal.dbmigration.migration.AddColumn;
-import io.ebeaninternal.dbmigration.migration.AddHistoryTable;
-import io.ebeaninternal.dbmigration.migration.AddTableComment;
-import io.ebeaninternal.dbmigration.migration.AddUniqueConstraint;
-import io.ebeaninternal.dbmigration.migration.AlterColumn;
-import io.ebeaninternal.dbmigration.migration.AlterForeignKey;
-import io.ebeaninternal.dbmigration.migration.AlterTable;
-import io.ebeaninternal.dbmigration.migration.ChangeSet;
-import io.ebeaninternal.dbmigration.migration.ChangeSetType;
-import io.ebeaninternal.dbmigration.migration.CreateIndex;
-import io.ebeaninternal.dbmigration.migration.DropColumn;
-import io.ebeaninternal.dbmigration.migration.DropHistoryTable;
-import io.ebeaninternal.dbmigration.migration.DropIndex;
-import io.ebeaninternal.dbmigration.migration.Migration;
+import io.ebeaninternal.dbmigration.ddlgeneration.platform.DdlHelp;
+import io.ebeaninternal.dbmigration.migration.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Used to prepare a diff in terms of changes required to migrate from
@@ -117,9 +106,15 @@ public class ModelDiff {
    * Compare to a 'newer' model and collect the differences.
    */
   public void compareTo(ModelContainer newModel) {
+    Set<String> baseSchemas = baseModel.getSchemas();
+    for (String schema : newModel.getSchemas()) {
+      if (!baseSchemas.contains(schema)) {
+        addCreateSchema(schema);
+      }
+    }
+
     Map<String, MTable> newTables = newModel.getTables();
     for (MTable newTable : newTables.values()) {
-
       MTable currentTable = baseModel.getTable(newTable.getName());
       if (currentTable == null) {
         addNewTable(newTable);
@@ -131,6 +126,21 @@ public class ModelDiff {
     // search for tables that are no longer used
     for (MTable existingTable : baseModel.getTables().values()) {
       if (!newTables.containsKey(existingTable.getName())) {
+        // Compounded foreign keys used in many-to-many mapping tables
+        existingTable.getCompoundKeys().forEach(it -> addAlterForeignKey(it.dropForeignKey(existingTable.getName())));
+        // Foreign keys through direct mapping (oneToMany)
+        existingTable.allColumns().stream()
+          .filter(it -> it.getForeignKeyIndex() != null)
+          .map(it -> {
+            AlterForeignKey fk = new AlterForeignKey();
+            fk.setName(it.getForeignKeyName());
+            fk.setIndexName(it.getForeignKeyIndex());
+            fk.setColumnNames(DdlHelp.DROP_FOREIGN_KEY);
+            fk.setTableName(existingTable.getName());
+            return fk;
+          })
+          .forEach(applyChanges::add);
+
         addDropTable(existingTable);
       }
     }
@@ -157,6 +167,12 @@ public class ModelDiff {
       // register new ones created just now as part of this diff
       newModel.registerPendingHistoryDropColumns(getDropChangeSet());
     }
+  }
+
+  protected void addCreateSchema(String schema) {
+    CreateSchema createSchema = new CreateSchema();
+    createSchema.setName(schema);
+    applyChanges.add(createSchema);
   }
 
   protected void addDropTable(MTable existingTable) {
@@ -253,7 +269,7 @@ public class ModelDiff {
   public void addAlterForeignKey(AlterForeignKey alterForeignKey) {
     applyChanges.add(alterForeignKey);
   }
-  
+
   /**
    * Adds a table alter.
    */

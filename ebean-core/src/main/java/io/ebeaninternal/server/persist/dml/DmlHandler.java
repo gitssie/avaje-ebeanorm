@@ -7,13 +7,14 @@ import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.persist.BatchedPstmt;
 import io.ebeaninternal.server.persist.BatchedPstmtHolder;
 import io.ebeaninternal.server.persist.dmlbind.BindableRequest;
-import io.ebeaninternal.server.type.DataBind;
-import io.ebeaninternal.server.util.Str;
+import io.ebeaninternal.server.bind.DataBind;
 
 import javax.persistence.OptimisticLockException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+
+import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * Base class for Handler implementations.
@@ -99,8 +100,8 @@ public abstract class DmlHandler implements PersistHandler, BindableRequest {
       persistRequest.postExecute();
     } catch (OptimisticLockException e) {
       // add the SQL and bind values to error message
-      String m = e.getMessage() + " sql[" + sql + "] bind[" + bindLog + "]";
-      persistRequest.transaction().logSummary("OptimisticLockException:" + m);
+      final String m = e.getMessage() + " sql[" + sql + "] bind[" + bindLog + "]";
+      persistRequest.transaction().logSummary("OptimisticLockException:{0}", m);
       throw new OptimisticLockException(m, null, e.getEntity());
     }
   }
@@ -123,7 +124,7 @@ public abstract class DmlHandler implements PersistHandler, BindableRequest {
         dataBind.close();
       }
     } catch (SQLException ex) {
-      CoreLog.log.error(null, ex);
+      CoreLog.log.log(ERROR, "Error closing DataBind", ex);
     }
   }
 
@@ -144,15 +145,15 @@ public abstract class DmlHandler implements PersistHandler, BindableRequest {
       switch (batchedStatus) {
         case BATCHED_FIRST: {
           transaction.logSql(sql);
-          transaction.logSql(Str.add(" -- bind(", bindLog.toString(), ")"));
+          transaction.logSql(" -- bind({0})", bindLog);
           return;
         }
         case BATCHED: {
-          transaction.logSql(Str.add(" -- bind(", bindLog.toString(), ")"));
+          transaction.logSql(" -- bind({0})", bindLog);
           return;
         }
         default: {
-          transaction.logSql(Str.add(sql, "; -- bind(", bindLog.toString(), ")"));
+          transaction.logSql("{0}; -- bind({1})", sql, bindLog);
         }
       }
     }
@@ -215,6 +216,8 @@ public abstract class DmlHandler implements PersistHandler, BindableRequest {
       }
       if (prop.isLob()) {
         bindLog.append("[LOB]");
+      } else if (value == null && !prop.isNullable() && prop.isArrayType()) {
+        bindLog.append("[]"); // null bound as empty array
       } else {
         String sv = String.valueOf(value);
         if (sv.length() > 50) {

@@ -926,7 +926,12 @@ public interface Query<T> extends CancelableQuery {
   <A> List<A> findSingleAttributeList();
 
   /**
-   * Execute a query returning a single value of a single property/column.
+   * Execute the query returning a hashset of values for a single property.
+   */
+  <A> Set<A> findSingleAttributeSet();
+
+  /**
+   * Execute a query returning a single value or null for a single property/column.
    * <p>
    * <pre>{@code
    *
@@ -938,6 +943,7 @@ public interface Query<T> extends CancelableQuery {
    *
    * }</pre>
    */
+  @Nullable
   <A> A findSingleAttribute();
 
   /**
@@ -1574,10 +1580,11 @@ public interface Query<T> extends CancelableQuery {
   Query<T> setReadOnly(boolean readOnly);
 
   /**
-   * Will be deprecated - migrate to use setBeanCacheMode(CacheMode.RECACHE).
+   * Deprecated - migrate to use setBeanCacheMode(CacheMode.PUT) or other CacheMode.
    * <p>
    * When set to true all the beans from this query are loaded into the bean cache.
    */
+  @Deprecated
   Query<T> setLoadBeanCache(boolean loadBeanCache);
 
   /**
@@ -1761,4 +1768,31 @@ public interface Query<T> extends CancelableQuery {
    */
   Query<T> orderById(boolean orderById);
 
+  /**
+   * Type safe query bean properties and expressions (marker interface).
+   * <p>
+   * Implemented by query bean properties and expressions based on those properties.
+   * <p>
+   * The base type determines which {@link StdOperators} can be used on the property.
+   *
+   * @param <T> The property type.
+   */
+  interface Property<T> {
+
+    /**
+     * Return a property given the expression.
+     */
+    static <T> Property<T> of(String expression) {
+      return new SimpleProperty<>(expression);
+    }
+
+    /**
+     * Return the property in string expression form.
+     * <p>
+     * This is a path to a database column (like "name" or "billingAddress.city") or a function
+     * wrapping a path (like <em>lower(name)</em>, <em>concat(name, '-', billingAddress.city)</em>
+     */
+    @Override
+    String toString();
+  }
 }

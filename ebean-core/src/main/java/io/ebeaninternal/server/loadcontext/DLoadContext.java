@@ -58,6 +58,7 @@ public final class DLoadContext implements LoadContext {
   private final ProfilingListener profilingListener;
   private final Map<String, ObjectGraphNode> nodePathMap = new HashMap<>();
   private final PersistenceContext persistenceContext;
+  boolean useReferences;
   private List<OrmQueryProperties> secQuery;
   private Object tenantId;
 
@@ -101,7 +102,7 @@ public final class DLoadContext implements LoadContext {
     this.useDocStore = query.isUseDocStore();
     this.asOf = query.getAsOf();
     this.asDraft = query.isAsDraft();
-    this.includeSoftDeletes = query.isIncludeSoftDeletes();
+    this.includeSoftDeletes = query.isIncludeSoftDeletes() && query.getMode() == SpiQuery.Mode.NORMAL;
     this.readOnly = query.isReadOnly();
     this.disableReadAudit = query.isDisableReadAudit();
     this.disableLazyLoading = query.isDisableLazyLoading();
@@ -118,7 +119,6 @@ public final class DLoadContext implements LoadContext {
       this.origin = null;
       this.relativePath = null;
     }
-
     // initialise rootBeanContext after origin and relativePath have been set
     this.rootBeanContext = new DLoadBeanContext(this, rootDescriptor, null, null);
     registerSecondaryQueries(secondaryQueries);
@@ -154,6 +154,11 @@ public final class DLoadContext implements LoadContext {
         registerSecondaryQuery(lazyJoin);
       }
     }
+  }
+
+  @Override
+  public void useReferences(boolean useReferences) {
+    this.useReferences = useReferences;
   }
 
   /**
@@ -234,7 +239,7 @@ public final class DLoadContext implements LoadContext {
     }
   }
 
-  protected SpiEbeanServer getEbeanServer() {
+  SpiEbeanServer getEbeanServer() {
     return ebeanServer;
   }
 
@@ -242,7 +247,7 @@ public final class DLoadContext implements LoadContext {
    * Return the parent state which defines the sharedInstance and readOnly status
    * which needs to be propagated to other beans and collections.
    */
-  protected Boolean isReadOnly() {
+  Boolean isReadOnly() {
     return readOnly;
   }
 
@@ -283,7 +288,7 @@ public final class DLoadContext implements LoadContext {
 
   DLoadBeanContext getBeanContextWithInherit(String path, BeanPropertyAssocOne<?> property) {
     String key = path + ":" + property.targetDescriptor().name();
-    return beanMap.computeIfAbsent(key, p -> createBeanContext(property, path, null));
+    return beanMap.computeIfAbsent(key, p -> createBeanContext(property, path));
   }
 
   private void registerSecondaryNode(boolean many, OrmQueryProperties props) {
@@ -313,8 +318,8 @@ public final class DLoadContext implements LoadContext {
     return new DLoadBeanContext(this, p.targetDescriptor(), path, queryProps);
   }
 
-  private DLoadBeanContext createBeanContext(BeanPropertyAssoc<?> property, String path, OrmQueryProperties queryProps) {
-    return new DLoadBeanContext(this, property.targetDescriptor(), path, queryProps);
+  private DLoadBeanContext createBeanContext(BeanPropertyAssoc<?> property, String path) {
+    return new DLoadBeanContext(this, property.targetDescriptor(), path, null);
   }
 
   private BeanProperty getBeanProperty(BeanDescriptor<?> desc, String path) {

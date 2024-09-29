@@ -6,7 +6,6 @@ import io.ebean.datasource.DataSourceConfig;
 import io.ebeaninternal.api.DbOffline;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
@@ -35,6 +34,43 @@ class ConfigTest {
     assertThat(config.trimExtensions(" a , b ")).isEqualTo("a,b");
     assertThat(config.trimExtensions(" a , , b ")).isEqualTo("a,b");
   }
+
+  @Test
+  void extensions_whenNoSetValues() {
+    DatabaseConfig databaseConfig = new DatabaseConfig();
+    databaseConfig.loadFromProperties(new Properties());
+
+    Config config = new Config("db", "postgis", "db", databaseConfig);
+
+    config.setUsernameDefault();
+    config.setPasswordDefault();
+    config.setDefaultPort(42);
+    config.setExtensions("a,b");
+    config.setExtraExtensions("c,d");
+
+    Properties dockerProperties = config.getDockerProperties();
+    assertThat(dockerProperties.getProperty("postgis.extensions")).isEqualTo("a,b");
+    assertThat(dockerProperties.getProperty("postgis.extraDb.extensions")).isEqualTo("c,d");
+  }
+
+  @Test
+  void extensions_whenSetValues() {
+    DatabaseConfig databaseConfig = new DatabaseConfig();
+    Properties properties = new Properties();
+    properties.setProperty("ebean.test.extensions", "x,y");
+    properties.setProperty("ebean.test.extraDb.extensions", "z");
+    databaseConfig.loadFromProperties(properties);
+
+    Config config = new Config("db", "postgis", "db", databaseConfig);
+
+    config.setExtensions("a,b");
+    config.setExtraExtensions("c,d");
+
+    Properties dockerProperties = config.getDockerProperties();
+    assertThat(dockerProperties.getProperty("postgis.extensions")).isEqualTo("x,y");
+    assertThat(dockerProperties.getProperty("postgis.extraDb.extensions")).isEqualTo("z");
+  }
+
 
   @Test
   void extraDbProperties_basic() {
@@ -138,42 +174,6 @@ class ConfigTest {
 
     Properties centralProps = serverConfig.getProperties();
     assertThat(centralProps.getProperty("datasource.central.username")).isEqualTo("central");
-  }
-
-  @Test
-  void ignoreDockerShutdown() {
-    Properties sourceProperties = new Properties();
-    DatabaseConfig serverConfig = new DatabaseConfig();
-    serverConfig.loadFromProperties(sourceProperties);
-
-    Config config = new Config("main", "postgres", "main", serverConfig);
-
-    assertThat(config.ignoreDockerShutdown("./src/test/resources/logback-test.xml")).isTrue();
-    assertThat(config.ignoreDockerShutdown("./src/test/resources/file-does-not-exist")).isFalse();
-  }
-
-  @Disabled
-  @Test
-  void run_local_only_ignoreDockerShutdown() {
-    Properties sourceProperties = new Properties();
-    DatabaseConfig serverConfig = new DatabaseConfig();
-    serverConfig.loadFromProperties(sourceProperties);
-
-    Config config = new Config("main", "postgres", "main", serverConfig);
-    assertThat(config.ignoreDockerShutdown("~/.ebean/ignore-docker-shutdown")).isTrue();
-    assertThat(config.ignoreDockerShutdown()).isTrue();
-  }
-
-  @Test
-  void ignoreDockerShutdown_viaProperties() {
-    Properties sourceProperties = new Properties();
-    sourceProperties.setProperty("ebean.test.localDevelopment", "./src/test/resources/logback-test.xml");
-
-    DatabaseConfig serverConfig = new DatabaseConfig();
-    serverConfig.loadFromProperties(sourceProperties);
-
-    Config config = new Config("main", "postgres", "main", serverConfig);
-    assertThat(config.ignoreDockerShutdown()).isTrue();
   }
 
   @Test

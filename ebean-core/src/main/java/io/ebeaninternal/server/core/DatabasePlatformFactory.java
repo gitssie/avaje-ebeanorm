@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.INFO;
+
 /**
  * Create a DatabasePlatform from the configuration.
  * <p>
@@ -38,7 +41,7 @@ public class DatabasePlatformFactory {
     try {
       String offlinePlatform = DbOffline.getPlatform();
       if (offlinePlatform != null) {
-        CoreLog.log.info("offline platform [{}]", offlinePlatform);
+        CoreLog.log.log(INFO, "offline platform [{0}]", offlinePlatform);
         return byDatabaseName(offlinePlatform);
       }
       if (config.getDatabasePlatformName() != null) {
@@ -87,11 +90,16 @@ public class DatabasePlatformFactory {
     String dbProductName = metaData.getDatabaseProductName().toLowerCase();
     final int majorVersion = metaData.getDatabaseMajorVersion();
     final int minorVersion = metaData.getDatabaseMinorVersion();
-    CoreLog.log.debug("platform for productName[{}] version[{}.{}]", dbProductName, majorVersion, minorVersion);
+    CoreLog.log.log(DEBUG, "platform for productName[{0}] version[{1}.{2}]", dbProductName, majorVersion, minorVersion);
     for (DatabasePlatformProvider provider : providers) {
       if (provider.matchByProductName(dbProductName)) {
         return provider.create(majorVersion, minorVersion, metaData, connection);
       }
+    }
+    if (providers.isEmpty()) {
+      throw new IllegalStateException("There are no ebean platform providers in the classpath. " +
+        "Add a missing dependency like ebean-h2, ebean-postgres, ebean-mysql etc to support the database [" + dbProductName
+        + "]. Adding a dependency on io.ebean:ebean will add support for all platforms.");
     }
     throw new IllegalStateException("Unable to determine the appropriate ebean platform given database product name [" + dbProductName
       + "] and ebean platform providers " + providers + ". With ebean 13+ we now have separate platforms (ebean-postgres, ebean-mysql etc)"

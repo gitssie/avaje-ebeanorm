@@ -2,7 +2,7 @@ package io.ebeaninternal.api;
 
 /**
  * Event codes used in transaction profiling.
- *
+ * <p>
  * These appear in verbose transaction profile logs.
  */
 public interface TxnProfileEventCodes {
@@ -28,6 +28,7 @@ public interface TxnProfileEventCodes {
   String FIND_ID_LIST = "fi";
   String FIND_EXISTS = "ex";
   String FIND_ATTRIBUTE = "fa";
+  String FIND_ATTRIBUTE_SET = "fas";
   String FIND_COUNT = "fc";
   String FIND_SUBQUERY = "fs";
 

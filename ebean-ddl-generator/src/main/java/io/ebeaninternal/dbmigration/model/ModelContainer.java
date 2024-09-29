@@ -2,24 +2,7 @@ package io.ebeaninternal.dbmigration.model;
 
 import io.ebean.migration.MigrationVersion;
 import io.ebeaninternal.dbmigration.ddlgeneration.platform.DdlHelp;
-import io.ebeaninternal.dbmigration.migration.AddColumn;
-import io.ebeaninternal.dbmigration.migration.AddHistoryTable;
-import io.ebeaninternal.dbmigration.migration.AddTableComment;
-import io.ebeaninternal.dbmigration.migration.AddUniqueConstraint;
-import io.ebeaninternal.dbmigration.migration.AlterColumn;
-import io.ebeaninternal.dbmigration.migration.AlterForeignKey;
-import io.ebeaninternal.dbmigration.migration.AlterTable;
-import io.ebeaninternal.dbmigration.migration.ChangeSet;
-import io.ebeaninternal.dbmigration.migration.ChangeSetType;
-import io.ebeaninternal.dbmigration.migration.CreateIndex;
-import io.ebeaninternal.dbmigration.migration.CreateTable;
-import io.ebeaninternal.dbmigration.migration.DropColumn;
-import io.ebeaninternal.dbmigration.migration.DropHistoryTable;
-import io.ebeaninternal.dbmigration.migration.DropIndex;
-import io.ebeaninternal.dbmigration.migration.DropTable;
-import io.ebeaninternal.dbmigration.migration.Migration;
-import io.ebeaninternal.dbmigration.migration.RenameColumn;
-import io.ebeaninternal.dbmigration.migration.Sql;
+import io.ebeaninternal.dbmigration.migration.*;
 import io.ebeaninternal.server.deploy.TablespaceMeta;
 
 import java.util.ArrayList;
@@ -122,14 +105,11 @@ public class ModelContainer {
    * Apply a migration with associated changeSets to the model.
    */
   public void apply(Migration migration, MigrationVersion version) {
-
-    List<ChangeSet> changeSets = migration.getChangeSet();
-    for (ChangeSet changeSet : changeSets) {
+    for (ChangeSet changeSet : migration.getChangeSet()) {
       boolean pending = changeSet.getType() == ChangeSetType.PENDING_DROPS;
       if (pending) {
         // un-applied drop columns etc
         pendingDrops.add(version, changeSet);
-
       } else if (isDropsFor(changeSet)) {
         pendingDrops.appliedDropsFor(changeSet);
       }
@@ -150,15 +130,15 @@ public class ModelContainer {
    * Apply a changeSet to the model.
    */
   protected void applyChangeSet(ChangeSet changeSet) {
-
-    List<Object> changeSetChildren = changeSet.getChangeSetChildren();
-    for (Object change : changeSetChildren) {
+    for (Object change : changeSet.getChangeSetChildren()) {
       if (change instanceof CreateTable) {
         applyChange((CreateTable) change);
       } else if (change instanceof DropTable) {
         applyChange((DropTable) change);
       } else if (change instanceof AlterTable) {
         applyChange((AlterTable) change);
+      } else if (change instanceof RenameTable) {
+        applyChange((RenameTable) change);
       } else if (change instanceof AlterColumn) {
         applyChange((AlterColumn) change);
       } else if (change instanceof AddColumn) {
@@ -181,6 +161,8 @@ public class ModelContainer {
         applyChange((AlterForeignKey) change);
       } else if (change instanceof AddTableComment) {
         applyChange((AddTableComment) change);
+      } else if (change instanceof CreateSchema) {
+        applyChange((CreateSchema)change);
       } else if (change instanceof Sql) {
         // do nothing
       } else {
@@ -193,7 +175,6 @@ public class ModelContainer {
    * Set the withHistory flag on the associated base table.
    */
   private void applyChange(AddHistoryTable change) {
-
     MTable table = tables.get(change.getBaseTable());
     if (table == null) {
       throw new IllegalStateException("Table [" + change.getBaseTable() + "] does not exist in model?");
@@ -205,7 +186,6 @@ public class ModelContainer {
    * Unset the withHistory flag on the associated base table.
    */
   protected void applyChange(DropHistoryTable change) {
-
     MTable table = tables.get(change.getBaseTable());
     if (table != null) {
       table.setWithHistory(false);
@@ -248,6 +228,10 @@ public class ModelContainer {
     }
   }
 
+  protected void applyChange(CreateSchema createSchema) {
+    schemas.add(createSchema.getName());
+  }
+
   /**
    * Apply a CreateTable change to the model.
    */
@@ -265,7 +249,7 @@ public class ModelContainer {
   protected void applyChange(DropTable dropTable) {
     tables.remove(dropTable.getName());
   }
-  
+
   /**
    * Apply a AlterTable change to the model.
    */
@@ -292,6 +276,19 @@ public class ModelContainer {
         table.setTablespaceMeta(null);
       }
     }
+  }
+
+  protected void applyChange(RenameTable renameTable) {
+    MTable notExpected = tables.get(renameTable.getNewName());
+    if (notExpected != null) {
+      throw new IllegalStateException("RenameTable to newName [" + renameTable.getNewName() + "] but this table already exists in the model?");
+    }
+    MTable table = tables.remove(renameTable.getOldName());
+    if (table == null) {
+      throw new IllegalStateException("RenameTable oldName [" + renameTable.getOldName() + "] does not exist in model?");
+    }
+    table.apply(renameTable);
+    tables.put(renameTable.getNewName(), table);
   }
 
   /**
@@ -433,7 +430,6 @@ public class ModelContainer {
    * Register a drop column on a history tables that has not been applied yet.
    */
   private void registerPendingDropColumn(DropColumn dropColumn) {
-
     MTable table = getTable(dropColumn.getTableName());
     if (table == null) {
       throw new IllegalArgumentException("Table [" + dropColumn.getTableName() + "] not found?");

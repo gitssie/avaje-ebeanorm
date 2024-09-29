@@ -7,14 +7,15 @@ import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.type.TypeManager;
-import org.slf4j.Logger;
 
 import javax.persistence.PersistenceException;
 import java.util.*;
 
+import static java.lang.System.Logger.Level.*;
+
 //copy from BeanDescriptorManager
 public class BeanDescriptorMapCheck {
-  protected static final Logger log = CoreLog.internal;
+  protected static final System.Logger log = CoreLog.internal;
   protected TypeManager typeManager;
   protected BeanDescriptorMapTemporal descriptorMap;
 
@@ -156,7 +157,7 @@ public class BeanDescriptorMapCheck {
 
             String m = "Implicitly found mappedBy for " + targetDesc + "." + prop;
             m += " by searching for [" + searchName + "] against " + matchSet;
-            log.debug(m);
+            log.log(DEBUG,m);
 
             return true;
           }
@@ -174,7 +175,7 @@ public class BeanDescriptorMapCheck {
   protected void makeOrderColumn(DeployBeanPropertyAssocMany<?> oneToMany) {
     DeployBeanDescriptor<?> targetDesc = targetDescriptor(oneToMany);
     DeployOrderColumn orderColumn = oneToMany.getOrderColumn();
-    final ScalarType<?> scalarType = typeManager.getScalarType(Integer.class);
+    final ScalarType<?> scalarType = typeManager.type(Integer.class);
     DeployBeanProperty orderProperty = new DeployBeanProperty(targetDesc, Integer.class, scalarType, null);
     orderProperty.setName(DeployOrderColumn.LOGICAL_NAME);
     orderProperty.setDbColumn(orderColumn.getName());

@@ -93,19 +93,24 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
     ATTRIBUTE(FIND_ATTRIBUTE, "findAttribute", false, false),
 
     /**
+     * Find single attribute set.
+     */
+    ATTRIBUTE_SET(FIND_ATTRIBUTE_SET, "findAttributeSet", false, false),
+
+    /**
      * Find rowCount.
      */
     COUNT(FIND_COUNT, "findCount"),
 
     /**
-     * A subquery used as part of an exists where clause.
+     * A sub-query used as part of an exists where clause.
      */
     SQ_EXISTS(FIND_SUBQUERY, "sqExists", false, false),
 
     /**
-     * A subquery used as part of an in where clause.
+     * A sub-query expression used as part of where clause.
      */
-    SQ_IN(FIND_SUBQUERY, "sqIn", false, false),
+    SQ_EX(FIND_SUBQUERY, "sqEx", false, false),
 
     /**
      * Delete query.
@@ -309,7 +314,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * Return true if select all properties was used to ensure the property
    * invoking a lazy load was included in the query.
    */
-  boolean selectAllForLazyLoadProperty();
+  void selectAllForLazyLoadProperty();
 
   /**
    * Set the select properties.
@@ -412,6 +417,8 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
 
   /**
    * Return a copy of the query.
+   * <p>
+   * Note that this does NOT copy the forUpdate property. See #2762.
    */
   @Override
   SpiQuery<T> copy();
@@ -751,6 +758,11 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * Return the bind parameters.
    */
   BindParams getBindParams();
+
+  /**
+   * Return the bind parameters ensuring it is initialised.
+   */
+  BindParams initBindParams();
 
   /**
    * Replace the query detail. This is used by the AutoTune feature to as a

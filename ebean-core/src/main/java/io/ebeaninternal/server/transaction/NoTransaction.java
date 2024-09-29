@@ -78,10 +78,14 @@ final class NoTransaction implements SpiTransaction {
   }
 
   @Override
-  public void rollback() throws PersistenceException {
+  public void rollbackAndContinue() {
     // do nothing
   }
 
+  @Override
+  public void rollback() throws PersistenceException {
+    // do nothing
+  }
 
   @Override
   public void rollback(Throwable e) throws PersistenceException {
@@ -113,10 +117,6 @@ final class NoTransaction implements SpiTransaction {
     // do nothing
   }
 
-  @Override
-  public String getLogPrefix() {
-    return null;
-  }
 
   @Override
   public boolean isLogSql() {
@@ -129,12 +129,17 @@ final class NoTransaction implements SpiTransaction {
   }
 
   @Override
-  public void logSql(String msg) {
+  public void logSql(String msg, Object... args) {
 
   }
 
   @Override
-  public void logSummary(String msg) {
+  public void logSummary(String msg, Object... args) {
+
+  }
+
+  @Override
+  public void logTxn(String msg, Object... args) {
 
   }
 

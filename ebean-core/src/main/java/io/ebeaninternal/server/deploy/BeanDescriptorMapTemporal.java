@@ -5,21 +5,18 @@ import io.ebean.bean.EntityBean;
 import io.ebean.bean.InterceptReadWrite;
 import io.ebean.bean.StaticEntity;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
-import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.properties.BeanElementPropertyAccess;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class BeanDescriptorMapTemporal {
-  protected static final Logger log = CoreLog.internal;
   private final BeanDescriptorManager proxy;
   private final BeanDescriptorMapTenantProxy proxyMap;
   private final BeanDescriptorMapCheck mapCheck;
@@ -293,7 +290,7 @@ public class BeanDescriptorMapTemporal {
     ccp.setTransient();
     ccp.setEmbedded();
     ccp.setUnmappedJson();
-    ccp.setScalarType(proxy.typeManager.getDbMapScalarType());
+    ccp.setScalarType(proxy.typeManager.dbMapType());
     slot.setTransient();
     slot.setJsonSerialize(false);
 
@@ -449,6 +446,9 @@ public class BeanDescriptorMapTemporal {
       DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         BeanManager beanManager = proxy.beanManager(beanClass.getName());
+        if (beanManager == null) {
+          proxy.errorBeanNotRegistered(beanClass);
+        }
         return new DeployInfo(beanClass, newInfo, beanManager);
       }
       return new DeployInfo(beanClass, newInfo, null);

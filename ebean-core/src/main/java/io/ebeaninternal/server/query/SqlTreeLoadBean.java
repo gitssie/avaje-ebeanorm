@@ -5,6 +5,7 @@ import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.PersistenceContext;
 import io.ebean.core.type.ScalarDataReader;
+import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.SpiQuery.Mode;
 import io.ebeaninternal.server.deploy.BeanElementHelper;
@@ -14,6 +15,8 @@ import io.ebeaninternal.server.deploy.id.IdBinder;
 
 import java.sql.SQLException;
 import java.util.Map;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Normal bean included in the query.
@@ -37,6 +40,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
   private final SpiQuery.TemporalMode temporalMode;
   private final boolean temporalVersions;
   final IdBinder lazyLoadParentIdBinder;
+  private final STreePropertyAssocMany loadingChildProperty;
 
   SqlTreeLoadBean(SqlTreeNodeBean node) {
     this.lazyLoadParent = node.lazyLoadParent;
@@ -56,6 +60,16 @@ class SqlTreeLoadBean implements SqlTreeLoad {
     this.properties = node.properties;
     this.pathMap = node.pathMap;
     this.children =  node.createLoadChildren();
+    this.loadingChildProperty = loadingChildProperty();
+  }
+
+  private STreePropertyAssocMany loadingChildProperty() {
+    for (SqlTreeLoad child : children) {
+      if (child instanceof SqlTreeLoadManyRoot) {
+        return ((SqlTreeLoadManyRoot) child).manyProp();
+      }
+    }
+    return null;
   }
 
   boolean isRoot() {
@@ -63,14 +77,14 @@ class SqlTreeLoadBean implements SqlTreeLoad {
   }
 
   @Override
-  public final ScalarDataReader<?> getSingleAttributeReader() {
+  public final ScalarDataReader<?> singleAttributeReader() {
     if (properties == null || properties.length == 0) {
       // if we have no property ask first children (in a distinct select with join)
       if (children.length == 0) {
         // expected to be a findIds query
         return desc.idBinder().getBeanProperty();
       }
-      return children[0].getSingleAttributeReader();
+      return children[0].singleAttributeReader();
     }
     if (properties[0] instanceof STreePropertyAssocOne) {
       STreePropertyAssocOne assocOne = (STreePropertyAssocOne)properties[0];
@@ -153,8 +167,8 @@ class SqlTreeLoadBean implements SqlTreeLoad {
     }
 
     private void initPersistenceContext() {
-      queryMode = ctx.getQueryMode();
-      persistenceContext = (!readIdNormal) ? null : ctx.getPersistenceContext();
+      queryMode = ctx.queryMode();
+      persistenceContext = (!readIdNormal) ? null : ctx.persistenceContext();
     }
 
     private void readId() throws SQLException {
@@ -198,9 +212,12 @@ class SqlTreeLoadBean implements SqlTreeLoad {
       localBean = null;
       // ... but there may exist as reference bean in parent which has to be marked as deleted.
       if (parentBean != null && nodeBeanProp instanceof STreePropertyAssocOne) {
-        contextBean = ((STreePropertyAssocOne)nodeBeanProp).getValueAsEntityBean(parentBean);
+        contextBean = ((STreePropertyAssocOne)nodeBeanProp).valueAsEntityBean(parentBean);
         if (contextBean != null) {
           desc.markAsDeleted(contextBean);
+          if (CoreLog.markedAsDeleted.isLoggable(DEBUG)) {
+            CoreLog.markedAsDeleted.log(DEBUG, contextBean + " contextBean markedAsDeleted", new RuntimeException(contextBean + " contextBean markedAsDeleted"));
+          }
         }
       }
     }
@@ -262,6 +279,9 @@ class SqlTreeLoadBean implements SqlTreeLoad {
         if (disableLazyLoad) {
           // bean does not have an Id or is SqlSelect based
           helper.setDisableLazyLoad(true);
+          if (!partialObject) {
+            helper.setFullyLoadedBean(true);
+          }
         } else if (partialObject) {
           if (readId) {
             // register for lazy loading
@@ -283,10 +303,9 @@ class SqlTreeLoadBean implements SqlTreeLoad {
      * included in the actual query.
      */
     private void createListProxies() {
-      STreePropertyAssocMany fetchedMany = ctx.getManyProperty();
       boolean forceNewReference = queryMode == Mode.REFRESH_BEAN;
       for (STreePropertyAssocMany many : localDesc.propsMany()) {
-        if (many != fetchedMany) {
+        if (many != loadingChildProperty) {
           if (readOnlyNoIntercept) {
             many.createEmptyReference(localBean);
           } else {
@@ -355,7 +374,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
      * context we need to check if it is already contained in the collection.
      */
     final boolean isContextBean() {
-      return localBean == null;
+      return localBean == null || queryMode == Mode.LAZYLOAD_BEAN;
     }
   }
 

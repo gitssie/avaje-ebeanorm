@@ -151,7 +151,6 @@ public class DeployBeanDescriptor<T> {
   private DocStoreMode docStoreDelete;
   private DeployBeanProperty idProperty;
   private TableJoin primaryKeyJoin;
-  private Object jacksonAnnotatedClass;
 
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
@@ -251,7 +250,7 @@ public class DeployBeanDescriptor<T> {
     if (partitionMeta != null) {
       DeployBeanProperty beanProperty = getBeanProperty(partitionMeta.getProperty());
       if (beanProperty != null) {
-        partitionMeta.setProperty(beanProperty.getDbColumn());
+        partitionMeta.setColumn(beanProperty.getDbColumn());
       }
     }
     return partitionMeta;
@@ -988,9 +987,7 @@ public class DeployBeanDescriptor<T> {
       // all good
       return;
     }
-    if (beanType.isAnnotationPresent(View.class)) {
-      // all good
-    } else if (parent.isAnnotationPresent(Entity.class)) {
+    if (parent.isAnnotationPresent(Entity.class)) {
       String msg = "Checking " + getBeanType() + " and found " + parent + " that has @Entity annotation rather than MappedSuperclass?";
       throw new IllegalStateException(msg);
     }
@@ -1136,17 +1133,6 @@ public class DeployBeanDescriptor<T> {
       }
       return null;
     }
-  }
-
-  /**
-   * Returns the jackson annotated class, if jackson is present.
-   */
-  @SuppressWarnings("unchecked")
-  Object /*AnnotatedClass*/ getJacksonAnnotatedClass() {
-    if (jacksonAnnotatedClass == null) {
-      jacksonAnnotatedClass = new DeployBeanObtainJackson(config, beanType).obtain();
-    }
-    return jacksonAnnotatedClass;
   }
 
   public Function<EntityBean, EntityBean> getElementBean() {

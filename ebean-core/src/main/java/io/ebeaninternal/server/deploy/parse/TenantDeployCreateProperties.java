@@ -4,7 +4,6 @@ import io.ebean.Model;
 import io.ebean.annotation.*;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.api.CoreLog;
-import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.ManyType;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
@@ -21,6 +20,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+
+import static java.lang.System.Logger.Level.*;
 
 public class TenantDeployCreateProperties {
   private XEntityFinder entityProvider;
@@ -97,7 +98,7 @@ public class TenantDeployCreateProperties {
       if (replaced != null && !replaced.isTransient()) {
         String msg = "Huh??? property " + prop.getFullBeanName() + " being defined twice";
         msg += " but replaced property was not transient? This is not expected?";
-        CoreLog.log.warn(msg);
+        CoreLog.log.log(WARNING, msg);
       }
     }
   }
@@ -132,14 +133,14 @@ public class TenantDeployCreateProperties {
           // not supporting this field (generic type used)
           return null;
         }
-        CoreLog.internal.warn("Could not find parameter type (via reflection) on " + desc.getFullName() + " " + field.getName());
+        CoreLog.internal.log(WARNING, "Could not find parameter type (via reflection) on " + desc.getFullName() + " " + field.getName());
       }
       return createManyType(desc, targetType, manyType);
     }
     if (propertyType.isEnum() || propertyType.isPrimitive()) {
       return new DeployBeanProperty(desc, propertyType, null, null);
     }
-    ScalarType<?> scalarType = typeManager.getScalarType(propertyType);
+    ScalarType<?> scalarType = typeManager.type(propertyType);
     if (scalarType != null) {
       return new DeployBeanProperty(desc, propertyType, scalarType, null);
     }
@@ -151,7 +152,7 @@ public class TenantDeployCreateProperties {
       return new DeployBeanPropertyAssocOne(desc, propertyType);
 
     } catch (Exception e) {
-      CoreLog.log.error("Error with " + desc + " field:" + field.getName(), e);
+      CoreLog.log.log(ERROR, "Error with " + desc + " field:" + field.getName(), e);
       return null;
     }
   }
@@ -175,12 +176,12 @@ public class TenantDeployCreateProperties {
 
   private DeployBeanProperty createManyType(DeployBeanDescriptor<?> desc, Class<?> targetType, ManyType manyType) {
     try {
-      ScalarType<?> scalarType = typeManager.getScalarType(targetType);
+      ScalarType<?> scalarType = typeManager.type(targetType);
       if (scalarType != null) {
         return new DeployBeanPropertySimpleCollection(desc, targetType, manyType);
       }
     } catch (NullPointerException e) {
-      CoreLog.internal.debug("expected non-scalar type {}", e.getMessage());
+      CoreLog.internal.log(DEBUG, "expected non-scalar type {}", e.getMessage());
     }
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }

@@ -7,19 +7,18 @@ import io.ebeaninternal.server.core.BindPadding;
 import io.ebeaninternal.server.core.OrmQueryRequest;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Request for loading Associated Many Beans.
  */
 public final class LoadManyRequest extends LoadRequest {
 
-  private static final Logger log = CoreLog.log;
-
-  private final List<BeanCollection<?>> batch;
+  private static final System.Logger log = CoreLog.log;
   private final LoadManyBuffer loadContext;
   private final boolean onlyIds;
   private final boolean loadCache;
@@ -41,7 +40,6 @@ public final class LoadManyRequest extends LoadRequest {
   private LoadManyRequest(LoadManyBuffer loadContext, OrmQueryRequest<?> parentRequest, boolean lazy, boolean onlyIds, boolean loadCache) {
     super(parentRequest, lazy);
     this.loadContext = loadContext;
-    this.batch = loadContext.getBatch();
     this.onlyIds = onlyIds;
     this.loadCache = loadCache;
   }
@@ -58,9 +56,12 @@ public final class LoadManyRequest extends LoadRequest {
   private List<Object> parentIdList(SpiEbeanServer server) {
     List<Object> idList = new ArrayList<>();
     BeanPropertyAssocMany<?> many = many();
-    for (BeanCollection<?> bc : batch) {
-      idList.add(many.parentId(bc.getOwnerBean()));
-      bc.setLoader(server); // don't use the load buffer again
+    for (int i = 0; i < loadContext.size(); i++) {
+      BeanCollection<?> bc = loadContext.get(i);
+      if (bc != null) {
+        idList.add(many.parentId(bc.getOwnerBean()));
+        bc.setLoader(server); // don't use the load buffer again
+      }
     }
     if (many.targetDescriptor().isPadInExpression()) {
       BindPadding.padIds(idList);
@@ -90,7 +91,7 @@ public final class LoadManyRequest extends LoadRequest {
     query.setPersistenceContext(loadContext.getPersistenceContext());
     query.setLoadDescription(lazy ? "+lazy" : "+query", description());
     if (lazy) {
-      query.setLazyLoadBatchSize(loadContext.getBatchSize());
+      query.setLazyLoadBatchSize(loadContext.batchSize());
     } else {
       query.setBeanCacheMode(CacheMode.OFF);
     }
@@ -111,15 +112,18 @@ public final class LoadManyRequest extends LoadRequest {
     BeanPropertyAssocMany<?> many = many();
     // check for BeanCollection's that where never processed
     // in the +query or +lazy load due to no rows (predicates)
-    for (BeanCollection<?> bc : batch) {
-      if (bc.checkEmptyLazyLoad()) {
-        if (log.isDebugEnabled()) {
-          EntityBean ownerBean = bc.getOwnerBean();
-          Object parentId = desc.getId(ownerBean);
-          log.debug("BeanCollection after lazy load was empty. type:" + ownerBean.getClass().getName() + " id:" + parentId + " owner:" + ownerBean);
+    for (int i = 0; i < loadContext.size(); i++) {
+      BeanCollection<?> bc = loadContext.get(i);
+      if (bc != null) {
+        if (bc.checkEmptyLazyLoad()) {
+          if (log.isLoggable(DEBUG)) {
+            EntityBean ownerBean = bc.getOwnerBean();
+            Object parentId = desc.getId(ownerBean);
+            log.log(DEBUG, "BeanCollection after lazy load was empty. type:{0} id:{1} owner:{2}", ownerBean.getClass().getName(), parentId, ownerBean);
+          }
+        } else if (loadCache && many.isUseCache()) {
+          desc.cacheManyPropPut(many, bc, desc.cacheKeyForBean(bc.getOwnerBean()));
         }
-      } else if (loadCache && many.isUseCache()) {
-        desc.cacheManyPropPut(many, bc, desc.getId(bc.getOwnerBean()));
       }
     }
   }

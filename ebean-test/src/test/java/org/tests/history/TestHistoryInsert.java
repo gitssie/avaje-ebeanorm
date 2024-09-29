@@ -15,9 +15,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestHistoryInsert extends BaseTestCase {
+class TestHistoryInsert extends BaseTestCase {
 
   private final Logger logger = LoggerFactory.getLogger(TestHistoryInsert.class);
+
+  private Timestamp currentDbSystemTime() {
+    return DB.sqlQuery("select current_timestamp(6)").mapToScalar(Timestamp.class).findOne();
+  }
 
   /**
    * Looks like we MUST use useLegacyDatetimeCode=false ... in order for
@@ -25,28 +29,29 @@ public class TestHistoryInsert extends BaseTestCase {
    */
   @Test
   @ForPlatform({Platform.MARIADB})
-  public void mariadb_simple_history() {
+  void mariadb_simple_history() {
 
-    Timestamp t0 = new Timestamp(System.currentTimeMillis());
-    littleSleep();
+    Timestamp t0 = currentDbSystemTime();
+    littleSleep(50);
 
     User user = new User();
     user.setName("Jim");
     user.setEmail("one@email.com");
     user.setPasswordHash("someHash");
     DB.save(user);
-    Timestamp t1 = new Timestamp(System.currentTimeMillis());
+    Timestamp t1 = currentDbSystemTime();
 
-    littleSleep();
+    littleSleep(100);
     user.setName("NotJim");
     user.save();
-    Timestamp t2 = new Timestamp(System.currentTimeMillis());
+    Timestamp t2 = currentDbSystemTime();
 
-    littleSleep();
+    littleSleep(100);
     user.setName("NotJimV2");
     user.setEmail("two@email.com");
     user.save();
-    Timestamp t3 = new Timestamp(System.currentTimeMillis());
+    littleSleep(50);
+    Timestamp t3 = currentDbSystemTime();
 
     List<Version<User>> versions = DB.find(User.class).setId(user.getId()).findVersionsBetween(t0, t3);
     assertThat(versions).hasSize(3);
@@ -66,9 +71,9 @@ public class TestHistoryInsert extends BaseTestCase {
     assertThat(user0).isNull();
   }
 
-  private void littleSleep() {
+  private void littleSleep(int millis) {
     try {
-      Thread.sleep(100);
+      Thread.sleep(millis);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }

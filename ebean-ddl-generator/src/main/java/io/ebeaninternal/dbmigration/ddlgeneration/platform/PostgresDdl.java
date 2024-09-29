@@ -4,6 +4,14 @@ import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebeaninternal.dbmigration.ddlgeneration.DdlBuffer;
 import io.ebeaninternal.dbmigration.ddlgeneration.DdlWrite;
 import io.ebeaninternal.dbmigration.migration.AlterColumn;
+import io.ebeaninternal.dbmigration.migration.Column;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Postgres specific DDL.
@@ -15,6 +23,7 @@ public class PostgresDdl extends PlatformDdl {
   public PostgresDdl(DatabasePlatform platform) {
     super(platform);
     this.historyDdl = new PostgresHistoryDdl();
+    this.createSchemaSupport = true;
     this.dropTableCascade = " cascade";
     this.columnSetType = "type ";
     this.alterTableIfExists = "if exists ";
@@ -25,13 +34,13 @@ public class PostgresDdl extends PlatformDdl {
   }
 
   @Override
-  public String setLockTimeout(int lockTimeoutSeconds) {
-    return "set lock_timeout = " + (lockTimeoutSeconds * 1000);
+  public boolean addPartitionColumnToPrimaryKey() {
+    return true;
   }
 
   @Override
-  public boolean suppressPrimaryKeyOnPartition() {
-    return true;
+  public String setLockTimeout(int lockTimeoutSeconds) {
+    return "set lock_timeout = " + (lockTimeoutSeconds * 1000);
   }
 
   @Override
@@ -42,6 +51,11 @@ public class PostgresDdl extends PlatformDdl {
   @Override
   public void addTablePartition(DdlBuffer apply, String partitionMode, String partitionColumn) {
     apply.append(" partition by range (").append(partitionColumn).append(")");
+  }
+
+  @Override
+  public void addDefaultTablePartition(DdlBuffer apply, String tableName) {
+    apply.append("create table ").append(tableName).append("_default partition of ").append(tableName).append(" default");
   }
 
   @Override
@@ -64,4 +78,52 @@ public class PostgresDdl extends PlatformDdl {
       .append(columnSetType).append(type)
       .append(" using ").append(alter.getColumnName()).append("::").append(type);
   }
+
+  @Override
+  protected List<Column> sortColumns(List<Column> columns) {
+    List<DDLColumnSort> sorting = new ArrayList<>(columns.size());
+    for (int i = 0, end = columns.size(); i < end; i++) {
+      Column column = columns.get(i);
+      sorting.add(new DDLColumnSort(column, ddlColumnOrdering(i, column)));
+    }
+    Collections.sort(sorting);
+    return sorting.stream().map(it -> it.column).collect(toList());
+  }
+
+  private int ddlColumnOrdering(int i, Column column) {
+    String type = column.getType().toLowerCase();
+    if (type.startsWith("decimal")) {
+      return i + 1_000;
+    }
+    if (isVariableLength(type) || isLob(type)) {
+      return i + 10_000;
+    }
+    return i;
+  }
+
+  private boolean isLob(String type) {
+    return type.startsWith("clob") || type.startsWith("longvarchar") || type.startsWith("blob") || type.startsWith("longvarbinary");
+  }
+
+  private boolean isVariableLength(String type) {
+    return type.startsWith("varchar") || type.startsWith("varbinary") || type.startsWith("json");
+  }
+
+  static final class DDLColumnSort implements Comparable<DDLColumnSort> {
+
+    private final Column column;
+    private final int ordering;
+
+    DDLColumnSort(Column column, int ordering) {
+      this.column = column;
+      this.ordering = ordering;
+    }
+
+    @Override
+    public int compareTo(DDLColumnSort o) {
+      return Integer.compare(ordering, o.ordering);
+    }
+  }
+
+
 }
