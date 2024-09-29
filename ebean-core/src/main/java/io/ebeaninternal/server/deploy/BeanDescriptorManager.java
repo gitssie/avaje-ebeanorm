@@ -571,7 +571,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     return mgr;
   }
 
-  protected  <T> void errorBeanNotRegistered(Class<T> entityType) {
+  private <T> void errorBeanNotRegistered(Class<T> entityType) {
     if (beanManagerMap.isEmpty()) {
       throw new PersistenceException(errNothingRegistered());
     } else {

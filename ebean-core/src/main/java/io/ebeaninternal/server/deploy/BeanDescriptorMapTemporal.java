@@ -323,6 +323,7 @@ public class BeanDescriptorMapTemporal {
 
   /**
    * supply an element bean
+   *
    * @param elementFieldIndex
    * @param slotIndex
    * @param properties
@@ -445,11 +446,7 @@ public class BeanDescriptorMapTemporal {
     try {
       DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
-        BeanManager beanManager = proxy.beanManager(beanClass.getName());
-        if (beanManager == null) {
-          proxy.errorBeanNotRegistered(beanClass);
-        }
-        return new DeployInfo(beanClass, newInfo, beanManager);
+        return new DeployInfo(beanClass, newInfo, proxy.beanManager(beanClass.getName()));
       }
       return new DeployInfo(beanClass, newInfo, null);
     } catch (Exception e) {
