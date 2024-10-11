@@ -1,7 +1,7 @@
 package io.ebeaninternal.dbmigration.ddlgeneration.platform;
 
 import io.ebean.DB;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.platform.db2.DB2LuwPlatform;
 import io.ebean.platform.h2.H2Platform;
@@ -36,7 +36,7 @@ public class PlatformDdl_AlterColumnTest {
   private final SoftAssertions softly = new SoftAssertions();
 
   {
-    DatabaseConfig serverConfig = DB.getDefault().pluginApi().config();
+    DatabaseBuilder.Settings serverConfig = DB.getDefault().pluginApi().config();
     sqlServerDdl.configure(serverConfig);
   }
 
@@ -107,7 +107,7 @@ public class PlatformDdl_AlterColumnTest {
 
     sql = alterColumn(pgDdl, alter);
     softly.assertThat(sql).isEqualTo("-- apply alter tables\n"
-      + "alter table mytab alter column acol type varchar(50) using acol::varchar(50);\n"
+      + "alter table mytab alter column acol type varchar(50);\n"
       + "alter table mytab alter column acol set default 'hi';\n"
       + "alter table mytab alter column acol set not null;\n");
 

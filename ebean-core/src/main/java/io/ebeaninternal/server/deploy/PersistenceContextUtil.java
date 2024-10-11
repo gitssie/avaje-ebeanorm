@@ -1,8 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
-import io.ebean.bean.DynamicEntity;
-
 import javax.persistence.Entity;
+import io.ebean.bean.DynamicEntity;
 
 /**
  * Utility to find the root bean type.

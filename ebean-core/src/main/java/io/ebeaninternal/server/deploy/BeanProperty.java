@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
 import com.fasterxml.jackson.core.JsonToken;
+import io.ebean.DataIntegrityException;
 import io.ebean.ValuePair;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
@@ -20,9 +21,9 @@ import io.ebeaninternal.api.SpiExpressionRequest;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonReader;
 import io.ebeaninternal.api.json.SpiJsonWriter;
+import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.server.core.EncryptAlias;
 import io.ebeaninternal.server.core.InternString;
-import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedWhenCreated;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedWhenModified;
@@ -40,8 +41,8 @@ import io.ebeanservice.docstore.api.mapping.DocMappingBuilder;
 import io.ebeanservice.docstore.api.mapping.DocPropertyMapping;
 import io.ebeanservice.docstore.api.mapping.DocPropertyOptions;
 import io.ebeanservice.docstore.api.support.DocStructure;
-
 import javax.persistence.PersistenceException;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -167,6 +168,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    */
   private final String dbComment;
   private final DbEncryptFunction dbEncryptFunction;
+  private final BindMaxLength bindMaxLength;
   private int deployOrder;
   final boolean jsonSerialize;
   final boolean jsonDeserialize;
@@ -260,6 +262,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     }
     this.jsonSerialize = deploy.isJsonSerialize();
     this.jsonDeserialize = deploy.isJsonDeserialize();
+    this.bindMaxLength = deploy.bindMaxLength();
   }
 
   private String tableAliasIntern(BeanDescriptor<?> descriptor, String s, boolean dbEncrypted, String dbColumn) {
@@ -348,6 +351,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.elPlaceHolderEncrypted = override.replace(source.elPlaceHolderEncrypted, source.dbColumn);
     this.jsonSerialize = source.jsonSerialize;
     this.jsonDeserialize = source.jsonDeserialize;
+    this.bindMaxLength = source.bindMaxLength;
   }
 
   /**
@@ -459,7 +463,8 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   @Override
   public void appendFrom(DbSqlContext ctx, SqlJoinType joinType, String manyWhere) {
     if (formula && sqlFormulaJoin != null) {
-      ctx.appendFormulaJoin(sqlFormulaJoin, joinType, manyWhere);
+      String alias = ctx.tableAliasManyWhere(manyWhere);
+      ctx.appendFormulaJoin(sqlFormulaJoin, joinType, alias);
     } else if (secondaryTableJoin != null) {
       String relativePrefix = ctx.relativePrefix(secondaryTableJoinPrefix);
       secondaryTableJoin.addJoin(joinType, relativePrefix, ctx);
@@ -511,6 +516,11 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   @Override
+  public String idNullOr(String filterManyExpression) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void loadIgnore(DbReadContext ctx) {
     ctx.dataReader().incrementPos(1);
   }
@@ -557,6 +567,18 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   @SuppressWarnings("unchecked")
   public void bind(DataBind b, Object value) throws SQLException {
     scalarType.bind(b, value);
+    if (bindMaxLength != null) {
+      Object obj = b.popLastObject();
+      long length = bindMaxLength.length(dbLength, obj);
+      if (length > dbLength) {
+        b.closeInputStreams();
+        String s = String.valueOf(value); // take original bind value here.
+        if (s.length() > 50) {
+          s = s.substring(0, 47) + "...";
+        }
+        throw new DataIntegrityException("Cannot bind value '" + s + "' (effective length=" + length + ") to column '" + dbColumn + "' (length=" + dbLength + ")");
+      }
+    }
   }
 
   @SuppressWarnings(value = "unchecked")
@@ -703,7 +725,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    * Return the bean cache value for this property using original values.
    */
   public Object getCacheDataValueOrig(EntityBeanIntercept ebi) {
-    return cacheDataConvert(ebi.getOrigValue(propertyIndex));
+    return cacheDataConvert(ebi.origValue(propertyIndex));
   }
 
   private Object cacheDataConvert(Object value) {
@@ -759,7 +781,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
 
   @Override
   public Object value(Object bean) {
-    return getValue((EntityBean) bean);
+    return getValueIntercept((EntityBean) bean);
   }
 
   /**
@@ -1172,14 +1194,14 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    * Returns true if this <code>isLob()</code> or the type will effectively map to a lob.
    */
   @Override
-  public boolean isDbLob() {
+  public boolean isLobForPlatform() {
     if (lob) {
       return true;
     }
     switch (dbType) {
       case DbPlatformType.JSON:
       case DbPlatformType.JSONB:
-        return dbLength == 0; // must be analog to DbPlatformTypeMapping.lookup
+        return dbLength == 0 || dbLength > 4000; // must be analog to DbPlatformTypeMapping.lookup
       case DbPlatformType.JSONBlob:
       case DbPlatformType.JSONClob:
         return true;
@@ -1415,15 +1437,20 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   public void jsonRead(SpiJsonReader ctx, EntityBean bean) throws IOException {
+    Object objValue = jsonRead(ctx);
+    if (jsonDeserialize) {
+      if (ctx.update()) {
+        setValueIntercept(bean, objValue);
+      } else {
+        setValue(bean, objValue);
+      }
+    }
+  }
+
+  public Object jsonRead(SpiJsonReader ctx) throws IOException {
     JsonToken event = ctx.nextToken();
     if (JsonToken.VALUE_NULL == event) {
-      if (jsonDeserialize) {
-        if (ctx.intercept()) {
-          setValueIntercept(bean, null);
-        } else {
-          setValue(bean, null);
-        }
-      }
+      return null;
     } else {
       // expect to read non-null json value
       Object objValue;
@@ -1440,13 +1467,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
           CoreLog.log.log(ERROR, msg, e);
         }
       }
-      if (jsonDeserialize) {
-        if (ctx.intercept()) {
-          setValueIntercept(bean, objValue);
-        } else {
-          setValue(bean, objValue);
-        }
-      }
+      return objValue;
     }
   }
 

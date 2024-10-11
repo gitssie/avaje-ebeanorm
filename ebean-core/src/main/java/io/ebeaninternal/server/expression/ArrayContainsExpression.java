@@ -2,6 +2,7 @@ package io.ebeaninternal.server.expression;
 
 import io.ebeaninternal.api.BindValuesKey;
 import io.ebeaninternal.api.SpiExpression;
+import io.ebeaninternal.api.SpiExpressionBind;
 import io.ebeaninternal.api.SpiExpressionRequest;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ final class ArrayContainsExpression extends AbstractExpression {
   public void queryPlanHash(StringBuilder builder) {
     builder.append("ArrayContains[").append(propName)
       .append(" b:").append(contains)
-      .append(" ?:").append(values.length).append("]");
+      .append(" ?:").append(values.length).append(']');
   }
 
   @Override
@@ -68,11 +69,11 @@ final class ArrayContainsExpression extends AbstractExpression {
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-    request.getDbPlatformHandler().arrayContains(request, propName, contains, values);
+    request.platformHandler().arrayContains(request, propName, contains, values);
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     for (Object value : values) {
       request.addBindValue(value);
     }

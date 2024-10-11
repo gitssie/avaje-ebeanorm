@@ -1,5 +1,6 @@
 package io.ebeaninternal.api;
 
+import io.avaje.lang.Nullable;
 import io.ebean.CacheMode;
 import io.ebean.CountDistinctOrder;
 import io.ebean.ExpressionList;
@@ -206,7 +207,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
      * Return the mode of the query of if null return CURRENT mode.
      */
     public static TemporalMode of(SpiQuery<?> query) {
-      return (query != null) ? query.getTemporalMode() : TemporalMode.CURRENT;
+      return (query != null) ? query.temporalMode() : TemporalMode.CURRENT;
     }
   }
 
@@ -218,22 +219,37 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the id used to identify a particular query for the given bean type.
    */
-  String getProfileId();
+  String profileId();
 
   /**
    * Return the profile location for this query.
    */
-  ProfileLocation getProfileLocation();
+  ProfileLocation profileLocation();
+
+  /**
+   * Return the SQL hint to include in the query.
+   */
+  String hint();
 
   /**
    * Return the label set on the query.
    */
-  String getLabel();
+  String label();
 
   /**
    * Return the label manually set on the query or from the profile location.
    */
-  String getPlanLabel();
+  String planLabel();
+
+  /**
+   * Return the transaction explicitly assigned or null.
+   */
+  SpiTransaction transaction();
+
+  /**
+   * Return true if this query should not use the read only data source.
+   */
+  boolean isUseMaster();
 
   /**
    * Return true if this is a "find by id" query. This includes a check for a single "equal to" expression for the Id.
@@ -258,7 +274,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the unmodified native sql query (with named params etc).
    */
-  String getNativeSql();
+  String nativeSql();
 
   /**
    * Return the ForUpdate mode.
@@ -269,17 +285,17 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the bean descriptor for this query.
    */
-  BeanDescriptor<T> getBeanDescriptor();
+  BeanDescriptor<T> descriptor();
 
   /**
    * Return the query plan key.
    */
-  Object getQueryPlanKey();
+  Object queryPlanKey();
 
   /**
    * Return the RawSql that was set to use for this query.
    */
-  SpiRawSql getRawSql();
+  SpiRawSql rawSql();
 
   /**
    * Return true if this query should be executed against the doc store.
@@ -298,7 +314,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * This can be null and in that case use the default scope.
    * </p>
    */
-  PersistenceContextScope getPersistenceContextScope();
+  PersistenceContextScope persistenceContextScope();
 
   /**
    * Return the origin key.
@@ -308,7 +324,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the default lazy load batch size.
    */
-  int getLazyLoadBatchSize();
+  int lazyLoadBatchSize();
 
   /**
    * Return true if select all properties was used to ensure the property
@@ -329,7 +345,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Set the on a secondary query given the label, relativePath and profile location of the parent query.
    */
-  void setProfilePath(String label, String relativePath, ProfileLocation profileLocation);
+  void setProfilePath(String label, String relativePath, @Nullable ProfileLocation profileLocation);
 
   /**
    * Set the query mode.
@@ -339,12 +355,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the query mode.
    */
-  Mode getMode();
+  Mode mode();
 
   /**
    * Return the Temporal mode for the query.
    */
-  TemporalMode getTemporalMode();
+  TemporalMode temporalMode();
 
   /**
    * Return true if this is a find versions between query.
@@ -354,12 +370,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the find versions start timestamp.
    */
-  Timestamp getVersionStart();
+  Timestamp versionStart();
 
   /**
    * Return the find versions end timestamp.
    */
-  Timestamp getVersionEnd();
+  Timestamp versionEnd();
 
   /**
    * Return true if this is a 'As Of' query.
@@ -408,7 +424,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
 
   void addSoftDeletePredicate(String softDeletePredicate);
 
-  List<String> getSoftDeletePredicates();
+  List<String> softDeletePredicates();
 
   /**
    * Bind the named multi-value array parameter which we would use with Postgres ANY.
@@ -424,6 +440,11 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   SpiQuery<T> copy();
 
   /**
+   * Return the distinct on clause.
+   */
+  String distinctOn();
+
+  /**
    * Return a copy of the query attaching to a different EbeanServer.
    */
   SpiQuery<T> copy(SpiEbeanServer server);
@@ -431,7 +452,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the type of query (List, Set, Map, Bean, rowCount etc).
    */
-  Type getType();
+  Type type();
 
   /**
    * Set the query type (List, Set etc).
@@ -441,12 +462,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return a more detailed description of the lazy or query load.
    */
-  String getLoadDescription();
+  String loadDescription();
 
   /**
    * Return the load mode (+lazy or +query).
    */
-  String getLoadMode();
+  String loadMode();
 
   /**
    * This becomes a lazy loading query for a many relationship.
@@ -456,7 +477,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the lazy loading 'many' property.
    */
-  BeanPropertyAssocMany<?> getLazyLoadMany();
+  BeanPropertyAssocMany<?> lazyLoadMany();
 
   /**
    * Set the load mode (+lazy or +query) and the load description.
@@ -476,7 +497,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the joins required to support predicates on the many properties.
    */
-  ManyWhereJoins getManyWhereJoins();
+  ManyWhereJoins manyWhereJoins();
 
   /**
    * Reset AUTO mode to OFF for findList(). Expect explicit cache use with findList().
@@ -497,7 +518,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return a Natural Key bind parameter if supported by this query.
    */
-  NaturalKeyBindParam getNaturalKeyBindParam();
+  NaturalKeyBindParam naturalKeyBindParam();
 
   /**
    * Prepare the query for docstore execution with nested paths.
@@ -533,7 +554,6 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * Return true if the query should include the Id property.
    * <p>
    * distinct and single attribute queries exclude the Id property.
-   * </p>
    */
   boolean isWithId();
 
@@ -550,7 +570,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the tenantId to use for lazy loading.
    */
-  Object getTenantId();
+  Object tenantId();
 
   /**
    * Set the path of the many when +query/+lazy loading query is executed.
@@ -560,7 +580,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Convert joins as necessary to query joins etc.
    */
-  SpiQuerySecondary convertJoins();
+  SpiQueryManyJoin convertJoins();
+
+  /**
+   * Return secondary queries if required.
+   */
+  SpiQuerySecondary secondaryQuery();
 
   /**
    * Return the TransactionContext.
@@ -570,7 +595,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * persistence context).
    * </p>
    */
-  PersistenceContext getPersistenceContext();
+  PersistenceContext persistenceContext();
 
   /**
    * Set an explicit TransactionContext (typically for a refresh query).
@@ -598,7 +623,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * returned this implies that profiling is turned on for this query (and all
    * the objects this query creates).
    */
-  ProfilingListener getProfilingListener();
+  ProfilingListener profilingListener();
 
   /**
    * This has the effect of turning on profiling for this query.
@@ -632,7 +657,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the property that invoked lazy load.
    */
-  String getLazyLoadProperty();
+  String lazyLoadProperty();
 
   /**
    * Used to hook back a lazy loading query to the original query (query
@@ -641,7 +666,17 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
    * This will return null or an "original" query.
    * </p>
    */
-  ObjectGraphNode getParentNode();
+  ObjectGraphNode parentNode();
+
+  /**
+   * Set that this is a future query that will execute in the background.
+   */
+  void usingFuture();
+
+  /**
+   * Return true if this is a future query.
+   */
+  boolean isUsingFuture();
 
   /**
    * Return false when this is a lazy load or refresh query for a bean.
@@ -702,17 +737,17 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Can return null if no expressions where added to the where clause.
    */
-  SpiExpressionList<T> getWhereExpressions();
+  SpiExpressionList<T> whereExpressions();
 
   /**
    * Can return null if no expressions where added to the having clause.
    */
-  SpiExpressionList<T> getHavingExpressions();
+  SpiExpressionList<T> havingExpressions();
 
   /**
    * Return the text expressions.
    */
-  SpiExpressionList<T> getTextExpression();
+  SpiExpressionList<T> textExpression();
 
   /**
    * Returns true if either firstRow or maxRows has been set.
@@ -737,12 +772,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the cache mode for using the bean cache (Get and Put).
    */
-  CacheMode getUseBeanCache();
+  CacheMode beanCacheMode();
 
   /**
    * Return the cache mode if this query should use/check the query cache.
    */
-  CacheMode getUseQueryCache();
+  CacheMode queryCacheMode();
 
   /**
    * Return true if the beans returned by this query should be read only.
@@ -752,12 +787,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the query timeout.
    */
-  int getTimeout();
+  int timeout();
 
   /**
    * Return the bind parameters.
    */
-  BindParams getBindParams();
+  BindParams bindParams();
 
   /**
    * Return the bind parameters ensuring it is initialised.
@@ -793,12 +828,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the query detail.
    */
-  OrmQueryDetail getDetail();
+  OrmQueryDetail detail();
 
   /**
    * Return the extra join for a M2M lazy load.
    */
-  TableJoin getM2mIncludeJoin();
+  TableJoin m2mIncludeJoin();
 
   /**
    * Set the extra join for a M2M lazy load.
@@ -808,7 +843,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the property used to specify keys for a map.
    */
-  String getMapKey();
+  String mapKey();
 
   /**
    * Return the maximum number of rows to return in the query.
@@ -860,23 +895,12 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the hint for Statement.setFetchSize().
    */
-  int getBufferFetchSizeHint();
+  int bufferFetchSizeHint();
 
   /**
    * Return true if read auditing is disabled on this query.
    */
   boolean isDisableReadAudit();
-
-  /**
-   * Return true if this is a query executing in the background.
-   */
-  boolean isFutureFetch();
-
-  /**
-   * Set to true to indicate the query is executing in a background thread
-   * asynchronously.
-   */
-  void setFutureFetch(boolean futureFetch);
 
   /**
    * Set the readEvent for future queries (as prepared in foreground thread).
@@ -886,17 +910,17 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Read the readEvent for future queries (null otherwise).
    */
-  ReadEvent getFutureFetchAudit();
+  ReadEvent futureFetchAudit();
 
   /**
    * Return the base table to use if user defined on the query.
    */
-  String getBaseTable();
+  String baseTable();
 
   /**
    * Return root table alias set by {@link #alias(String)} command.
    */
-  String getAlias();
+  String alias();
 
   /**
    * Return root table alias with default option.
@@ -911,7 +935,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Return the properties for an update query.
    */
-  OrmUpdateProperties getUpdateProperties();
+  OrmUpdateProperties updateProperties();
 
   /**
    * Simplify nested expression lists where possible.
@@ -921,7 +945,7 @@ public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCod
   /**
    * Returns the count distinct order setting.
    */
-  CountDistinctOrder getCountDistinctOrder();
+  CountDistinctOrder countDistinctOrder();
 
   /**
    * Handles load errors.

@@ -1,13 +1,8 @@
 package io.ebeaninternal.server.deploy.parse;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.annotation.*;
-import io.ebean.config.DatabaseConfig;
-import io.ebean.config.EncryptDeploy;
-import io.ebean.config.EncryptDeployManager;
-import io.ebean.config.EncryptKeyManager;
-import io.ebean.config.Encryptor;
-import io.ebean.config.NamingConvention;
-import io.ebean.config.TableName;
+import io.ebean.config.*;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.config.dbplatform.DbPlatformType;
 import io.ebean.core.type.ScalarType;
@@ -49,7 +44,7 @@ public final class DeployUtil {
   private final Encryptor bytesEncryptor;
   private final boolean useValidationNotNull;
 
-  public DeployUtil(TypeManager typeMgr, DatabaseConfig config) {
+  public DeployUtil(TypeManager typeMgr, DatabaseBuilder.Settings config) {
     this.typeManager = typeMgr;
     this.namingConvention = config.getNamingConvention();
     this.dbPlatform = config.getDatabasePlatform();
@@ -106,7 +101,7 @@ public final class DeployUtil {
       prop.setScalarType(scalarType);
       prop.setDbType(scalarType.jdbcType());
     } catch (IllegalStateException e) {
-      throw new PersistenceException("Error mapping property " + prop.getFullBeanName() + " - " + e.getMessage());
+      throw new PersistenceException("Error mapping property " + prop + " - " + e.getMessage());
     }
   }
 
@@ -141,7 +136,7 @@ public final class DeployUtil {
       if (scalarType != null || property.isTransient()) {
         return scalarType;
       }
-      throw new PersistenceException(property.getFullBeanName() + " has no ScalarType - type " + propType.getName());
+      throw new PersistenceException(property + " has no ScalarType - type " + propType.getName());
     } catch (IllegalArgumentException e) {
       if (property.isTransient()) {
         // expected for transient properties with unknown/non-mapped types
@@ -179,7 +174,7 @@ public final class DeployUtil {
     Class<?> type = prop.getPropertyType();
     ScalarType<?> scalarType = typeManager.dbArrayType(type, prop.getGenericType(), prop.isNullable());
     if (scalarType == null) {
-      throw new RuntimeException("No ScalarType for @DbArray type for " + prop.getFullBeanName());
+      throw new RuntimeException("No ScalarType for @DbArray type for " + prop);
     }
     int dbType = scalarType.jdbcType();
     prop.setDbType(dbType);

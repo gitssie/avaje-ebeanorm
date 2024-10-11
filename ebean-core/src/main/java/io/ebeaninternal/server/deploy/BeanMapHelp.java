@@ -1,12 +1,12 @@
 package io.ebeaninternal.server.deploy;
 
-import io.ebean.Query;
 import io.ebean.Transaction;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.BeanCollectionAdd;
 import io.ebean.bean.EntityBean;
 import io.ebean.common.BeanMap;
 import io.ebeaninternal.api.SpiEbeanServer;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonWriter;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class BeanMapHelp<T> extends BaseCollectionHelp<T> {
     BeanProperty beanProp = targetDescriptor.beanProperty(mapKey);
     if (bc instanceof BeanMap<?, ?>) {
       BeanMap<Object, Object> bm = (BeanMap<Object, Object>) bc;
-      Map<Object, Object> actualMap = bm.getActualMap();
+      Map<Object, Object> actualMap = bm.actualMap();
       if (actualMap == null) {
         actualMap = new LinkedHashMap<>();
         bm.setActualMap(actualMap);
@@ -114,12 +114,6 @@ public class BeanMapHelp<T> extends BaseCollectionHelp<T> {
   }
 
   @Override
-  public final void refresh(SpiEbeanServer server, Query<?> query, Transaction t, EntityBean parentBean) {
-    BeanMap<?, ?> newBeanMap = (BeanMap<?, ?>) server.findMap(query, t);
-    refresh(newBeanMap, parentBean);
-  }
-
-  @Override
   public final void refresh(BeanCollection<?> bc, EntityBean parentBean) {
     BeanMap<?, ?> newBeanMap = (BeanMap<?, ?>) bc;
     Map<?, ?> current = (Map<?, ?>) many.getValue(parentBean);
@@ -132,7 +126,7 @@ public class BeanMapHelp<T> extends BaseCollectionHelp<T> {
     } else if (current instanceof BeanMap<?, ?>) {
       // normally this case, replace just the underlying list
       BeanMap<?, ?> currentBeanMap = (BeanMap<?, ?>) current;
-      currentBeanMap.setActualMap(newBeanMap.getActualMap());
+      currentBeanMap.setActualMap(newBeanMap.actualMap());
       currentBeanMap.setModifyListening(many.modifyListenMode());
 
     } else {
@@ -155,7 +149,7 @@ public class BeanMapHelp<T> extends BaseCollectionHelp<T> {
           return;
         }
       }
-      map = bc.getActualMap();
+      map = bc.actualMap();
     } else {
       map = (Map<?, ?>) collection;
     }

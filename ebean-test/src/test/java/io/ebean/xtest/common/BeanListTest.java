@@ -3,6 +3,7 @@ package io.ebean.xtest.common;
 import io.ebean.bean.BeanCollection;
 import io.ebean.common.BeanList;
 import org.junit.jupiter.api.Test;
+import org.tests.model.basic.Product;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -13,22 +14,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class BeanListTest {
 
-  private final Object object1 = new Object();
-  private final Object object2 = new Object();
-  private final Object object3 = new Object();
+  private final Product object1 = new Product(1);
+  private final Product object2 = new Product(2);
+  private final Product object3 = new Product(3);
 
   private List<Object> all() {
     List<Object> all = new ArrayList<>();
-    all.add(object1);
-    all.add(object2);
-    all.add(object3);
+    all.add(new Product(1));
+    all.add(new Product(2));
+    all.add(new Product(3));
     return all;
   }
 
   private List<Object> some() {
     List<Object> some = new ArrayList<>();
-    some.add(object2);
-    some.add(object3);
+    some.add(new Product(2));
+    some.add(new Product(3));
     return some;
   }
 
@@ -41,7 +42,7 @@ public class BeanListTest {
     // act
     list.addAll(all());
 
-    assertThat(list.getModifyAdditions()).isNull();
+    assertThat(list.modifyAdditions()).isNull();
   }
 
   @Test
@@ -53,7 +54,7 @@ public class BeanListTest {
     // act
     list.addAll(all());
 
-    assertThat(list.getModifyAdditions()).isNull();
+    assertThat(list.modifyAdditions()).isNull();
   }
 
   @Test
@@ -63,18 +64,18 @@ public class BeanListTest {
     list.setModifyListening(BeanCollection.ModifyListenMode.ALL);
     list.add(object1);
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1);
+    assertThat(list.modifyRemovals()).isEmpty();
 
     list.add(object1);
-    assertThat(list.getModifyAdditions()).containsOnly(object1);
+    assertThat(list.modifyAdditions()).containsOnly(object1);
 
     list.add(object2);
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2);
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2);
 
     list.remove(object1);
-    assertThat(list.getModifyAdditions()).containsOnly(object2);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object2);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
@@ -86,8 +87,8 @@ public class BeanListTest {
     // act
     list.addAll(all());
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2, object3);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2, object3);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
@@ -98,11 +99,11 @@ public class BeanListTest {
 
     // act
     list.remove(object2);
-    assertThat(list.getModifyRemovals()).isNotEmpty();
+    assertThat(list.modifyRemovals()).isNotEmpty();
     list.add(object2);
 
-    assertThat(list.getModifyRemovals()).isEmpty();
-    assertThat(list.getModifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).isEmpty();
   }
 
   @Test
@@ -114,8 +115,8 @@ public class BeanListTest {
     // act
     list.sort(Comparator.comparingInt(Object::hashCode));
 
-    assertThat(list.getModifyRemovals()).isEmpty();
-    assertThat(list.getModifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).isEmpty();
   }
 
   @Test
@@ -127,8 +128,8 @@ public class BeanListTest {
     // act
     list.sort(Comparator.comparingInt(Object::hashCode));
 
-    assertThat(list.getModifyRemovals()).isEmpty();
-    assertThat(list.getModifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).isEmpty();
   }
 
   @Test
@@ -143,8 +144,8 @@ public class BeanListTest {
     assertThat(list.contains(object2)).isTrue();
     list.add(object2); // object2 added as List allows duplicates
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
@@ -156,39 +157,41 @@ public class BeanListTest {
     // act
     list.addAll(all());
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2, object3);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2, object3);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
   public void testRemove_given_beansInAdditions() {
 
+    List<Object> all = all();
     BeanList<Object> list = new BeanList<>();
     list.setModifyListening(BeanCollection.ModifyListenMode.ALL);
-    list.addAll(all());
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2, object3);
+    list.addAll(all);
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2, object3);
 
     // act
-    list.remove(object2);
-    list.remove(object3);
+    list.remove(all.get(1));
+    list.remove(all.get(2));
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
   public void testRemoveAll_given_beansInAdditions() {
 
+    List<Object> all = all();
     BeanList<Object> list = new BeanList<>();
     list.setModifyListening(BeanCollection.ModifyListenMode.ALL);
-    list.addAll(all());
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2, object3);
+    list.addAll(all);
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2, object3);
 
     // act
-    list.removeAll(some());
+    list.removeAll(List.of(all.get(1), all.get(2)));
 
-    assertThat(list.getModifyAdditions()).containsOnly(object1);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object1);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
@@ -202,8 +205,8 @@ public class BeanListTest {
     list.remove(object3);
 
     // assert
-    assertThat(list.getModifyAdditions()).isEmpty();
-    assertThat(list.getModifyRemovals()).containsOnly(object2, object3);
+    assertThat(list.modifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).containsOnly(object2, object3);
   }
 
   @Test
@@ -216,8 +219,8 @@ public class BeanListTest {
     list.removeAll(some());
 
     // assert
-    assertThat(list.getModifyAdditions()).isEmpty();
-    assertThat(list.getModifyRemovals()).containsOnly(object2, object3);
+    assertThat(list.modifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).containsOnly(object2, object3);
   }
 
   @Test
@@ -230,8 +233,8 @@ public class BeanListTest {
     list.clear();
 
     //assert
-    assertThat(list.getModifyRemovals()).containsOnly(object1, object2, object3);
-    assertThat(list.getModifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).containsOnly(object1, object2, object3);
+    assertThat(list.modifyAdditions()).isEmpty();
   }
 
   @Test
@@ -247,8 +250,8 @@ public class BeanListTest {
     list.clear();
 
     //assert
-    assertThat(list.getModifyRemovals()).containsOnly(object1);
-    assertThat(list.getModifyAdditions()).isEmpty();
+    assertThat(list.modifyRemovals()).containsOnly(object1);
+    assertThat(list.modifyAdditions()).isEmpty();
   }
 
   @Test
@@ -257,13 +260,13 @@ public class BeanListTest {
     BeanList<Object> list = new BeanList<>();
     list.setModifyListening(BeanCollection.ModifyListenMode.ALL);
     list.addAll(all());
-    assertThat(list.getModifyAdditions()).containsOnly(object1, object2, object3);
+    assertThat(list.modifyAdditions()).containsOnly(object1, object2, object3);
 
     // act
     list.retainAll(some());
 
-    assertThat(list.getModifyAdditions()).containsOnly(object2, object3);
-    assertThat(list.getModifyRemovals()).isEmpty();
+    assertThat(list.modifyAdditions()).containsOnly(object2, object3);
+    assertThat(list.modifyRemovals()).isEmpty();
   }
 
   @Test
@@ -278,8 +281,8 @@ public class BeanListTest {
     // act
     list.retainAll(some());
 
-    assertThat(list.getModifyAdditions()).containsOnly(object3);
-    assertThat(list.getModifyRemovals()).containsOnly(object1);
+    assertThat(list.modifyAdditions()).containsOnly(object3);
+    assertThat(list.modifyRemovals()).containsOnly(object1);
   }
 
   @Test
@@ -291,7 +294,7 @@ public class BeanListTest {
     // act
     list.retainAll(some());
 
-    assertThat(list.getModifyRemovals()).containsOnly(object1);
+    assertThat(list.modifyRemovals()).containsOnly(object1);
   }
 
   @Test

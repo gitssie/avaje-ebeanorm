@@ -1,8 +1,8 @@
 package io.ebeaninternal.server.core;
 
 import io.ebean.Database;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.ContainerConfig;
-import io.ebean.config.DatabaseConfig;
 import io.ebean.service.SpiContainer;
 
 /**
@@ -16,7 +16,7 @@ public class TenantContainer implements SpiContainer {
   }
 
   @Override
-  public Database createServer(DatabaseConfig configuration) {
+  public Database createServer(DatabaseBuilder configuration) {
     return spiContainer.createServer(configuration);
   }
 

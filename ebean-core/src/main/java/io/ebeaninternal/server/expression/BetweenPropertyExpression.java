@@ -1,11 +1,7 @@
 package io.ebeaninternal.server.expression;
 
 import io.ebean.util.SplitName;
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.ManyWhereJoins;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
-import io.ebeaninternal.api.SpiExpressionValidation;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.el.ElPropertyDeploy;
 
@@ -79,18 +75,18 @@ final class BetweenPropertyExpression extends NonPrepareExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     request.addBindValue(val());
   }
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-    request.append(" ?").append(BETWEEN).append(name(lowProperty)).append(" and ").append(name(highProperty));
+    request.append("?").append(BETWEEN).property(name(lowProperty)).append(" and ").property(name(highProperty));
   }
 
   @Override
   public void queryPlanHash(StringBuilder builder) {
-    builder.append("BetweenProperties[").append("low:").append(lowProperty).append(" high:").append(highProperty).append("]");
+    builder.append("BetweenProperties[").append("low:").append(lowProperty).append(" high:").append(highProperty).append(']');
   }
 
   @Override

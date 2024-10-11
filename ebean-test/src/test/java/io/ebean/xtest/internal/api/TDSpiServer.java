@@ -7,7 +7,7 @@ import io.ebean.annotation.TxIsolation;
 import io.ebean.bean.BeanLoader;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.cache.ServerCacheManager;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.meta.MetaInfoManager;
 import io.ebean.plugin.BeanType;
@@ -219,21 +219,6 @@ public class TDSpiServer implements SpiServer {
 
   @Override
   public void flush() {
-
-  }
-
-  @Override
-  public void commitTransaction() {
-
-  }
-
-  @Override
-  public void rollbackTransaction() {
-
-  }
-
-  @Override
-  public void endTransaction() {
 
   }
 
@@ -454,7 +439,17 @@ public class TDSpiServer implements SpiServer {
   }
 
   @Override
+  public void insert(Object bean, InsertOptions insertOptions) {
+
+  }
+
+  @Override
   public void insert(Object bean, Transaction transaction) {
+
+  }
+
+  @Override
+  public void insert(Object bean, InsertOptions insertOptions, Transaction transaction) {
 
   }
 
@@ -464,7 +459,17 @@ public class TDSpiServer implements SpiServer {
   }
 
   @Override
+  public void insertAll(Collection<?> beans, InsertOptions options) {
+
+  }
+
+  @Override
   public void insertAll(Collection<?> beans, Transaction transaction) {
+
+  }
+
+  @Override
+  public void insertAll(Collection<?> beans, InsertOptions options, Transaction transaction) {
 
   }
 
@@ -579,7 +584,7 @@ public class TDSpiServer implements SpiServer {
   }
 
   @Override
-  public DatabaseConfig config() {
+  public DatabaseBuilder.Settings config() {
     return null;
   }
 

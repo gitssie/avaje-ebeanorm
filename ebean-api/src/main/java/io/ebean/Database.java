@@ -35,14 +35,14 @@ import java.util.concurrent.Callable;
  * <h5>The 'default' Database</h5>
  * <p>
  * One Database can be designated as the 'default' or 'primary' Database
- * (see {@link DatabaseConfig#setDefaultServer(boolean)}. Many methods on DB
+ * (see {@link DatabaseConfig#setDefaultServer(boolean)}). Many methods on DB
  * such as {@link DB#find(Class)} etc are actually just a convenient way to
  * call methods on the 'default/primary' Database.
  *
  * <h5>Constructing a Database</h5>
  * <p>
  * Databases are constructed by the DatabaseFactory. They can be created
- * programmatically via {@link DatabaseFactory#create(DatabaseConfig)} or they
+ * programmatically via {@link DatabaseFactory#create(DatabaseBuilder)} or they
  * can be automatically constructed on demand using configuration information in
  * the application.properties file.
  *
@@ -85,6 +85,23 @@ import java.util.concurrent.Callable;
  */
 @NonNullApi
 public interface Database {
+
+  /**
+   * Return a new database builder.
+   * <pre>{@code
+   *
+   *   // build the 'default' database using configuration
+   *   // from application.properties / application.yaml
+   *
+   *   Database db = Database.builder()
+   *     .loadFromProperties()
+   *     .build();
+   *
+   * }</pre>
+   */
+  static DatabaseBuilder builder() {
+    return new DatabaseConfig();
+  }
 
   /**
    * Shutdown the Database instance.
@@ -166,7 +183,7 @@ public interface Database {
   /**
    * Return the BeanState for a given entity bean.
    * <p>
-   * This will return null if the bean is not an enhanced entity bean.
+   * This will throw an IllegalArgumentException if the bean is not an enhanced entity bean.
    */
   BeanState beanState(Object bean);
 
@@ -648,43 +665,6 @@ public interface Database {
    * This is the same as <code>currentTransaction().flush()</code>.
    */
   void flush();
-
-  /**
-   * Commit the current transaction.
-   */
-  void commitTransaction();
-
-  /**
-   * Rollback the current transaction.
-   */
-  void rollbackTransaction();
-
-  /**
-   * If the current transaction has already been committed do nothing otherwise
-   * rollback the transaction.
-   * <p>
-   * Useful to put in a finally block to ensure the transaction is ended, rather
-   * than a rollbackTransaction() in each catch block.
-   * <p>
-   * Code example:
-   * <p>
-   * <pre>{@code
-   *
-   *   database.beginTransaction();
-   *   try {
-   *     // do some fetching and or persisting ...
-   *
-   *     // commit at the end
-   *     database.commitTransaction();
-   *
-   *   } finally {
-   *     // if commit didn't occur then rollback the transaction
-   *     database.endTransaction();
-   *   }
-   *
-   * }</pre>
-   */
-  void endTransaction();
 
   /**
    * Refresh the values of a bean.
@@ -1205,9 +1185,26 @@ public interface Database {
   void insert(Object bean);
 
   /**
+   * Insert the bean with options (ON CONFLICT DO UPDATE | DO NOTHING).
+   * <p>
+   * Currently, this is limited to use with Postgres only,
+   * <p>
+   * When using this ebean will look to determine the unique columns by looking at
+   * the mapping like {@code @Column(unique=true} and {@code @Index(unique=true}.
+   */
+  void insert(Object bean, InsertOptions insertOptions);
+
+  /**
    * Insert the bean with a transaction.
    */
   void insert(Object bean, Transaction transaction);
+
+  /**
+   * Insert the beans with options (ON CONFLICT DO UPDATE | DO NOTHING) and transaction.
+   * <p>
+   * Currently, this is limited to use with Postgres only,
+   */
+  void insert(Object bean, InsertOptions insertOptions, Transaction transaction);
 
   /**
    * Insert a collection of beans. If there is no current transaction one is created and used to
@@ -1216,9 +1213,23 @@ public interface Database {
   void insertAll(Collection<?> beans);
 
   /**
+   * Insert the beans with options - typically ON CONFLICT DO UPDATE | DO NOTHING.
+   * <p>
+   * Currently, this is limited to use with Postgres only,
+   */
+  void insertAll(Collection<?> beans, InsertOptions options);
+
+  /**
    * Insert a collection of beans with an explicit transaction.
    */
   void insertAll(Collection<?> beans, Transaction transaction);
+
+  /**
+   * Insert the beans with options (ON CONFLICT DO UPDATE | DO NOTHING) and transaction.
+   * <p>
+   * Currently, this is limited to use with Postgres only,
+   */
+  void insertAll(Collection<?> beans, InsertOptions options, Transaction transaction);
 
   /**
    * Execute explicitly passing a transaction.

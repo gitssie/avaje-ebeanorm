@@ -1,13 +1,14 @@
 package io.ebean.xtest.event;
 
-import io.ebean.xtest.BaseTestCase;
 import io.ebean.Database;
 import io.ebean.DatabaseFactory;
 import io.ebean.bean.BeanCollection;
 import io.ebean.common.BeanList;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.event.BeanFindController;
 import io.ebean.event.BeanQueryRequest;
+import io.ebean.xtest.BaseTestCase;
 import org.junit.jupiter.api.Test;
 import org.tests.example.ModUuidGenerator;
 import org.tests.model.basic.EBasic;
@@ -26,7 +27,7 @@ public class BeanFindControllerTest extends BaseTestCase {
   @Test
   public void test() {
 
-    DatabaseConfig config = new DatabaseConfig();
+    var config = new DatabaseConfig();
 
     config.setName("h2otherfind");
     config.loadFromProperties();
@@ -37,8 +38,8 @@ public class BeanFindControllerTest extends BaseTestCase {
     config.setRegister(false);
     config.setDefaultServer(false);
     config.add(new ModUuidGenerator());
-    config.getClasses().add(EBasic.class);
-    config.getClasses().add(ECustomId.class);
+    config.addClass(EBasic.class);
+    config.addClass(ECustomId.class);
 
     EBasicFindController findController = new EBasicFindController();
     config.getFindControllers().add(findController);
@@ -180,9 +181,9 @@ public class BeanFindControllerTest extends BaseTestCase {
     config.setRegister(false);
     config.setDefaultServer(false);
     config.add(new ModUuidGenerator());
-    config.getClasses().add(FindControllerMain.class);
-    config.getClasses().add(SoftRefA.class);
-    config.getClasses().add(SoftRefB.class);
+    config.addClass(FindControllerMain.class);
+    config.addClass(SoftRefA.class);
+    config.addClass(SoftRefB.class);
 
     config.getFindControllers().add(new TestBeanFindController());
 

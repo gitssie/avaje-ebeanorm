@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy.generatedproperty;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.Transaction;
 import io.ebean.config.*;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
@@ -28,7 +29,7 @@ public final class GeneratedPropertyFactory {
   private final Map<String, PlatformIdGenerator> idGeneratorMap = new HashMap<>();
   private final Map<String, IdGenerator> idGeneratorPureMap = new HashMap<>();
 
-  public GeneratedPropertyFactory(boolean offlineMode, DatabaseConfig config, List<IdGenerator> idGenerators) {
+  public GeneratedPropertyFactory(boolean offlineMode, DatabaseBuilder.Settings config, List<IdGenerator> idGenerators) {
     this.classLoadConfig = config.getClassLoadConfig();
     this.insertFactory = new InsertTimestampFactory(classLoadConfig);
     this.updateFactory = new UpdateTimestampFactory(classLoadConfig);

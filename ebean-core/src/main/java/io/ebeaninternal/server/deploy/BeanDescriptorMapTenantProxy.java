@@ -26,7 +26,7 @@ public class BeanDescriptorMapTenantProxy implements BeanDescriptorMap {
   }
 
   @Override
-  public DatabaseConfig config() {
+  public DatabaseConfig.Settings config() {
     return proxy.config();
   }
 

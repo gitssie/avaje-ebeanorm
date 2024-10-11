@@ -673,7 +673,7 @@ public class DatabasePlatform {
 
   protected String withForUpdate(String sql, Query.LockWait lockWait, Query.LockType lockType) {
     // silently assume the database does not support the "for update" clause.
-    log.log(INFO, "it seems your database does not support the 'for update' clause");
+    log.log(INFO, "it seems your database does not support the ''for update'' clause");
     return sql;
   }
 
@@ -768,5 +768,16 @@ public class DatabasePlatform {
 
   public boolean supportsNativeJavaTime() {
     return supportsNativeJavaTime;
+  }
+
+  public String inlineSqlComment(String label) {
+    if (label == null) {
+      return "";
+    }
+    return "/* " + label + " */ ";
+  }
+
+  public String inlineSqlHint(String hint) {
+    return "/*+ " + hint + " */ ";
   }
 }

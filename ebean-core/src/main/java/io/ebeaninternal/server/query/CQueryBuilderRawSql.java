@@ -8,6 +8,7 @@ import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.server.core.OrmQueryRequest;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.querydefn.OrmQueryLimitRequest;
+import io.ebeaninternal.server.querydefn.OrmQueryProperties;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
 import io.ebeaninternal.server.util.BindParamsParser;
 
@@ -31,7 +32,7 @@ final class CQueryBuilderRawSql {
     }
     if (!rsql.isParsed()) {
       String sql = rsql.getUnparsedSql();
-      BindParams bindParams = request.query().getBindParams();
+      BindParams bindParams = request.query().bindParams();
       if (bindParams != null && bindParams.requiresNamedParamsPrepare()) {
         // convert named parameters into positioned parameters
         sql = BindParamsParser.parse(bindParams, sql);
@@ -56,18 +57,30 @@ final class CQueryBuilderRawSql {
 
   private String buildMainQuery(String orderBy, OrmQueryRequest<?> request, CQueryPredicates predicates, SpiRawSql.Sql sql) {
     StringBuilder sb = new StringBuilder();
-    sb.append(sql.getPreFrom());
-    sb.append(" ");
+    OrmQueryProperties ormQueryProperties = request.query().detail().getChunk(null, false);
+    if (ormQueryProperties.hasSelectClause()) {
+      boolean first = true;
+      for (String selectProperty : ormQueryProperties.getIncluded()) {
+        if (!first) {
+          sb.append(", ");
+        }
+        sb.append(selectProperty);
+        first = false;
+      }
+    } else {
+      sb.append(sql.getPreFrom());
+    }
+    sb.append(' ');
 
     String s = sql.getPreWhere();
-    BindParams bindParams = request.query().getBindParams();
+    BindParams bindParams = request.query().bindParams();
     if (bindParams != null && bindParams.requiresNamedParamsPrepare()) {
       // convert named parameters into positioned parameters
       // Named Parameters only allowed prior to dynamic where
       // clause (so not allowed in having etc - use unparsed)
       s = BindParamsParser.parse(bindParams, s);
     }
-    sb.append(s).append(" ");
+    sb.append(s).append(' ');
 
     String dynamicWhere = null;
     if (request.query().getId() != null) {
@@ -96,12 +109,12 @@ final class CQueryBuilderRawSql {
       } else {
         sb.append(" where ");
       }
-      sb.append(dynamicWhere).append(" ");
+      sb.append(dynamicWhere).append(' ');
     }
 
     String preHaving = sql.getPreHaving();
     if (hasValue(preHaving)) {
-      sb.append(preHaving).append(" ");
+      sb.append(preHaving).append(' ');
     }
 
     String dbHaving = predicates.dbHaving();
@@ -111,10 +124,10 @@ final class CQueryBuilderRawSql {
       } else {
         sb.append(" having ");
       }
-      sb.append(dbHaving).append(" ");
+      sb.append(dbHaving).append(' ');
     }
     if (hasValue(orderBy)) {
-      sb.append(" ").append(sql.getOrderByPrefix()).append(" ").append(orderBy);
+      sb.append(' ').append(sql.getOrderByPrefix()).append(' ').append(orderBy);
     }
     return sb.toString().trim();
   }

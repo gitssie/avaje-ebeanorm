@@ -37,13 +37,13 @@ public class WriteJsonDirtyTest {
     customer.setAnniversary(new Date(System.currentTimeMillis()));
 
     EntityBean entityBean = (EntityBean) customer;
-    boolean[] dirtyProperties = entityBean._ebean_getIntercept().getDirtyProperties();
+    boolean[] dirtyProperties = entityBean._ebean_getIntercept().dirtyProperties();
 
     StringWriter writer = new StringWriter();
     JsonFactory jsonFactory = new JsonFactory();
     JsonGenerator generator = jsonFactory.createGenerator(writer);
 
-    WriteJson writeJson = new WriteJson(server, generator, null, null, null, null);
+    WriteJson writeJson = new WriteJson(server, generator, null, null, null, null, true);
     descriptor.jsonWriteDirty(writeJson, entityBean, dirtyProperties);
 
     generator.flush();

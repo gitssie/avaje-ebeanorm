@@ -1,51 +1,33 @@
 package io.ebeaninternal.server.deploy.meta;
 
-import io.ebean.annotation.*;
+import io.ebean.DatabaseBuilder;
+import io.ebean.annotation.Cache;
+import io.ebean.annotation.DocStore;
+import io.ebean.annotation.DocStoreMode;
+import io.ebean.annotation.Identity;
 import io.ebean.bean.EntityBean;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
-import io.ebean.event.BeanFindController;
-import io.ebean.event.BeanPersistController;
-import io.ebean.event.BeanPersistListener;
-import io.ebean.event.BeanPostConstructListener;
-import io.ebean.event.BeanPostLoad;
-import io.ebean.event.BeanQueryAdapter;
+import io.ebean.event.*;
 import io.ebean.event.changelog.ChangeLogFilter;
 import io.ebean.text.PathProperties;
 import io.ebean.util.SplitName;
 import io.ebeaninternal.api.ConcurrencyMode;
 import io.ebeaninternal.server.core.CacheOptions;
 import io.ebeaninternal.server.deploy.BeanDescriptor.EntityType;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
-import io.ebeaninternal.server.deploy.ChainedBeanPersistController;
-import io.ebeaninternal.server.deploy.ChainedBeanPersistListener;
-import io.ebeaninternal.server.deploy.ChainedBeanPostConstructListener;
-import io.ebeaninternal.server.deploy.ChainedBeanPostLoad;
-import io.ebeaninternal.server.deploy.ChainedBeanQueryAdapter;
-import io.ebeaninternal.server.deploy.DeployPropertyParserMap;
-import io.ebeaninternal.server.deploy.IdentityMode;
-import io.ebeaninternal.server.deploy.IndexDefinition;
-import io.ebeaninternal.server.deploy.InheritInfo;
-import io.ebeaninternal.server.deploy.PartitionMeta;
-import io.ebeaninternal.server.deploy.TableJoin;
-import io.ebeaninternal.server.deploy.TablespaceMeta;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.idgen.UuidV1IdGenerator;
 import io.ebeaninternal.server.idgen.UuidV1RndIdGenerator;
 import io.ebeaninternal.server.idgen.UuidV4IdGenerator;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
-
 import javax.persistence.Entity;
 import javax.persistence.MappedSuperclass;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -67,9 +49,7 @@ public class DeployBeanDescriptor<T> {
 
   private static final PropOrder PROP_ORDER = new PropOrder();
 
-  private static final String I_SCALAOBJECT = "scala.ScalaObject";
-
-  private final DatabaseConfig config;
+  private final DatabaseBuilder.Settings config;
   private final BeanDescriptorManager manager;
   /**
    * Map of BeanProperty Linked so as to preserve order.
@@ -154,20 +134,43 @@ public class DeployBeanDescriptor<T> {
 
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
-
   /**
    * Construct the BeanDescriptor.
    */
-  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config) {
+  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseBuilder.Settings config) {
     this.manager = manager;
     this.config = config;
     this.beanType = beanType;
   }
 
+  public BindMaxLength bindMaxLength() {
+    return manager.bindMaxLength();
+  }
+
+  private String[] readPropertyNames() {
+    try {
+      Field field = beanType.getField("_ebean_props");
+      return (String[]) field.get(null);
+    } catch (Exception e) {
+      throw new IllegalStateException("Error getting _ebean_props field on type " + beanType, e);
+    }
+  }
+
+  public void setPropertyNames(String[] properties) {
+    this.properties = properties;
+  }
+
+  public String[] propertyNames() {
+    if (properties == null) {
+      properties = readPropertyNames();
+    }
+    return properties;
+  }
+
   /**
    * Set the IdClass to use.
    */
-  public void setIdClass(Class idClass) {
+  public void setIdClass(Class<?> idClass) {
     this.idClass = idClass;
   }
 
@@ -285,7 +288,6 @@ public class DeployBeanDescriptor<T> {
    * Read the top level doc store deployment information.
    */
   public void readDocStore(DocStore docStore) {
-
     this.docStore = docStore;
     docStoreMapped = true;
     docStoreQueueId = docStore.queueId();
@@ -301,23 +303,10 @@ public class DeployBeanDescriptor<T> {
     }
   }
 
-  public boolean isScalaObject() {
-    Class<?>[] interfaces = beanType.getInterfaces();
-    for (Class<?> anInterface : interfaces) {
-      String iname = anInterface.getName();
-      if (I_SCALAOBJECT.equals(iname)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public DeployBeanTable createDeployBeanTable() {
-
     DeployBeanTable beanTable = new DeployBeanTable(getBeanType());
     beanTable.setBaseTable(baseTable);
     beanTable.setIdProperty(idProperty());
-
     return beanTable;
   }
 
@@ -679,7 +668,7 @@ public class DeployBeanDescriptor<T> {
   public void postAnnotations() {
     if (idClass != null) {
       idClassProperty = new DeployBeanPropertyAssocOne<>(this, idClass);
-      idClassProperty.setName("_idClass");
+      idClassProperty.setName("_$IdClass$");
       idClassProperty.setEmbedded();
       idClassProperty.setNullable(false);
     }
@@ -838,7 +827,7 @@ public class DeployBeanDescriptor<T> {
     for (DeployBeanProperty prop : propMap.values()) {
       if (!prop.isTransient() && !(prop instanceof DeployBeanPropertyAssocMany<?>)) {
         if (prop.isFetchEager()) {
-          sb.append(prop.getName()).append(",");
+          sb.append(prop.getName()).append(',');
         } else {
           hasLazyFetch = true;
         }
@@ -1108,7 +1097,7 @@ public class DeployBeanDescriptor<T> {
     }
 
     @Override
-    public String getDeployWord(String expression) {
+    public String deployWord(String expression) {
       return descriptor.getDeployWord(expression);
     }
   }
@@ -1143,7 +1132,7 @@ public class DeployBeanDescriptor<T> {
     this.elementBean = elementBean;
   }
 
-  public DatabaseConfig getConfig() {
+  public DatabaseBuilder.Settings getConfig() {
     return config;
   }
 }

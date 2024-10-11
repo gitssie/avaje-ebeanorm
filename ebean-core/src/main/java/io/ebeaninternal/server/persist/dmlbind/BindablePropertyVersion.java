@@ -46,9 +46,8 @@ final class BindablePropertyVersion implements Bindable {
    */
   @Override
   public void dmlBind(BindableRequest request, EntityBean bean) throws SQLException {
-
     // get prior version value from 'old values'
-    Object value = bean._ebean_getIntercept().getOrigValue(prop.propertyIndex());
+    Object value = bean._ebean_getIntercept().origValue(prop.propertyIndex());
     request.bind(value, prop);
   }
 }

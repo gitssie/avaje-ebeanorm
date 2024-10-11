@@ -37,8 +37,7 @@ public class TestNestedSubTransaction extends BaseTestCase {
       try (Transaction txn1 = server.beginTransaction()) {
         bean.setName("x2");
         server.save(bean);
-        //txn1.commit();
-        server.commitTransaction();
+        txn1.commit();
       }
 
       EBasic fresh = server.find(EBasic.class, bean.getId());
@@ -48,8 +47,7 @@ public class TestNestedSubTransaction extends BaseTestCase {
       try (Transaction txn2 = server.beginTransaction()) {
         bean.setName("barney");
         DB.save(bean);
-        //txn2.commit();
-        server.commitTransaction();
+        txn2.commit();
       }
 
       fresh = server.find(EBasic.class)
@@ -108,13 +106,13 @@ public class TestNestedSubTransaction extends BaseTestCase {
 
       server.save(bean);
 
-      TransactionEvent event0 = ((SpiTransaction) txn0).getEvent();
+      TransactionEvent event0 = ((SpiTransaction) txn0).event();
 
       try (Transaction txn1 = server.beginTransaction()) {
         bean.setName("updateNested");
         server.save(bean);
 
-        TransactionEvent event1 = ((SpiTransaction) txn1).getEvent();
+        TransactionEvent event1 = ((SpiTransaction) txn1).event();
         assertThat(event1).isNotSameAs(event0);
 
         try (Transaction txn2 = server.beginTransaction()) {

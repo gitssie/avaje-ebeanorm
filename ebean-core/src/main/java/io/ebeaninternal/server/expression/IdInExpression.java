@@ -1,21 +1,13 @@
 package io.ebeaninternal.server.expression;
 
 import io.ebean.event.BeanQueryRequest;
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.ManyWhereJoins;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
-import io.ebeaninternal.api.SpiExpressionValidation;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.core.BindPadding;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.id.IdBinder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * In a collection of ID values.
@@ -69,47 +61,39 @@ public final class IdInExpression extends NonPrepareExpression implements IdInCo
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     if (idCollection.isEmpty()) {
       return;
     }
     // Bind the ID values including EmbeddedId and multiple ID
-
-    DefaultExpressionRequest r = (DefaultExpressionRequest) request;
-    BeanDescriptor<?> descriptor = r.getBeanDescriptor();
-    IdBinder idBinder = descriptor.idBinder();
-    idBinder.addIdInBindValues(request, idCollection);
+    request.descriptor().idBinder().addBindValues(request, idCollection);
   }
 
   /**
    * For use with deleting non-attached detail beans during stateless update.
    */
   public void addSqlNoAlias(SpiExpressionRequest request) {
-
-    DefaultExpressionRequest r = (DefaultExpressionRequest) request;
-    BeanDescriptor<?> descriptor = r.getBeanDescriptor();
-    IdBinder idBinder = descriptor.idBinder();
     if (idCollection.isEmpty()) {
       request.append(SQL_FALSE); // append false for this stage
     } else {
-      request.append(descriptor.idBinder().getBindIdInSql(null));
-      String inClause = idBinder.getIdInValueExpr(false, idCollection.size());
-      request.append(inClause);
+      final BeanDescriptor<?> descriptor = request.descriptor();
+      request.property(descriptor.idBinder().bindInSql(null));
+      request.append(descriptor.idBinder().idInValueExpr(false, idCollection.size()));
     }
   }
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-    BeanDescriptor<?> descriptor = request.getBeanDescriptor();
-    IdBinder idBinder = descriptor.idBinder();
     if (idCollection.isEmpty()) {
       request.append(SQL_FALSE); // append false for this stage
     } else {
+      final BeanDescriptor<?> descriptor = request.descriptor();
+      final IdBinder idBinder = descriptor.idBinder();
       if (idBinder.isComplexId()) {
-        request.append(descriptor.idBinderInLHSSql());
-        request.append(idBinder.getIdInValueExpr(false, idCollection.size()));
+        request.parse(descriptor.idBinderInLHSSql());
+        request.append(idBinder.idInValueExpr(false, idCollection.size()));
       } else {
-        request.append(idBinder.getBeanProperty().name());
+        request.property(idBinder.beanProperty().name());
         request.appendInExpression(false, idCollection);
       }
     }
@@ -125,7 +109,7 @@ public final class IdInExpression extends NonPrepareExpression implements IdInCo
       // query plan specific to the number of parameters in the IN clause
       builder.append(idCollection.size());
     }
-    builder.append("]");
+    builder.append(']');
   }
 
   @Override

@@ -2,7 +2,7 @@ package io.ebeaninternal.dbmigration;
 
 import io.avaje.applog.AppLog;
 import io.ebean.annotation.Platform;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.ddlrunner.DdlRunner;
 import io.ebean.ddlrunner.ScriptTransform;
@@ -51,7 +51,7 @@ public class DdlGenerator implements SpiDdlGenerator {
 
   public DdlGenerator(SpiEbeanServer server) {
     this.server = server;
-    final DatabaseConfig config = server.config();
+    final var config = server.config();
     this.jaxbPresent = Detect.isJAXBPresent(config);
     this.generateDdl = config.isDdlGenerate();
     this.extraDdl = config.isDdlExtra();
@@ -61,7 +61,7 @@ public class DdlGenerator implements SpiDdlGenerator {
     this.platform = databasePlatform.platform();
     this.platformName = platform.base().name();
     if (!config.getTenantMode().isDdlEnabled() && config.isDdlRun()) {
-      log.log(WARNING, "DDL can't be run on startup with TenantMode " + config.getTenantMode());
+      log.log(WARNING, "DDL can''t be run on startup with TenantMode " + config.getTenantMode());
       this.runDdl = false;
       this.useMigrationStoredProcedures = false;
     } else {
@@ -309,7 +309,7 @@ public class DdlGenerator implements SpiDdlGenerator {
     try (LineNumberReader lineReader = new LineNumberReader(reader)) {
       String s;
       while ((s = lineReader.readLine()) != null) {
-        buf.append(s).append("\n");
+        buf.append(s).append('\n');
       }
       return buf.toString();
     }
@@ -318,7 +318,7 @@ public class DdlGenerator implements SpiDdlGenerator {
   /**
    * Create the ScriptTransform for placeholder key/value replacement.
    */
-  private ScriptTransform createScriptTransform(DatabaseConfig config) {
+  private ScriptTransform createScriptTransform(DatabaseBuilder.Settings config) {
     return ScriptTransform.build(config.getDdlPlaceholders(), config.getDdlPlaceholderMap());
   }
 

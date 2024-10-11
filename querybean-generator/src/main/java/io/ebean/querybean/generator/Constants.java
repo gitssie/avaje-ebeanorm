@@ -2,12 +2,14 @@ package io.ebean.querybean.generator;
 
 interface Constants {
 
-  String AT_GENERATED = "@Generated(\"io.ebean.querybean.generator\")";
-
-  String AT_TYPEQUERYBEAN = "@TypeQueryBean(\"v1\")";
+  String AT_GENERATED = "@io.ebean.typequery.Generated(\"io.ebean.querybean.generator\")";
+  String AT_TYPEQUERYBEAN = "@io.ebean.typequery.TypeQueryBean(\"v1\")";
   String GENERATED = "io.ebean.typequery.Generated";
 
+  String ONE_TO_MANY = "javax.persistence.OneToMany";
+  String MANY_TO_MANY = "javax.persistence.ManyToMany";
   String MAPPED_SUPERCLASS = "javax.persistence.MappedSuperclass";
+  String DISCRIMINATOR_VALUE = "javax.persistence.DiscriminatorValue";
   String INHERITANCE = "javax.persistence.Inheritance";
   String ENTITY = "javax.persistence.Entity";
   String EMBEDDABLE = "javax.persistence.Embeddable";
@@ -19,20 +21,13 @@ interface Constants {
   String DBJSONB = "io.ebean.annotation.DbJsonB";
   String DBNAME = "io.ebean.annotation.DbName";
 
-  String TQROOTBEAN = "io.ebean.typequery.TQRootBean";
-  String TQASSOCBEAN = "io.ebean.typequery.TQAssocBean";
-  String TQPROPERTY = "io.ebean.typequery.TQProperty";
-  String TYPEQUERYBEAN = "io.ebean.typequery.TypeQueryBean";
-  String DATABASE = "io.ebean.Database";
-  String DB = "io.ebean.DB";
-  String FETCHGROUP = "io.ebean.FetchGroup";
-  String QUERY = "io.ebean.Query";
-  String TRANSACTION = "io.ebean.Transaction";
-
   String MODULEINFO = "io.ebean.config.ModuleInfo";
   String METAINF_MANIFEST = "META-INF/ebean-generated-info.mf";
   String METAINF_SERVICES_MODULELOADER = "META-INF/services/io.ebean.config.EntityClassRegister";
 
   String AVAJE_LANG_NULLABLE = "io.avaje.lang.Nullable";
   String JAVA_COLLECTION = "java.util.Collection";
+  String EXPRESSIONLIST = "io.ebean.ExpressionList";
+  String EXPR = "io.ebean.Expr";
+  String CONSUMER = "java.util.function.Consumer";
 }

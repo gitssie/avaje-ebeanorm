@@ -510,7 +510,7 @@ final class XAnnotationFields extends AnnotationParser {
   }
 
   private void setEncryption(DeployBeanProperty prop, boolean dbEncString, int dbLen) {
-    util.checkEncryptKeyManagerDefined(prop.getFullBeanName());
+    util.checkEncryptKeyManagerDefined(prop.toString());
     ScalarType<?> st = prop.getScalarType();
     if (byte[].class.equals(st.type())) {
       // Always using Java client encryption rather than DB for encryption

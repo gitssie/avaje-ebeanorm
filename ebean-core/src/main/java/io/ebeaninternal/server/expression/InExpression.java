@@ -2,10 +2,7 @@ package io.ebeaninternal.server.expression;
 
 import io.ebean.bean.EntityBean;
 import io.ebean.event.BeanQueryRequest;
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.NaturalKeyQueryData;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.el.ElPropertyValue;
 import io.ebeaninternal.server.persist.MultiValueWrapper;
 
@@ -103,7 +100,7 @@ public final class InExpression extends AbstractExpression implements IdInCommon
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     if (empty) {
       return;
     }
@@ -156,21 +153,20 @@ public final class InExpression extends AbstractExpression implements IdInCommon
       request.append(not ? SQL_TRUE : SQL_FALSE);
       return;
     }
-
     ElPropertyValue prop = getElProp(request);
     if (prop != null) {
       if (prop.isAssocId()) {
-        request.append(prop.assocIdInExpr(propName));
+        request.parse(prop.assocIdInExpr(propName));
         request.append(prop.assocIdInValueExpr(not, bindValues.size()));
         return;
       }
       if (prop.isDbEncrypted()) {
-        request.append(prop.beanProperty().decryptProperty(propName));
+        request.parse(prop.beanProperty().decryptProperty(propName));
         request.appendInExpression(not, bindValues);
         return;
       }
     }
-    request.append(propName);
+    request.property(propName);
     request.appendInExpression(not, bindValues);
   }
 
@@ -194,7 +190,7 @@ public final class InExpression extends AbstractExpression implements IdInCommon
         builder.append(bindValues.size());
       }
     }
-    builder.append("]");
+    builder.append(']');
   }
 
   @Override

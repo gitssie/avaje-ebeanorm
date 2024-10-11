@@ -19,7 +19,7 @@ public final class PersistRequestOrmUpdate extends PersistRequest {
   private String bindLog;
 
   public PersistRequestOrmUpdate(SpiEbeanServer server, BeanManager<?> mgr, SpiUpdate<?> ormUpdate, SpiTransaction t, PersistExecute persistExecute) {
-    super(server, t, persistExecute, ormUpdate.getLabel());
+    super(server, t, persistExecute, ormUpdate.label());
     this.beanDescriptor = mgr.getBeanDescriptor();
     this.ormUpdate = ormUpdate;
   }
@@ -77,11 +77,14 @@ public final class PersistRequestOrmUpdate extends PersistRequest {
    */
   @Override
   public void postExecute() {
+    OrmUpdateType ormUpdateType = ormUpdate.ormUpdateType();
+    if (OrmUpdateType.INSERT != ormUpdateType && !transaction.isAutoPersistUpdates()) {
+      beanDescriptor.contextClear(transaction.persistenceContext());
+    }
     if (startNanos > 0) {
       persistExecute.collectOrmUpdate(label, startNanos);
     }
-    OrmUpdateType ormUpdateType = ormUpdate.getOrmUpdateType();
-    String tableName = ormUpdate.getBaseTable();
+    String tableName = ormUpdate.baseTable();
     if (transaction.isLogSummary()) {
       transaction.logSummary("{0} table[{1}] rows[{2}] bind[{3}]", ormUpdateType, tableName, rowCount, bindLog);
     }
@@ -90,13 +93,13 @@ public final class PersistRequestOrmUpdate extends PersistRequest {
       // this is used to invalidate cached objects etc
       switch (ormUpdateType) {
         case INSERT:
-          transaction.getEvent().add(tableName, true, false, false);
+          transaction.event().add(tableName, true, false, false);
           break;
         case UPDATE:
-          transaction.getEvent().add(tableName, false, true, false);
+          transaction.event().add(tableName, false, true, false);
           break;
         case DELETE:
-          transaction.getEvent().add(tableName, false, false, true);
+          transaction.event().add(tableName, false, false, true);
           break;
         default:
           break;

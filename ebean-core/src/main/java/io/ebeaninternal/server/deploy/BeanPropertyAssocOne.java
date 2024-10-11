@@ -241,51 +241,49 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
     return encrypted ? elPlaceHolderEncrypted : elPlaceHolder;
   }
 
-  public SqlUpdate deleteByParentId(Object parentId, List<Object> parentIdist) {
-    if (parentId != null) {
-      return deleteByParentId(parentId);
-    } else {
-      return deleteByParentIdList(parentIdist);
-    }
-  }
 
-  private SqlUpdate deleteByParentIdList(List<Object> parentIds) {
-    String sql = deleteByParentIdInSql + targetIdBinder.getIdInValueExpr(false, parentIds.size());
+  @Override
+  public SqlUpdate deleteByParentIdList(List<Object> parentIds) {
+    String sql = deleteByParentIdInSql + targetIdBinder.idInValueExpr(false, parentIds.size());
     DefaultSqlUpdate delete = new DefaultSqlUpdate(sql);
     bindParentIds(delete, parentIds);
     return delete;
   }
 
-  private SqlUpdate deleteByParentId(Object parentId) {
+  @Override
+  public SqlUpdate deleteByParentId(Object parentId) {
     DefaultSqlUpdate delete = new DefaultSqlUpdate(deleteByParentIdSql);
     bindParentId(delete, parentId);
     return delete;
   }
 
-  public List<Object> findIdsByParentId(Object parentId, List<Object> parentIds, Transaction t) {
-    if (parentId != null) {
-      return findIdsByParentId(parentId, t);
-    } else {
-      return findIdsByParentIdList(parentIds, t);
-    }
-  }
 
-  private List<Object> findIdsByParentId(Object parentId, Transaction t) {
+  @Override
+  public List<Object> findIdsByParentId(Object parentId, Transaction t, boolean includeSoftDeletes) {
     String rawWhere = deriveWhereParentIdSql(false);
     SpiEbeanServer server = server();
-    Query<?> q = server.find(type());
+    SpiQuery<?> q = server.createQuery(type());
+    q.usingTransaction(t);
     bindParentIdEq(rawWhere, parentId, q);
-    return server.findIds(q, t);
+    if (includeSoftDeletes) {
+      q.setIncludeSoftDeletes();
+    }
+    return server.findIds(q);
   }
 
-  private List<Object> findIdsByParentIdList(List<Object> parentIds, Transaction t) {
+  @Override
+  public List<Object> findIdsByParentIdList(List<Object> parentIds, Transaction t, boolean includeSoftDeletes) {
     String rawWhere = deriveWhereParentIdSql(true);
-    String inClause = idBinder().getIdInValueExpr(false, parentIds.size());
+    String inClause = idBinder().idInValueExpr(false, parentIds.size());
     String expr = rawWhere + inClause;
     SpiEbeanServer server = server();
-    Query<?> q = server.find(type());
+    SpiQuery<?> q = server.createQuery(type());
+    q.usingTransaction(t);
     bindParentIdsIn(expr, parentIds, q);
-    return server.findIds(q, t);
+    if (includeSoftDeletes) {
+      q.setIncludeSoftDeletes();
+    }
+    return server.findIds(q);
   }
 
   void addFkey() {
@@ -412,7 +410,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
    */
   @Override
   public Object getCacheDataValueOrig(EntityBeanIntercept ebi) {
-    return cacheDataConvert(ebi.getOrigValue(propertyIndex));
+    return cacheDataConvert(ebi.origValue(propertyIndex));
   }
 
   @Override
@@ -491,7 +489,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
    */
   @Override
   public Object[] assocIdValues(EntityBean bean) {
-    return targetDescriptor.idBinder().getIdValues(bean);
+    return targetDescriptor.idBinder().values(bean);
   }
 
   /**
@@ -499,7 +497,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
    */
   @Override
   public String assocIdExpression(String prefix, String operator) {
-    return targetDescriptor.idBinder().getAssocOneIdExpr(prefix, operator);
+    return targetDescriptor.idBinder().assocExpr(prefix, operator);
   }
 
   /**
@@ -507,7 +505,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
    */
   @Override
   public String assocIdInValueExpr(boolean not, int size) {
-    return targetDescriptor.idBinder().getIdInValueExpr(not, size);
+    return targetDescriptor.idBinder().idInValueExpr(not, size);
   }
 
   /**
@@ -515,7 +513,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
    */
   @Override
   public String assocIdInExpr(String prefix) {
-    return targetDescriptor.idBinder().getAssocIdInExpr(prefix);
+    return targetDescriptor.idBinder().assocInExpr(prefix);
   }
 
   @Override
@@ -617,12 +615,24 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
     }
   }
 
+  /**
+   * Add table join with explicit table alias.
+   */
+  @Override
+  public SqlJoinType addJoin(SqlJoinType joinType, String a1, String a2, DbSqlContext ctx) {
+    if (sqlFormulaJoin != null) {
+      ctx.appendFormulaJoin(sqlFormulaJoin, joinType, a1);
+    }
+    return super.addJoin(joinType, a1, a2, ctx);
+  }
+
   @Override
   public void appendFrom(DbSqlContext ctx, SqlJoinType joinType, String manyWhere) {
     if (!isTransient && !primaryKeyExport) {
       localHelp.appendFrom(ctx, joinType);
       if (sqlFormulaJoin != null) {
-        ctx.appendFormulaJoin(sqlFormulaJoin, joinType, manyWhere);
+        String alias = ctx.tableAliasManyWhere(manyWhere);
+        ctx.appendFormulaJoin(sqlFormulaJoin, joinType, alias);
       }
     }
   }
@@ -791,14 +801,20 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
   @Override
   public void jsonRead(SpiJsonReader readJson, EntityBean bean) throws IOException {
     if (jsonDeserialize && targetDescriptor != null) {
-      T target = (T) value(bean);
+      // CHECKME: may we skip reading the object from the json stream?
+      T target = readJson.update() ? (T) getValue(bean) : null;
       T assocBean = targetDescriptor.jsonRead(readJson, name, target);
-      if (readJson.intercept()) {
+      if (readJson.update()) {
         setValueIntercept(bean, assocBean);
       } else {
         setValue(bean, assocBean);
       }
     }
+  }
+
+  @Override
+  public Object jsonRead(SpiJsonReader readJson) throws IOException {
+    return targetDescriptor.jsonRead(readJson, name, null);
   }
 
   public boolean isReference(Object detailBean) {

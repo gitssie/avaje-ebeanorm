@@ -67,7 +67,7 @@ public final class BeanSet<E> extends AbstractBeanCollection<E> implements Set<E
     if (set == null) {
       set = new LinkedHashSet<>();
     }
-    set.addAll((Collection<? extends E>) other.getActualDetails());
+    set.addAll((Collection<? extends E>) other.actualDetails());
   }
 
   @Override
@@ -119,7 +119,7 @@ public final class BeanSet<E> extends AbstractBeanCollection<E> implements Set<E
     try {
       if (set == null) {
         if (!disableLazyLoad && modifyListening) {
-          lazyLoadCollection(true);
+          lazyLoadCollection(false);
         } else {
           set = new LinkedHashSet<>();
         }
@@ -136,7 +136,7 @@ public final class BeanSet<E> extends AbstractBeanCollection<E> implements Set<E
         if (disableLazyLoad) {
           set = new LinkedHashSet<>();
         } else {
-          lazyLoadCollection(true);
+          lazyLoadCollection(false);
         }
       }
     } finally {
@@ -155,17 +155,17 @@ public final class BeanSet<E> extends AbstractBeanCollection<E> implements Set<E
   /**
    * Return the actual underlying set.
    */
-  public Set<E> getActualSet() {
+  public Set<E> actualSet() {
     return set;
   }
 
   @Override
-  public Collection<E> getActualDetails() {
+  public Collection<E> actualDetails() {
     return set;
   }
 
   @Override
-  public Collection<?> getActualEntries() {
+  public Collection<?> actualEntries() {
     return set;
   }
 
@@ -382,7 +382,7 @@ public final class BeanSet<E> extends AbstractBeanCollection<E> implements Set<E
   }
 
   @Override
-  public BeanCollection<E> getShallowCopy() {
+  public BeanCollection<E> shallowCopy() {
     BeanSet<E> copy = new BeanSet<>(new LinkedHashSet<>(set));
     copy.setFromOriginal(this);
     return copy;

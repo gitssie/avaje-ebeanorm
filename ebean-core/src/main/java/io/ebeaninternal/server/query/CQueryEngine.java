@@ -7,7 +7,7 @@ import io.ebean.annotation.Platform;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.ObjectGraphNode;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.util.JdbcClose;
 import io.ebean.util.StringHelper;
@@ -38,13 +38,13 @@ public final class CQueryEngine {
   private final CQueryHistorySupport historySupport;
   private final DatabasePlatform dbPlatform;
 
-  public CQueryEngine(DatabaseConfig config, DatabasePlatform dbPlatform, Binder binder, Map<String, String> asOfTableMapping, Map<String, String> draftTableMap) {
+  public CQueryEngine(DatabaseBuilder.Settings config, DatabasePlatform dbPlatform, Binder binder, Map<String, String> asOfTableMapping, Map<String, String> draftTableMap) {
     this.dbPlatform = dbPlatform;
     this.defaultFetchSizeFindEach = config.getJdbcFetchSizeFindEach();
     this.defaultFetchSizeFindList = config.getJdbcFetchSizeFindList();
     this.forwardOnlyHintOnFindIterate = dbPlatform.forwardOnlyHintOnFindIterate();
     this.historySupport = new CQueryHistorySupport(dbPlatform.historySupport(), asOfTableMapping, config.getAsOfSysPeriod());
-    this.queryBuilder = new CQueryBuilder(dbPlatform, binder, historySupport, new CQueryDraftSupport(draftTableMap));
+    this.queryBuilder = new CQueryBuilder(config, dbPlatform, binder, historySupport, new CQueryDraftSupport(draftTableMap));
   }
 
   public int forwardOnlyFetchSize() {
@@ -73,6 +73,9 @@ public final class CQueryEngine {
       int rows = query.execute();
       if (request.logSql()) {
         request.logSql("{0}; --bind({1}) --micros({2}) --rows({3})", query.generatedSql(), query.bindLog(), query.micros(), rows);
+      }
+      if (rows > 0) {
+        request.clearContext();
       }
       return rows;
     } catch (SQLException e) {
@@ -163,9 +166,6 @@ public final class CQueryEngine {
       if (request.logSummary()) {
         request.transaction().logSummary(rcQuery.summary());
       }
-      if (request.query().isFutureFetch()) {
-        request.transaction().end();
-      }
       if (request.isQueryCachePut()) {
         request.addDependentTables(rcQuery.dependentTables());
         request.putToQueryCache(count);
@@ -198,7 +198,7 @@ public final class CQueryEngine {
       int iterateBufferSize = request.secondaryQueriesMinBatchSize();
       if (iterateBufferSize < 1) {
         // not set on query joins so check if batch size set on query itself
-        int queryBatch = request.query().getLazyLoadBatchSize();
+        int queryBatch = request.query().lazyLoadBatchSize();
         if (queryBatch > 0) {
           iterateBufferSize = queryBatch;
         } else {
@@ -235,8 +235,8 @@ public final class CQueryEngine {
     SpiQuery<T> query = request.query();
     String sysPeriodLower = getSysPeriodLower(query);
     if (query.isVersionsBetween() && !historySupport.isStandardsBased()) {
-      query.where().lt(sysPeriodLower, query.getVersionEnd());
-      query.where().geOrNull(getSysPeriodUpper(query), query.getVersionStart());
+      query.where().lt(sysPeriodLower, query.versionEnd());
+      query.where().geOrNull(getSysPeriodUpper(query), query.versionStart());
     }
 
     // order by lower sys period desc
@@ -410,15 +410,15 @@ public final class CQueryEngine {
    */
   private void logFindBeanSummary(CQuery<?> q) {
     SpiQuery<?> query = q.request().query();
-    String loadMode = query.getLoadMode();
-    String loadDesc = query.getLoadDescription();
-    String lazyLoadProp = query.getLazyLoadProperty();
-    ObjectGraphNode node = query.getParentNode();
+    String loadMode = query.loadMode();
+    String loadDesc = query.loadDescription();
+    String lazyLoadProp = query.lazyLoadProperty();
+    ObjectGraphNode node = query.parentNode();
     String originKey;
-    if (node == null || node.getOriginQueryPoint() == null) {
+    if (node == null || node.origin() == null) {
       originKey = null;
     } else {
-      originKey = node.getOriginQueryPoint().getKey();
+      originKey = node.origin().key();
     }
 
     StringBuilder msg = new StringBuilder(200);
@@ -444,7 +444,7 @@ public final class CQueryEngine {
     }
     msg.append("exeMicros[").append(q.queryExecutionTimeMicros());
     msg.append("] rows[").append(q.loadedRowDetail());
-    msg.append("] bind[").append(q.bindLog()).append("]");
+    msg.append("] bind[").append(q.bindLog()).append(']');
     q.transaction().logSummary(msg.toString());
   }
 
@@ -453,16 +453,16 @@ public final class CQueryEngine {
    */
   private void logFindManySummary(CQuery<?> q) {
     SpiQuery<?> query = q.request().query();
-    String loadMode = query.getLoadMode();
-    String loadDesc = query.getLoadDescription();
-    String lazyLoadProp = query.getLazyLoadProperty();
-    ObjectGraphNode node = query.getParentNode();
+    String loadMode = query.loadMode();
+    String loadDesc = query.loadDescription();
+    String lazyLoadProp = query.lazyLoadProperty();
+    ObjectGraphNode node = query.parentNode();
 
     String originKey;
-    if (node == null || node.getOriginQueryPoint() == null) {
+    if (node == null || node.origin() == null) {
       originKey = null;
     } else {
-      originKey = node.getOriginQueryPoint().getKey();
+      originKey = node.origin().key();
     }
 
     StringBuilder msg = new StringBuilder(200);
@@ -489,7 +489,7 @@ public final class CQueryEngine {
     msg.append("exeMicros[").append(q.queryExecutionTimeMicros());
     msg.append("] rows[").append(q.loadedRowDetail());
     msg.append("] predicates[").append(q.logWhereSql());
-    msg.append("] bind[").append(q.bindLog()).append("]");
+    msg.append("] bind[").append(q.bindLog()).append(']');
     q.transaction().logSummary(msg.toString());
   }
 }

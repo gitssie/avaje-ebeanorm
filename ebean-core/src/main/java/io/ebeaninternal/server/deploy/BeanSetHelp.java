@@ -1,12 +1,12 @@
 package io.ebeaninternal.server.deploy;
 
-import io.ebean.Query;
 import io.ebean.Transaction;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.BeanCollectionAdd;
 import io.ebean.bean.EntityBean;
 import io.ebean.common.BeanSet;
 import io.ebeaninternal.api.SpiEbeanServer;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonWriter;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class BeanSetHelp<T> extends BaseCollectionHelp<T> {
   public final BeanCollectionAdd getBeanCollectionAdd(Object bc, String mapKey) {
     if (bc instanceof BeanSet<?>) {
       BeanSet<?> beanSet = (BeanSet<?>) bc;
-      if (beanSet.getActualSet() == null) {
+      if (beanSet.actualSet() == null) {
         beanSet.setActualSet(new LinkedHashSet<>());
       }
       return beanSet;
@@ -73,12 +73,6 @@ public class BeanSetHelp<T> extends BaseCollectionHelp<T> {
   }
 
   @Override
-  public final void refresh(SpiEbeanServer server, Query<?> query, Transaction t, EntityBean parentBean) {
-    BeanSet<?> newBeanSet = (BeanSet<?>) server.findSet(query, t);
-    refresh(newBeanSet, parentBean);
-  }
-
-  @Override
   public final void refresh(BeanCollection<?> bc, EntityBean parentBean) {
     BeanSet<?> newBeanSet = (BeanSet<?>) bc;
     Set<?> current = (Set<?>) many.getValue(parentBean);
@@ -90,7 +84,7 @@ public class BeanSetHelp<T> extends BaseCollectionHelp<T> {
     } else if (current instanceof BeanSet<?>) {
       // normally this case, replace just the underlying list
       BeanSet<?> currentBeanSet = (BeanSet<?>) current;
-      currentBeanSet.setActualSet(newBeanSet.getActualSet());
+      currentBeanSet.setActualSet(newBeanSet.actualSet());
       currentBeanSet.setModifyListening(many.modifyListenMode());
 
     } else {
@@ -113,7 +107,7 @@ public class BeanSetHelp<T> extends BaseCollectionHelp<T> {
           return;
         }
       }
-      set = bc.getActualSet();
+      set = bc.actualSet();
     } else {
       set = (Set<?>) collection;
     }

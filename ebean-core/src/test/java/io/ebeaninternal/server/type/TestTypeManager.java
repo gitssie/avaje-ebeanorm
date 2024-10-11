@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.type;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.platform.h2.H2Platform;
 import io.ebean.core.type.DataReader;
@@ -57,7 +58,7 @@ class TestTypeManager extends BaseTest {
       typeManager.enumType(MyEnum.class, EnumType.STRING);
       fail("never get here");
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 
@@ -91,7 +92,7 @@ class TestTypeManager extends BaseTest {
       typeManager.enumType(MyDayOfWeek.class, EnumType.ORDINAL);
       fail("never get here");
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 
@@ -121,7 +122,7 @@ class TestTypeManager extends BaseTest {
   }
 
   private DefaultTypeManager createTypeManager() {
-    DatabaseConfig config = new DatabaseConfig();
+    var config = new DatabaseConfig();
     config.setDatabasePlatform(new H2Platform());
 
     BootupClasses bootupClasses = new BootupClasses();
@@ -131,7 +132,7 @@ class TestTypeManager extends BaseTest {
   }
 
   private DefaultTypeManager createTypeManagerDefaultEnumTypeString() {
-    DatabaseConfig config = new DatabaseConfig();
+    var config = new DatabaseConfig();
     config.setDatabasePlatform(new H2Platform());
     config.setDefaultEnumType(EnumType.STRING);
 

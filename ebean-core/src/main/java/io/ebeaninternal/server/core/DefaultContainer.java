@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.core;
 
+import io.ebean.Database;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.*;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.event.ShutdownManager;
@@ -12,13 +14,15 @@ import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClassPathSearch;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.executor.DefaultBackgroundExecutor;
-
 import javax.persistence.PersistenceException;
+
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.System.Logger.Level.*;
@@ -32,18 +36,28 @@ public final class DefaultContainer implements SpiContainer {
 
   private final ReentrantLock lock = new ReentrantLock();
   private final ClusterManager clusterManager;
-  private boolean isTenant = false;
+  private final List<EntityClassRegister> entityClassRegisters;
+  boolean isTenant = false;
 
   public DefaultContainer(ContainerConfig containerConfig) {
     this.clusterManager = new ClusterManager(containerConfig);
     // register so that we can shutdown any Ebean wide
     // resources such as clustering
     ShutdownManager.registerContainer(this);
+    entityClassRegisters = initEntityRegisters();
   }
 
   public DefaultContainer(ContainerConfig containerConfig, boolean isTenant) {
     this(containerConfig);
     this.isTenant = isTenant;
+  }
+
+  private List<EntityClassRegister> initEntityRegisters() {
+    var entityClassRegisters = new ArrayList<EntityClassRegister>();
+    for (EntityClassRegister entityClassRegister : ServiceLoader.load(EntityClassRegister.class)) {
+      entityClassRegisters.add(entityClassRegister);
+    }
+    return entityClassRegisters;
   }
 
   @Override
@@ -57,13 +71,12 @@ public final class DefaultContainer implements SpiContainer {
    */
   @Override
   public SpiEbeanServer createServer(String name) {
-    DatabaseConfig config = new DatabaseConfig();
-    config.setName(name);
-    config.loadFromProperties();
-    return createServer(config);
+    var builder = Database.builder().name(name).loadFromProperties();
+    return createServer(builder);
   }
 
-  private SpiBackgroundExecutor createBackgroundExecutor(DatabaseConfig config) {
+  private SpiBackgroundExecutor createBackgroundExecutor(DatabaseBuilder builder) {
+    var config = builder.settings();
     String namePrefix = "ebean-" + config.getName();
     int schedulePoolSize = config.getBackgroundExecutorSchedulePoolSize();
     int shutdownSecs = config.getBackgroundExecutorShutdownSecs();
@@ -75,9 +88,10 @@ public final class DefaultContainer implements SpiContainer {
    * Create the implementation from the configuration.
    */
   @Override
-  public SpiEbeanServer createServer(DatabaseConfig config) {
+  public SpiEbeanServer createServer(DatabaseBuilder builder) {
     lock.lock();
     try {
+      var config = builder.settings();
       long start = System.currentTimeMillis();
       applyConfigServices(config);
       setNamingConvention(config);
@@ -85,7 +99,7 @@ public final class DefaultContainer implements SpiContainer {
 
       boolean online = true;
       if (config.isDocStoreOnly()) {
-        config.setDatabasePlatform(new DatabasePlatform());
+        config.databasePlatform(new DatabasePlatform());
       } else {
         TenantMode tenantMode = config.getTenantMode();
         if (TenantMode.DB != tenantMode) {
@@ -121,20 +135,18 @@ public final class DefaultContainer implements SpiContainer {
     }
   }
 
-  private void applyConfigServices(DatabaseConfig config) {
+  private void applyConfigServices(DatabaseBuilder.Settings config) {
     if (config.isDefaultServer()) {
       for (DatabaseConfigProvider configProvider : ServiceLoader.load(DatabaseConfigProvider.class)) {
         configProvider.apply(config);
       }
     }
-    if (config.isAutoLoadModuleInfo()) {
+    if (config.isLoadModuleInfo()) {
       // auto register entity classes
-      boolean found = false;
-      for (EntityClassRegister loader : ServiceLoader.load(EntityClassRegister.class)) {
+      for (EntityClassRegister loader : entityClassRegisters) {
         config.addAll(loader.classesFor(config.getName(), config.isDefaultServer()));
-        found = true;
       }
-      if (!found) {
+      if (entityClassRegisters.isEmpty()) {
         checkMissingModulePathProvides();
       }
     }
@@ -143,7 +155,7 @@ public final class DefaultContainer implements SpiContainer {
   private void checkMissingModulePathProvides() {
     URL servicesFile = ClassLoader.getSystemResource("META-INF/services/io.ebean.config.EntityClassRegister");
     if (servicesFile != null) {
-      log.log(ERROR, "module-info.java is probably missing 'provides io.ebean.config.EntityClassRegister with EbeanEntityRegister' clause. EntityClassRegister exists but was not service loaded.");
+      log.log(ERROR, "module-info.java is probably missing ''provides io.ebean.config.EntityClassRegister with EbeanEntityRegister'' clause. EntityClassRegister exists but was not service loaded.");
     }
   }
 
@@ -164,7 +176,7 @@ public final class DefaultContainer implements SpiContainer {
    * Get the entities, scalarTypes, Listeners etc combining the class registered
    * ones with the already created instances.
    */
-  private BootupClasses bootupClasses(DatabaseConfig config) {
+  private BootupClasses bootupClasses(DatabaseBuilder.Settings config) {
     BootupClasses bootup = bootupClasses1(config);
     bootup.addServerConfigStartup(config.getServerConfigStartupListeners());
     bootup.runServerConfigStartup(config);
@@ -182,11 +194,11 @@ public final class DefaultContainer implements SpiContainer {
   /**
    * Get the class based entities, scalarTypes, Listeners etc.
    */
-  private BootupClasses bootupClasses1(DatabaseConfig config) {
-    List<Class<?>> entityClasses = config.getClasses();
-    if (config.isDisableClasspathSearch() || (entityClasses != null && !entityClasses.isEmpty())) {
+  private BootupClasses bootupClasses1(DatabaseBuilder.Settings config) {
+    Set<Class<?>> classes = config.classes();
+    if (config.isDisableClasspathSearch() || (classes != null && !classes.isEmpty())) {
       // use classes we explicitly added via configuration
-      return new BootupClasses(entityClasses);
+      return new BootupClasses(classes);
     }
     return BootupClassPathSearch.search(config);
   }
@@ -194,16 +206,16 @@ public final class DefaultContainer implements SpiContainer {
   /**
    * Set the naming convention to underscore if it has not already been set.
    */
-  private void setNamingConvention(DatabaseConfig config) {
+  private void setNamingConvention(DatabaseBuilder.Settings config) {
     if (config.getNamingConvention() == null) {
-      config.setNamingConvention(new UnderscoreNamingConvention());
+      config.namingConvention(new UnderscoreNamingConvention());
     }
   }
 
   /**
    * Set the DatabasePlatform if it has not already been set.
    */
-  private void setDatabasePlatform(DatabaseConfig config) {
+  private void setDatabasePlatform(DatabaseBuilder.Settings config) {
     DatabasePlatform platform = config.getDatabasePlatform();
     if (platform == null) {
       if (config.getTenantMode().isDynamicDataSource()) {
@@ -211,7 +223,7 @@ public final class DefaultContainer implements SpiContainer {
       }
       // automatically determine the platform
       platform = new DatabasePlatformFactory().create(config);
-      config.setDatabasePlatform(platform);
+      config.databasePlatform(platform);
     }
     platform.configure(config.getPlatformConfig());
   }
@@ -219,7 +231,7 @@ public final class DefaultContainer implements SpiContainer {
   /**
    * Set the DataSource if it has not already been set.
    */
-  private void setDataSource(DatabaseConfig config) {
+  private void setDataSource(DatabaseBuilder.Settings config) {
     if (isOfflineMode(config)) {
       log.log(DEBUG, "... DbOffline using platform [{0}]", DbOffline.getPlatform());
     } else {
@@ -227,7 +239,7 @@ public final class DefaultContainer implements SpiContainer {
     }
   }
 
-  private boolean isOfflineMode(DatabaseConfig config) {
+  private boolean isOfflineMode(DatabaseBuilder.Settings config) {
     return config.isDbOffline() || DbOffline.isSet();
   }
 
@@ -235,13 +247,11 @@ public final class DefaultContainer implements SpiContainer {
    * Check the autoCommit and Transaction Isolation levels of the DataSource.
    * <p>
    * If autoCommit is true this could be a real problem.
-   * </p>
    * <p>
    * If the Isolation level is not READ_COMMITTED then optimistic concurrency
    * checking may not work as expected.
-   * </p>
    */
-  private boolean checkDataSource(DatabaseConfig config) {
+  private boolean checkDataSource(DatabaseBuilder.Settings config) {
     if (isOfflineMode(config)) {
       return false;
     }

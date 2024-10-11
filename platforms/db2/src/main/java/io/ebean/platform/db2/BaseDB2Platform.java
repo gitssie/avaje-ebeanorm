@@ -1,6 +1,7 @@
 package io.ebean.platform.db2;
 
 import io.ebean.BackgroundExecutor;
+import io.ebean.Query;
 import io.ebean.annotation.Platform;
 import io.ebean.config.dbplatform.*;
 
@@ -34,6 +35,8 @@ public abstract class BaseDB2Platform extends DatabasePlatform {
 
     historySupport = new DB2HistorySupport();
     booleanDbType = Types.BOOLEAN;
+    dbTypeMap.put(DbType.VARCHAR, new DbPlatformType("varchar", 255, 4000, dbTypeMap.get(DbType.CLOB)));
+    dbTypeMap.put(DbType.VARBINARY, new DbPlatformType("varbinary", 255, 8000, dbTypeMap.get(DbType.BLOB)));
     dbTypeMap.put(DbType.TINYINT, new DbPlatformType("smallint", false));
     dbTypeMap.put(DbType.INTEGER, new DbPlatformType("integer", false));
     dbTypeMap.put(DbType.BIGINT, new DbPlatformType("bigint", false));
@@ -51,4 +54,9 @@ public abstract class BaseDB2Platform extends DatabasePlatform {
     return new DB2SequenceIdGenerator(be, ds, seqName, sequenceBatchSize);
   }
 
+  @Override
+  protected String withForUpdate(String sql, Query.LockWait lockWait, Query.LockType lockType) {
+    // NOWAIT and SKIP LOCKED not supported with Db2
+    return sql + " with rs use and keep update locks";
+  }
 }

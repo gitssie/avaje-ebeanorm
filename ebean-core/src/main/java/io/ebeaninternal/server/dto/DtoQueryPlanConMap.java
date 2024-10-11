@@ -18,7 +18,7 @@ public class DtoQueryPlanConMap extends DtoQueryPlanBase {
   public Object readRow(DataReader dataReader) throws SQLException {
     Map<String, Object> bean = new HashMap<>();
     for (DtoColumn prop : dtoColumns) {
-      bean.put(prop.getLabel(), dataReader.getObject());
+      bean.put(prop.label(), dataReader.getObject());
     }
     return bean;
   }

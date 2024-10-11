@@ -9,7 +9,7 @@ import io.ebean.config.dbplatform.DbEncrypt;
 import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
-import io.ebean.core.type.ScalarType;
+import io.ebean.core.type.ScalarType;;
 import io.ebeaninternal.server.deploy.DbMigrationInfo;
 import io.ebeaninternal.server.deploy.IndexDefinition;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
@@ -74,7 +74,7 @@ final class AnnotationFields extends AnnotationParser {
   /**
    * Read the Id marker annotations on EmbeddedId properties.
    */
-  protected void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
+  private void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
     readJsonAnnotations(prop);
     if (has(prop, Id.class)) {
       readIdAssocOne(prop);
@@ -106,6 +106,10 @@ final class AnnotationFields extends AnnotationParser {
     if (formula != null) {
       prop.setSqlFormula(processFormula(formula.select()), processFormula(formula.join()));
     }
+    DbComment comment = get(prop, DbComment.class);
+    if (comment != null) {
+      prop.setDbComment(comment.value());
+    }
     initWhoProperties(prop);
     initDbMigration(prop);
   }
@@ -122,7 +126,7 @@ final class AnnotationFields extends AnnotationParser {
     }
   }
 
-  protected void readField(DeployBeanProperty prop) {
+  private void readField(DeployBeanProperty prop) {
     // all Enums will have a ScalarType assigned...
     boolean isEnum = prop.getPropertyType().isEnum();
     Enumerated enumerated = get(prop, Enumerated.class);
@@ -410,7 +414,7 @@ final class AnnotationFields extends AnnotationParser {
   }
 
   private void setEncryption(DeployBeanProperty prop, boolean dbEncString, int dbLen) {
-    util.checkEncryptKeyManagerDefined(prop.getFullBeanName());
+    util.checkEncryptKeyManagerDefined(prop.toString());
     ScalarType<?> st = prop.getScalarType();
     if (byte[].class.equals(st.type())) {
       // Always using Java client encryption rather than DB for encryption

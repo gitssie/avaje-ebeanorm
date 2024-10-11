@@ -1,10 +1,7 @@
 package io.ebeaninternal.server.expression;
 
 import io.ebean.util.SplitName;
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.ManyWhereJoins;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.el.ElPropertyValue;
 
@@ -51,24 +48,22 @@ final class NullExpression extends AbstractExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
 
   }
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-
     if (assocMany) {
-      // translate to exists subquery
+      // translate to exists sub-query
       IsEmptyExpression.isEmptySql(request, elProperty, !notNull, propertyPath);
       return;
     }
-
     String nullExpr = notNull ? " is not null" : " is null";
     if (elProperty != null && elProperty.isAssocId()) {
-      request.append(elProperty.assocIdExpression(propName, nullExpr));
+      request.parse(elProperty.assocIdExpression(propName, nullExpr));
     } else {
-      request.append(propName).append(nullExpr);
+      request.property(propName).append(nullExpr);
     }
   }
 
@@ -88,7 +83,7 @@ final class NullExpression extends AbstractExpression {
     } else {
       builder.append("Null[");
     }
-    builder.append(propName).append("]");
+    builder.append(propName).append(']');
   }
 
   @Override

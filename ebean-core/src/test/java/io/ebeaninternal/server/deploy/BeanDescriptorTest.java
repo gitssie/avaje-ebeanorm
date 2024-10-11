@@ -44,7 +44,7 @@ public class BeanDescriptorTest extends BaseTest {
     BeanProperty b2 = (BeanProperty) customerDesc.property("name__c");
     b1.setValueIntercept((EntityBean) bean, "Jack");
     b2.setValueIntercept((EntityBean) bean, "新数据1");
-    System.out.println(ebi.getDirtyPropertyNames());
+    System.out.println(ebi.dirtyPropertyNames());
     DB.save(bean);
 
     bean = DB.createQuery(Customer.class)
@@ -60,7 +60,7 @@ public class BeanDescriptorTest extends BaseTest {
 //    bean.setSmallnote("xxx");
     ebi = ((EntityBean) bean)._ebean_getIntercept();
 //    EntityBeanIntercept ebi2 = ((EntityBean) bean.getCustom())._ebean_getIntercept();
-    System.out.println(ebi.getDirtyPropertyNames());
+    System.out.println(ebi.dirtyPropertyNames());
 //    System.out.println(bean.getName() + bean.getCustom());
     DB.update(bean);
     if (true) {
@@ -74,7 +74,7 @@ public class BeanDescriptorTest extends BaseTest {
     bean.setName("CJAK");
     custom.put("name__c", "01-重新更新1");
 //    custom.put("name2__c","02-重新更新2");
-    System.out.println(ebi.getDirtyPropertyNames());
+    System.out.println(ebi.dirtyPropertyNames());
     DB.update(bean);
     if (true) {
       ElementBean ebean = (ElementBean) custom;
@@ -90,7 +90,7 @@ public class BeanDescriptorTest extends BaseTest {
     custom.put("name__c", "01-重新更新3");
     custom.put("name2__c", "02-重新更新3");
     custom.put("name3__c", "02-重新更新3");
-    System.out.println(((EntityBean) bean)._ebean_getIntercept().getDirtyPropertyNames());
+    System.out.println(((EntityBean) bean)._ebean_getIntercept().dirtyPropertyNames());
     DB.update(bean);
     System.out.println(bean.getCustom().size());
 
@@ -102,7 +102,7 @@ public class BeanDescriptorTest extends BaseTest {
 
     bean.setName("这是为什么");
     custom.put("name__c", "01-重新更新4");
-    System.out.println(((EntityBean) bean)._ebean_getIntercept().getDirtyPropertyNames());
+    System.out.println(((EntityBean) bean)._ebean_getIntercept().dirtyPropertyNames());
     DB.update(bean);
   }
 

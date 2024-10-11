@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy.parse;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
 import io.ebeaninternal.server.deploy.BeanDescriptorMap;
@@ -15,7 +16,7 @@ public class XReadAnnotations {
   private final ReadAnnotationConfig readConfig;
   private final TenantDeployCreateProperties createProperties;
 
-  public XReadAnnotations(GeneratedPropertyFactory generatedPropFactory, String asOfViewSuffix, String versionsBetweenSuffix, DatabaseConfig config, TenantDeployCreateProperties createProperties) {
+  public XReadAnnotations(GeneratedPropertyFactory generatedPropFactory, String asOfViewSuffix, String versionsBetweenSuffix, DatabaseBuilder.Settings config, TenantDeployCreateProperties createProperties) {
     this.readConfig = new ReadAnnotationConfig(generatedPropFactory, asOfViewSuffix, versionsBetweenSuffix, config);
     this.createProperties = createProperties;
   }

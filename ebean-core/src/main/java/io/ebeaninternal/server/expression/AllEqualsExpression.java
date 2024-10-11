@@ -1,10 +1,6 @@
 package io.ebeaninternal.server.expression;
 
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.ManyWhereJoins;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
-import io.ebeaninternal.api.SpiExpressionValidation;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.el.ElPropertyDeploy;
 
@@ -55,7 +51,7 @@ final class AllEqualsExpression extends NonPrepareExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     if (propMap.isEmpty()) {
       return;
     }
@@ -72,7 +68,7 @@ final class AllEqualsExpression extends NonPrepareExpression {
     if (propMap.isEmpty()) {
       return;
     }
-    request.append("(");
+    request.append('(');
     int count = 0;
     for (Map.Entry<String, Object> entry : propMap.entrySet()) {
       Object value = entry.getValue();
@@ -80,7 +76,7 @@ final class AllEqualsExpression extends NonPrepareExpression {
       if (count > 0) {
         request.append("and ");
       }
-      request.append(name(propName));
+      request.property(name(propName));
       if (value == null) {
         request.append(" is null ");
       } else {
@@ -88,7 +84,7 @@ final class AllEqualsExpression extends NonPrepareExpression {
       }
       count++;
     }
-    request.append(")");
+    request.append(')');
   }
 
   /**
@@ -109,9 +105,9 @@ final class AllEqualsExpression extends NonPrepareExpression {
       } else {
         builder.append(" =?");
       }
-      builder.append(",");
+      builder.append(',');
     }
-    builder.append("]");
+    builder.append(']');
   }
 
   @Override

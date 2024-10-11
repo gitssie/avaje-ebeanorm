@@ -58,16 +58,16 @@ class SqlTreeNodeBean implements SqlTreeNode {
    * Construct for leaf node.
    */
   SqlTreeNodeBean(String prefix, STreePropertyAssoc beanProp, SqlTreeProperties props,
-                  List<SqlTreeNode> myChildren, boolean withId, SpiQuery.TemporalMode temporalMode, boolean disableLazyLoad, boolean readOnly) {
-    this(prefix, beanProp, beanProp.target(), props, myChildren, withId, null, temporalMode, disableLazyLoad, readOnly);
+                  List<SqlTreeNode> myChildren, boolean withId, SqlTreeCommon common) {
+    this(prefix, beanProp, beanProp.target(), props, myChildren, withId, null, common);
   }
 
   /**
    * Construct for root node.
    */
   SqlTreeNodeBean(STreeType desc, SqlTreeProperties props, List<SqlTreeNode> myList, boolean withId,
-                  STreePropertyAssocMany many, SpiQuery.TemporalMode temporalMode, boolean disableLazyLoad, boolean readOnly) {
-    this(null, null, desc, props, myList, withId, many, temporalMode, disableLazyLoad, readOnly);
+                  STreePropertyAssocMany many, SqlTreeCommon common) {
+    this(null, null, desc, props, myList, withId, many, common);
   }
 
   /**
@@ -75,14 +75,14 @@ class SqlTreeNodeBean implements SqlTreeNode {
    */
   private SqlTreeNodeBean(String prefix, STreePropertyAssoc beanProp, STreeType desc, SqlTreeProperties props,
                           List<SqlTreeNode> myChildren, boolean withId, STreePropertyAssocMany lazyLoadParent,
-                          SpiQuery.TemporalMode temporalMode, boolean disableLazyLoad, boolean readOnly) {
+                          SqlTreeCommon common) {
     this.lazyLoadParent = lazyLoadParent;
     this.lazyLoadParentIdBinder = (lazyLoadParent == null) ? null : lazyLoadParent.idBinder();
     this.prefix = prefix;
     this.desc = desc;
     this.inheritInfo = desc.inheritInfo();
     this.idBinder = desc.idBinder();
-    this.temporalMode = temporalMode;
+    this.temporalMode = common.temporalMode();
     this.temporalVersions = temporalMode == SpiQuery.TemporalMode.VERSIONS;
     this.nodeBeanProp = beanProp;
     this.extraWhere = (beanProp == null) ? null : beanProp.extraWhere();
@@ -91,8 +91,8 @@ class SqlTreeNodeBean implements SqlTreeNode {
     // the bean has an Id property and we want to use it
     this.readId = !aggregationRoot && withId && desc.hasId();
     this.readIdNormal = readId && !temporalVersions;
-    this.disableLazyLoad = disableLazyLoad || !readIdNormal || desc.isRawSqlBased();
-    this.readOnly = readOnly;
+    this.disableLazyLoad = common.disableLazyLoad() || !readIdNormal || desc.isRawSqlBased();
+    this.readOnly = common.readOnly();
     this.partialObject = props.isPartialObject();
     this.properties = props.props();
     this.children = myChildren == null ? Collections.emptyList() : myChildren;
@@ -159,7 +159,7 @@ class SqlTreeNodeBean implements SqlTreeNode {
       lazyLoadParent.addSelectExported(ctx, prefix);
     }
     if (readId) {
-      appendSelectId(ctx, idBinder.getBeanProperty());
+      appendSelectId(ctx, idBinder.beanProperty());
     }
     for (STreeProperty property : properties) {
       if (!property.isAggregation()) {
@@ -201,7 +201,7 @@ class SqlTreeNodeBean implements SqlTreeNode {
       if (!subQuery && inheritInfo != null) {
         ctx.appendColumn(inheritInfo.getDiscriminatorColumn());
       }
-      appendSelectId(ctx, idBinder.getBeanProperty());
+      appendSelectId(ctx, idBinder.beanProperty());
     }
     appendSelect(ctx, subQuery, properties);
     for (SqlTreeNode child : children) {
@@ -379,16 +379,16 @@ class SqlTreeNodeBean implements SqlTreeNode {
 
 
   @Override
-  public void unselectLobs() {
+  public void unselectLobsForPlatform() {
     if (children != null) {
       for (SqlTreeNode child : children) {
-        child.unselectLobs();
+        child.unselectLobsForPlatform();
       }
     }
     if (hasLob()) {
       List<STreeProperty> lst = new ArrayList<>();
       for (STreeProperty prop : properties) {
-        if (!prop.isDbLob()) {
+        if (!prop.isLobForPlatform()) {
           lst.add(prop);
         }
       }
@@ -399,7 +399,7 @@ class SqlTreeNodeBean implements SqlTreeNode {
 
   private boolean hasLob() {
     for (STreeProperty prop : properties) {
-      if (prop.isDbLob()) {
+      if (prop.isLobForPlatform()) {
         return true;
       }
     }

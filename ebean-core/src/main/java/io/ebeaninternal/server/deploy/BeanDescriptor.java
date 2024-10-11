@@ -4,7 +4,7 @@ import io.ebean.*;
 import io.ebean.annotation.DocStoreMode;
 import io.ebean.bean.*;
 import io.ebean.cache.QueryCacheEntry;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
@@ -29,6 +29,7 @@ import io.ebeaninternal.api.*;
 import io.ebeaninternal.api.TransactionEventTable.TableIUD;
 import io.ebeaninternal.api.json.SpiJsonReader;
 import io.ebeaninternal.api.json.SpiJsonWriter;
+import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.server.cache.CacheChangeSet;
 import io.ebeaninternal.server.cache.CachedBeanData;
 import io.ebeaninternal.server.cache.CachedManyIds;
@@ -45,7 +46,6 @@ import io.ebeaninternal.server.querydefn.DefaultOrmQuery;
 import io.ebeaninternal.server.querydefn.OrmQueryDetail;
 import io.ebeaninternal.server.querydefn.OrmQueryProperties;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
-import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.util.SortByClause;
 import io.ebeaninternal.util.SortByClauseParser;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
@@ -213,7 +213,6 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private final EntityBean prototypeEntityBean;
 
   private final IdBinder idBinder;
-  private final String idSelect;
   private String idBinderInLHSSql;
   private String idBinderIdSql;
   private String deleteByIdSql;
@@ -241,7 +240,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.owner = owner;
     this.multiValueSupported = owner.isMultiValueSupported();
     this.entityType = deploy.getEntityType();
-    this.properties = deploy.getProperties();
+    this.properties = deploy.propertyNames();
     this.name = InternString.intern(deploy.getName());
     this.baseTableAlias = "t0";
     this.fullName = InternString.intern(deploy.getFullName());
@@ -354,28 +353,16 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       this.idPropertyIndex = (idProperty == null) ? -1 : ebi.findProperty(idProperty.name());
       this.versionPropertyIndex = (versionProperty == null) ? -1 : ebi.findProperty(versionProperty.name());
       this.unloadProperties = derivePropertiesToUnload(prototypeEntityBean);
-      this.propertiesIndex = new BeanProperty[ebi.getPropertyLength()];
+      this.propertiesIndex = new BeanProperty[ebi.propertyLength()];
       for (int i = 0; i < propertiesIndex.length; i++) {
-        propertiesIndex[i] = propMap.get(ebi.getProperty(i));
+        propertiesIndex[i] = propMap.get(ebi.property(i));
       }
     }
-    idSelect = initIdSelect();
   }
 
-  String initIdSelect() {
-    if (idProperty != null && !idProperty.name().equals("_idClass")) {
-      return idProperty.name();
-    } else if (entityType == EntityType.EMBEDDED) {
-      return null;
-    } else {
-      StringJoiner sj = new StringJoiner(",");
-      for (BeanProperty prop : propertiesNonMany) {
-        if (prop.isImportedPrimaryKey()) {
-          sj.add(prop.name());
-        }
-      }
-      return sj.toString().intern();
-    }
+  public String idSelect() {
+    if (idBinder == null) throw new UnsupportedOperationException();
+    return idBinder.idSelect();
   }
 
   public boolean isJacksonCorePresent() {
@@ -404,7 +391,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * These properties need to be unloaded when populating beans for queries.
    */
   private int[] derivePropertiesToUnload(EntityBean prototypeEntityBean) {
-    boolean[] loaded = prototypeEntityBean._ebean_getIntercept().getLoaded();
+    boolean[] loaded = prototypeEntityBean._ebean_getIntercept().loaded();
     int[] props = new int[loaded.length];
     int pos = 0;
     // collect the positions of the properties initialised in the default constructor.
@@ -440,7 +427,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   /**
    * Return the DatabaseConfig.
    */
-  public DatabaseConfig config() {
+  public DatabaseBuilder.Settings config() {
     return owner.config();
   }
 
@@ -547,10 +534,10 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       unidirectional.initialise(initContext);
     }
     idBinder.initialise();
-    idBinderInLHSSql = idBinder.getBindIdInSql(baseTableAlias);
-    idBinderIdSql = idBinder.getBindIdSql(baseTableAlias);
-    String idBinderInLHSSqlNoAlias = idBinder.getBindIdInSql(null);
-    String idEqualsSql = idBinder.getBindIdSql(null);
+    idBinderInLHSSql = idBinder.bindInSql(baseTableAlias);
+    idBinderIdSql = idBinder.bindEqSql(baseTableAlias);
+    String idBinderInLHSSqlNoAlias = idBinder.bindInSql(null);
+    String idEqualsSql = idBinder.bindEqSql(null);
     deleteByIdSql = "delete from " + baseTable + " where " + idEqualsSql;
     whereIdInSql = " where " + idBinderInLHSSqlNoAlias + " ";
     deleteByIdInSql = "delete from " + baseTable + whereIdInSql;
@@ -715,7 +702,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   public void merge(EntityBean bean, EntityBean existing) {
     EntityBeanIntercept fromEbi = bean._ebean_getIntercept();
     EntityBeanIntercept toEbi = existing._ebean_getIntercept();
-    int propertyLength = toEbi.getPropertyLength();
+    int propertyLength = toEbi.propertyLength();
     String[] names = properties();
     for (int i = 0; i < propertyLength; i++) {
       if (fromEbi.isLoadedProperty(i)) {
@@ -872,10 +859,10 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private SqlUpdate deleteByIdList(List<Object> idList, DeleteMode mode) {
     String baseSql = mode.isHard() ? deleteByIdInSql : softDeleteByIdInSql;
     StringBuilder sb = new StringBuilder(baseSql);
-    String inClause = idBinder.getIdInValueExprDelete(idList.size());
+    String inClause = idBinder.idInValueExprDelete(idList.size());
     sb.append(inClause);
     DefaultSqlUpdate delete = new DefaultSqlUpdate(sb.toString());
-    idBinder.addIdInBindValues(delete, idList);
+    idBinder.addBindValues(delete, idList);
     return delete;
   }
 
@@ -886,7 +873,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private SqlUpdate deleteById(Object id, DeleteMode mode) {
     String baseSql = mode.isHard() ? deleteByIdSql : softDeleteByIdSql;
     DefaultSqlUpdate sqlDelete = new DefaultSqlUpdate(baseSql);
-    Object[] bindValues = idBinder.getBindValues(id);
+    Object[] bindValues = idBinder.bindValues(id);
     for (Object bindValue : bindValues) {
       sqlDelete.setParameter(bindValue);
     }
@@ -1541,7 +1528,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * Return a Sql update statement to set the importedId value (deferred execution).
    */
   public String updateImportedIdSql(ImportedId prop) {
-    return "update " + baseTable + " set " + prop.importedIdClause() + " where " + idBinder.getBindIdSql(null);
+    return "update " + baseTable + " set " + prop.importedIdClause() + " where " + idBinder.bindEqSql(null);
   }
 
   /**
@@ -1619,23 +1606,10 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   /**
-   * Return the many property included in the query or null if one is not.
-   */
-  public BeanPropertyAssocMany<?> manyProperty(SpiQuery<?> query) {
-    OrmQueryDetail detail = query.getDetail();
-    for (BeanPropertyAssocMany<?> many : propertiesMany) {
-      if (detail.includesPath(many.name())) {
-        return many;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Return a raw expression for 'where parent id in ...' clause.
    */
   String parentIdInExpr(int parentIdSize, String rawWhere) {
-    String inClause = idBinder.getIdInValueExpr(false, parentIdSize);
+    String inClause = idBinder.idInValueExpr(false, parentIdSize);
     return idBinder.isIdInExpandedForm() ? inClause : rawWhere + inClause;
   }
 
@@ -1688,7 +1662,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     if (alias == null) {
       return idBinderIdSql;
     } else {
-      return idBinder.getBindIdSql(alias);
+      return idBinder.bindEqSql(alias);
     }
   }
 
@@ -1714,7 +1688,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * This 'flattens' any EmbeddedId or multiple Id property cases.
    */
   public Object[] bindIdValues(Object idValue) {
-    return idBinder.getBindValues(idValue);
+    return idBinder.bindValues(idValue);
   }
 
   @Override
@@ -1735,8 +1709,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       throw new UnsupportedOperationException("cannot create entity bean for abstract entity " + name());
     }
     try {
-//      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
-      EntityBean bean = createPrototypeEntityBean(beanType);
+      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
       if (beanPostConstructListener != null) {
         beanPostConstructListener.autowire(bean); // calls all registered listeners
         beanPostConstructListener.postConstruct(bean); // calls first the @PostConstruct method and then the listeners
@@ -2075,6 +2048,13 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   /**
+   * Clear a bean from the persistence context.
+   */
+  public void contextClear(PersistenceContext pc) {
+    pc.clear(rootBeanType);
+  }
+
+  /**
    * Delete a bean from the persistence context (such that we don't fetch it in the same transaction).
    */
   public void contextDeleted(PersistenceContext pc, Object idValue) {
@@ -2123,7 +2103,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * The usage is to provide simple id types for JSON processing (for embeddedId's).
    */
   public Object idForJson(Object bean) {
-    return idBinder.getIdForJson((EntityBean) bean);
+    return idBinder.convertForJson((EntityBean) bean);
   }
 
   /**
@@ -2132,7 +2112,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * The usage is to provide simple id types for JSON processing (for embeddedId's).
    */
   Object convertIdFromJson(Object idValue) {
-    return idBinder.convertIdFromJson(idValue);
+    return idBinder.convertFromJson(idValue);
   }
 
   /**
@@ -2140,7 +2120,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * included in the query.
    */
   public String defaultOrderBy() {
-    return idBinder.getDefaultOrderBy();
+    return idBinder.orderBy();
   }
 
   /**
@@ -2222,12 +2202,12 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   public boolean lazyLoadMany(EntityBeanIntercept ebi, LoadBeanContext parent) {
-    int lazyLoadProperty = ebi.getLazyLoadPropertyIndex();
+    int lazyLoadProperty = ebi.lazyLoadPropertyIndex();
     if (lazyLoadProperty == -1) {
       return false;
     }
     if (inheritInfo != null) {
-      return descOf(ebi.getOwner().getClass()).lazyLoadMany(ebi, lazyLoadProperty, parent);
+      return descOf(ebi.owner().getClass()).lazyLoadMany(ebi, lazyLoadProperty, parent);
     }
     return lazyLoadMany(ebi, lazyLoadProperty, parent);
   }
@@ -2246,7 +2226,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     BeanProperty lazyLoadBeanProp = propertiesIndex[lazyLoadProperty];
     if (lazyLoadBeanProp instanceof BeanPropertyAssocMany<?>) {
       BeanPropertyAssocMany<?> manyProp = (BeanPropertyAssocMany<?>) lazyLoadBeanProp;
-      final BeanCollection<?> collection = manyProp.createReference(ebi.getOwner());
+      final BeanCollection<?> collection = manyProp.createReference(ebi.owner());
       ebi.setLoadedLazy();
       if (loadBeanContext != null) {
         loadBeanContext.register(manyProp, collection);
@@ -2360,7 +2340,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       ElPropertyDeploy fk = elDeployCache.get(propName);
       if (fk instanceof BeanFkeyProperty) {
         // propertyDeploy chain for foreign key column
-        return ((BeanFkeyProperty) fk).create(chain.getExpression(), chain.isContainsMany());
+        return ((BeanFkeyProperty) fk).create(chain.expression(), chain.isContainsMany());
       }
     }
     int basePos = propName.indexOf('.');
@@ -2380,7 +2360,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       return property;
     }
     if (property == null) {
-      throw new PersistenceException("No property found for [" + propName + "] in expression " + chain.getExpression());
+      throw new PersistenceException("No property found for [" + propName + "] in expression " + chain.expression());
     }
     if (property.containsMany()) {
       chain.setContainsMany();
@@ -2455,9 +2435,13 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
 
   BeanProperty _findBeanProperty(String propName) {
     BeanProperty prop = propMap.get(propName);
-    if (prop == null && inheritInfo != null) {
-      // search in sub types...
-      return inheritInfo.findSubTypeProperty(propName);
+    if (prop == null) {
+      if ("_$IdClass$".equals(propName)) {
+        return idProperty;
+      } else if (inheritInfo != null) {
+        // search in sub types...
+        return inheritInfo.findSubTypeProperty(propName);
+      }
     }
     return prop;
   }
@@ -3062,10 +3046,6 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     return idProperty;
   }
 
-  public String idSelect() {
-    return idSelect;
-  }
-
   /**
    * Return true if this bean should be inserted rather than updated.
    *
@@ -3081,7 +3061,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       // not using Id generator so just base on isLoaded()
       return !ebi.isLoaded();
     }
-    if (!hasIdValue(ebi.getOwner())) {
+    if (!hasIdValue(ebi.owner())) {
       // No Id property means it must be an insert
       return true;
     }
@@ -3144,7 +3124,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     for (BeanProperty beanProperty : propertiesMutable) {
       int propertyIndex = beanProperty.propertyIndex();
       if (ebi.isLoadedProperty(propertyIndex)) {
-        Object value = beanProperty.getValue(ebi.getOwner());
+        Object value = beanProperty.getValue(ebi.owner());
         if (beanProperty.checkMutable(value, ebi.isDirtyProperty(propertyIndex), ebi)) {
           // mutable scalar value which is considered dirty so mark
           // it as such so that it is included in an update
@@ -3161,7 +3141,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     for (BeanProperty beanProperty : propertiesMutable) {
       int propertyIndex = beanProperty.propertyIndex();
       if (ebi.isLoadedProperty(propertyIndex)) {
-        Object value = beanProperty.getValue(ebi.getOwner());
+        Object value = beanProperty.getValue(ebi.owner());
         if (beanProperty.checkMutable(value, ebi.isDirtyProperty(propertyIndex), ebi)) {
           ebi.markPropertyAsChanged(propertyIndex);
           return;
@@ -3171,7 +3151,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   public ConcurrencyMode concurrencyMode(EntityBeanIntercept ebi) {
-    if (concurrencyMode == null && !hasVersionProperty(ebi)) {
+    if (!hasVersionProperty(ebi)) {
       return ConcurrencyMode.NONE;
     } else {
       return concurrencyMode;
@@ -3210,8 +3190,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * provides unique ordering of the rows (so that the paging is predicable).
    */
   public void appendOrderById(SpiQuery<T> query) {
-    if (idProperty != null && !idProperty.isEmbedded() && !query.order().containsProperty(idProperty.name())) {
-      query.order().asc(idProperty.name());
+    if (idProperty != null && !idProperty.isEmbedded() && !query.orderBy().containsProperty(idProperty.name())) {
+      query.orderBy().asc(idProperty.name());
     }
   }
 

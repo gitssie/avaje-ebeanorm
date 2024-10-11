@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy;
 
 import io.ebean.BackgroundExecutor;
+import io.ebean.DatabaseBuilder;
 import io.ebean.Model;
 import io.ebean.RawSqlBuilder;
 import io.ebean.annotation.ConstraintMode;
@@ -79,7 +80,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   protected NamingConvention namingConvention;
   protected DeployCreateProperties createProperties;
   protected BeanManagerFactory beanManagerFactory;
-  protected DatabaseConfig config;
+  protected DatabaseBuilder.Settings config;
   protected ChangeLogListener changeLogListener;
   protected ChangeLogRegister changeLogRegister;
   protected ChangeLogPrepare changeLogPrepare;
@@ -106,6 +107,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   protected String asOfViewSuffix;
   protected boolean jacksonCorePresent;
   protected int queryPlanTTLSeconds;
+  protected BindMaxLength bindMaxLength;
   protected int entityBeanCount;
   protected List<BeanDescriptor<?>> immutableDescriptorList;
   /**
@@ -160,6 +162,19 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     this.changeLogListener = config.changeLogListener(bootupClasses.getChangeLogListener());
     this.changeLogRegister = config.changeLogRegister(bootupClasses.getChangeLogRegister());
     this.jacksonCorePresent = config.isJacksonCorePresent();
+    this.bindMaxLength = initMaxLength();
+  }
+
+  BindMaxLength initMaxLength() {
+    LengthCheck lengthCheck = this.config.getLengthCheck();
+    switch (lengthCheck) {
+      case OFF:
+        return null;
+      case UTF8:
+        return BindMaxLength.ofUtf8();
+      default:
+        return BindMaxLength.ofStandard();
+    }
   }
 
   @Override
@@ -196,19 +211,19 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   /**
    * Return the AsOfViewSuffix based on the DbHistorySupport.
    */
-  private String asOfViewSuffix(DatabasePlatform databasePlatform, DatabaseConfig serverConfig) {
+  private String asOfViewSuffix(DatabasePlatform databasePlatform, DatabaseBuilder.Settings config) {
     DbHistorySupport historySupport = databasePlatform.historySupport();
     // with historySupport returns a simple view suffix or the sql2011 as of timestamp suffix
-    return (historySupport == null) ? serverConfig.getAsOfViewSuffix() : historySupport.getAsOfViewSuffix(serverConfig.getAsOfViewSuffix());
+    return (historySupport == null) ? config.getAsOfViewSuffix() : historySupport.getAsOfViewSuffix(config.getAsOfViewSuffix());
   }
 
   /**
    * Return the versions between timestamp suffix based on the DbHistorySupport.
    */
-  protected String versionsBetweenSuffix(DatabasePlatform databasePlatform, DatabaseConfig serverConfig) {
+  protected String versionsBetweenSuffix(DatabasePlatform databasePlatform, DatabaseBuilder.Settings config) {
     DbHistorySupport historySupport = databasePlatform.historySupport();
     // with historySupport returns a simple view suffix or the sql2011 versions between timestamp suffix
-    return (historySupport == null) ? serverConfig.getAsOfViewSuffix() : historySupport.getVersionsBetweenSuffix(serverConfig.getAsOfViewSuffix());
+    return (historySupport == null) ? config.getAsOfViewSuffix() : historySupport.getVersionsBetweenSuffix(config.getAsOfViewSuffix());
   }
 
   @Override
@@ -217,7 +232,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   }
 
   @Override
-  public DatabaseConfig config() {
+  public DatabaseBuilder.Settings config() {
     return config;
   }
 
@@ -399,7 +414,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
    * Return the BeanDescriptors mapped to the table.
    */
   public List<BeanDescriptor<?>> descriptors(String tableName) {
-    return tableToDescMap.get(tableName.toLowerCase());
+    return tableName == null ? Collections.emptyList() : tableToDescMap.get(tableName.toLowerCase());
   }
 
   /**
@@ -444,11 +459,10 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
         // build map of tables to view entities dependent on those tables
         // for the purpose of invalidating appropriate query caches
         String[] dependentTables = desc.dependentTables();
-        if (dependentTables != null && dependentTables.length > 0) {
+        if (dependentTables != null) {
           for (String depTable : dependentTables) {
             depTable = depTable.toLowerCase();
-            List<BeanDescriptor<?>> list = tableToViewDescMap.computeIfAbsent(depTable, k -> new ArrayList<>(1));
-            list.add(desc);
+            tableToViewDescMap.computeIfAbsent(depTable, k -> new ArrayList<>(1)).add(desc);
           }
         }
       }
@@ -519,7 +533,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     IdBinder idBinder = d.idBinder();
     if (idBinder instanceof IdBinderEmbedded) {
       IdBinderEmbedded embId = (IdBinderEmbedded) idBinder;
-      BeanDescriptor<?> idBeanDescriptor = embId.getIdBeanDescriptor();
+      BeanDescriptor<?> idBeanDescriptor = embId.descriptor();
       Class<?> idType = idBeanDescriptor.type();
       try {
         idType.getDeclaredMethod("hashCode");
@@ -579,7 +593,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     }
   }
 
-  private <T> String errNothingRegistered() {
+  private String errNothingRegistered() {
     return "There are no registered entities. If using query beans, that generates EbeanEntityRegister.java into " +
       "generated sources and is service loaded. If using module-info.java, then probably missing 'provides io.ebean.config.EntityClassRegister with EbeanEntityRegister' clause.";
   }
@@ -769,7 +783,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
         // find a join to that table...
         DeployBeanPropertyAssocOne<?> assocOne = descriptor.findJoinToTable(tableName);
         if (assocOne == null) {
-          String msg = "Error with property " + prop.getFullBeanName() + ". Could not find a Relationship to table " + tableName
+          String msg = "Error with property " + prop+ ". Could not find a Relationship to table " + tableName
             + ". Perhaps you could use a @JoinColumn instead.";
           throw new RuntimeException(msg);
         }
@@ -812,7 +826,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     Class<?> targetType = prop.getTargetType();
     DeployBeanInfo<?> info = deployInfoMap.get(targetType);
     if (info == null) {
-      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop.getFullBeanName());
+      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop);
     }
     return info.getDescriptor();
   }
@@ -875,7 +889,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
       }
     }
     // multiple options so should specify mappedBy property
-    String msg = "Error on " + prop.getFullBeanName() + " missing mappedBy.";
+    String msg = "Error on " + prop + " missing mappedBy.";
     msg += " There are [" + matchSet.size() + "] possible properties in " + targetDesc;
     msg += " that this association could be mapped to. Please specify one using ";
     msg += "the mappedBy attribute on @OneToMany.";
@@ -920,7 +934,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     if (!oneToMany.getCascadeInfo().isSave()) {
       // The property MUST have persist cascading so that inserts work.
       Class<?> targetType = oneToMany.getTargetType();
-      String msg = "Error on " + oneToMany.getFullBeanName() + ". @OneToMany MUST have ";
+      String msg = "Error on " + oneToMany + ". @OneToMany MUST have ";
       msg += "Cascade.PERSIST or Cascade.ALL because this is a unidirectional ";
       msg += "relationship. That is, there is no property of type " + owningType + " on " + targetType;
       throw new PersistenceException(msg);
@@ -933,7 +947,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     // define the TableJoin
     DeployTableJoin oneToManyJoin = oneToMany.getTableJoin();
     if (!oneToManyJoin.hasJoinColumns()) {
-      throw new RuntimeException("No join columns");
+      throw new RuntimeException("No join columns found to satisfy the relationship " + oneToMany);
     }
     createUnidirectional(targetDesc, owningType, beanTable, oneToManyJoin);
   }
@@ -984,14 +998,14 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   private DeployBeanPropertyAssocOne<?> mappedOneToOne(DeployBeanPropertyAssocOne<?> prop, String mappedBy, DeployBeanDescriptor<?> targetDesc) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + " Can not find mappedBy property " + targetDesc + "." + mappedBy);
+      throw new PersistenceException("Error on " + prop + " Can not find mappedBy property " + targetDesc + "." + mappedBy);
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocOne<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a OneToOne?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a OneToOne?");
     }
     DeployBeanPropertyAssocOne<?> mappedAssocOne = (DeployBeanPropertyAssocOne<?>) mappedProp;
     if (!mappedAssocOne.isOneToOne()) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a OneToOne?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a OneToOne?");
     }
     return mappedAssocOne;
   }
@@ -1074,10 +1088,10 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   private DeployBeanPropertyAssocOne<?> mappedManyToOne(DeployBeanPropertyAssocMany<?> prop, DeployBeanDescriptor<?> targetDesc, String mappedBy) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + "  Can not find mappedBy property " + mappedBy + " in " + targetDesc);
+      throw new PersistenceException("Error on " + prop + "  Can not find mappedBy property " + mappedBy + " in " + targetDesc);
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocOne<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property " + mappedBy + " is not a ManyToOne? in " + targetDesc);
+      throw new PersistenceException("Error on " + prop + ". mappedBy property " + mappedBy + " is not a ManyToOne? in " + targetDesc);
     }
     return (DeployBeanPropertyAssocOne<?>) mappedProp;
   }
@@ -1125,15 +1139,15 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   private DeployBeanPropertyAssocMany<?> mappedManyToMany(DeployBeanPropertyAssocMany<?> prop, String mappedBy, DeployBeanDescriptor<?> targetDesc) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + "  Can not find mappedBy property " + mappedBy + " in " + targetDesc);
+      throw new PersistenceException("Error on " + prop + "  Can not find mappedBy property " + mappedBy + " in " + targetDesc);
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocMany<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a ManyToMany?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a ManyToMany?");
     }
 
     DeployBeanPropertyAssocMany<?> mappedAssocMany = (DeployBeanPropertyAssocMany<?>) mappedProp;
     if (!mappedAssocMany.isManyToMany()) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a ManyToMany?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property " + targetDesc + "." + mappedBy + " is not a ManyToMany?");
     }
     return mappedAssocMany;
   }
@@ -1187,13 +1201,13 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
       setConcurrencyMode(desc);
     }
     // generate the byte code
-    createByteCode(desc);
+    setAccessors(desc);
   }
 
   /**
    * Set the Identity generation mechanism.
    */
-  protected <T> void setIdGeneration(DeployBeanDescriptor<T> desc) {
+  protected  <T> void setIdGeneration(DeployBeanDescriptor<T> desc) {
     if (desc.getIdGenerator() != null) {
       // already assigned (So custom or UUID)
       return;
@@ -1256,13 +1270,13 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
     return databasePlatform.createSequenceIdGenerator(backgroundExecutor, dataSource, stepSize, seqName);
   }
 
-  private void createByteCode(DeployBeanDescriptor<?> deploy) {
+  private void setAccessors(DeployBeanDescriptor<?> deploy) {
     // check to see if the bean supports EntityBean interface
     // generate a subclass if required
-    setEntityBeanClass(deploy);
+    confirmEnhanced(deploy);
     // use Code generation or Standard reflection to support
     // getter and setter methods
-    setBeanReflect(deploy);
+    setPropertyAccessors(deploy);
   }
 
   /**
@@ -1289,15 +1303,14 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
    * and getting of properties. It is generally faster to use code generation
    * rather than reflection to do this.
    */
-  private void setBeanReflect(DeployBeanDescriptor<?> desc) {
+  private void setPropertyAccessors(DeployBeanDescriptor<?> desc) {
     // Set the BeanReflectGetter and BeanReflectSetter that typically
     // use generated code. NB: Due to Bug 166 so now doing this for
     // abstract classes as well.
-    BeanPropertiesReader reflectProps = new BeanPropertiesReader(desc.getBeanType());
-    desc.setProperties(reflectProps.getProperties());
+    BeanPropertiesReader reflectProps = new BeanPropertiesReader(desc.propertyNames());
     for (DeployBeanProperty prop : desc.propertiesAll()) {
       String propName = prop.getName();
-      Integer pos = reflectProps.getPropertyIndex(propName);
+      Integer pos = reflectProps.propertyIndex(propName);
       if (pos == null) {
         if (isPersistentField(prop)) {
           throw new IllegalStateException(
@@ -1369,7 +1382,7 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
   /**
    * Test the bean type to see if it implements EntityBean interface already.
    */
-  private void setEntityBeanClass(DeployBeanDescriptor<?> desc) {
+  private void confirmEnhanced(DeployBeanDescriptor<?> desc) {
     Class<?> beanClass = desc.getBeanType();
     if (!hasEntityBeanInterface(beanClass)) {
       String msg = "Bean " + beanClass + " is not enhanced? Check packages specified in ebean.mf. If you are running in IDEA or " +
@@ -1504,6 +1517,10 @@ public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeMana
       desc.queryPlanInit(request, list);
     }
     return list;
+  }
+
+  public BindMaxLength bindMaxLength() {
+    return bindMaxLength;
   }
 
   /**

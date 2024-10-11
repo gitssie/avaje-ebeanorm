@@ -1,6 +1,5 @@
 package io.ebeaninternal.server.expression.platform;
 
-import io.ebeaninternal.api.SpiExpressionRequest;
 import io.ebeaninternal.server.expression.BitwiseOp;
 import io.ebeaninternal.server.expression.Op;
 
@@ -10,19 +9,18 @@ import io.ebeaninternal.server.expression.Op;
 final class HanaDbExpression extends BaseDbExpression {
 
   @Override
-  public void bitwise(SpiExpressionRequest request, String propName, BitwiseOp operator, long flags, String compare, long match) {
+  public void bitwise(DbExpressionRequest request, String propName, BitwiseOp operator, long flags, String compare, long match) {
     bitwiseFunction(request, propName, operator, compare);
   }
 
   @Override
-  public void json(SpiExpressionRequest request, String propName, String path, Op operator, Object value) {
-    request.append("json_value(").append(propName).append(", '$.").append(path).append("')");
-    request.append(operator.bind());
+  public void json(DbExpressionRequest request, String propName, String path, Op operator, Object value) {
+    request.append("json_value(").property(propName).append(", '$.").append(path).append("')").append(operator.bind());
   }
 
   @Override
-  public void arrayIsEmpty(SpiExpressionRequest request, String propName, boolean empty) {
-    request.append("cardinality(").append(propName).append(")");
+  public void arrayIsEmpty(DbExpressionRequest request, String propName, boolean empty) {
+    request.append("cardinality(").property(propName).append(')');
     if (empty) {
       request.append(" = 0");
     } else {
@@ -37,12 +35,12 @@ final class HanaDbExpression extends BaseDbExpression {
     if (suffix != null && !suffix.isEmpty()) {
       sb.append("||'").append(suffix).append('\'');
     }
-    sb.append(")");
+    sb.append(')');
     return sb.toString();
   }
 
   @Override
-  public void arrayContains(SpiExpressionRequest request, String propName, boolean contains, Object... values) {
+  public void arrayContains(DbExpressionRequest request, String propName, boolean contains, Object... values) {
     for (int i = 0; i < values.length; i++) {
       if (i > 0) {
         request.append(" and ");
@@ -51,8 +49,7 @@ final class HanaDbExpression extends BaseDbExpression {
       if (!contains) {
         request.append(" not ");
       }
-      request.append(" member of ").append(propName).append(")");
-
+      request.append(" member of ").property(propName).append(')');
     }
   }
 

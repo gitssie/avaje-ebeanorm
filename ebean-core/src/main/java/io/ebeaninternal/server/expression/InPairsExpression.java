@@ -3,10 +3,7 @@ package io.ebeaninternal.server.expression;
 import io.ebean.Pairs;
 import io.ebean.Pairs.Entry;
 import io.ebean.event.BeanQueryRequest;
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.NaturalKeyQueryData;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.persist.MultiValueWrapper;
 
 import java.util.ArrayList;
@@ -58,8 +55,7 @@ final class InPairsExpression extends AbstractExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
-
+  public void addBindValues(SpiExpressionBind request) {
     // Note at this point entries may have been removed when used with l2 caching
     // ... for each l2 cache hit an entry was removed
     this.concatBindValues = new ArrayList<>(entries.size());
@@ -85,14 +81,11 @@ final class InPairsExpression extends AbstractExpression {
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-
     if (entries.isEmpty()) {
-      String expr = not ? SQL_TRUE : SQL_FALSE;
-      request.append(expr);
+      request.append(not ? SQL_TRUE : SQL_FALSE);
       return;
     }
-
-    request.append(request.getDbPlatformHandler().concat(property0, separator, property1, suffix));
+    request.parse(request.platformHandler().concat(property0, separator, property1, suffix));
     request.appendInExpression(not, concatBindValues);
   }
 
@@ -106,15 +99,15 @@ final class InPairsExpression extends AbstractExpression {
     } else {
       builder.append("InPairs[");
     }
-    builder.append(property0).append("-");
-    builder.append(property1).append("-");
-    builder.append(separator).append("-");
+    builder.append(property0).append('-');
+    builder.append(property1).append('-');
+    builder.append(separator).append('-');
     builder.append(suffix).append(" ?");
     if (!multiValueSupported || entries.isEmpty()) {
       // query plan specific to the number of parameters in the IN clause
       builder.append(entries.size());
     }
-    builder.append("]");
+    builder.append(']');
   }
 
   @Override

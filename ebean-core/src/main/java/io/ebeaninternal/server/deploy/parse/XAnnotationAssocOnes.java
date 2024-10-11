@@ -156,7 +156,7 @@ final class XAnnotationAssocOnes extends XAnnotationAssoc {
 
   private void setFromJoinColumn(DeployBeanPropertyAssocOne<?> prop, BeanTable beanTable, JoinColumn joinColumn) {
     if (beanTable == null) {
-      throw new IllegalStateException("Looks like a missing @ManyToOne or @OneToOne on property " + prop.getFullBeanName() + " - no related 'BeanTable'");
+      throw new IllegalStateException("Looks like a missing @ManyToOne or @OneToOne on property " + prop + " - no related 'BeanTable'");
     }
     prop.getTableJoin().addJoinColumn(util, false, joinColumn, beanTable);
     if (!joinColumn.updatable()) {
@@ -218,15 +218,15 @@ final class XAnnotationAssocOnes extends XAnnotationAssoc {
 
   private void readPrimaryKeyJoin(PrimaryKeyJoinColumn primaryKeyJoin, DeployBeanPropertyAssocOne<?> prop) {
     if (!prop.isOneToOne()) {
-      throw new IllegalStateException("Expecting property " + prop.getFullBeanName() + " with PrimaryKeyJoinColumn to be a OneToOne?");
+      throw new IllegalStateException("Expecting property " + prop + " with PrimaryKeyJoinColumn to be a OneToOne?");
     }
     prop.setPrimaryKeyJoin(true);
 
     if (!primaryKeyJoin.name().isEmpty()) {
-      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - ignoring PrimaryKeyJoinColumn.name attribute [{}] on {}", primaryKeyJoin.name(), prop.getFullBeanName());
+      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - ignoring PrimaryKeyJoinColumn.name attribute [{}] on {}", primaryKeyJoin.name(), prop);
     }
     if (!primaryKeyJoin.referencedColumnName().isEmpty()) {
-      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - Ignoring PrimaryKeyJoinColumn.referencedColumnName attribute [{}] on {}", primaryKeyJoin.referencedColumnName(), prop.getFullBeanName());
+      CoreLog.internal.log(INFO, "Automatically determining join columns for @PrimaryKeyJoinColumn - Ignoring PrimaryKeyJoinColumn.referencedColumnName attribute [{}] on {}", primaryKeyJoin.referencedColumnName(), prop);
     }
     BeanTable baseBeanTable = factory.beanTable(info.getDescriptor().getBeanType());
     String localPrimaryKey = baseBeanTable.getIdColumn();

@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.NamingConvention;
@@ -51,7 +52,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   @Override
-  public DatabaseConfig config() {
+  public DatabaseBuilder.Settings config() {
     return beanDescriptorManager.config();
   }
 

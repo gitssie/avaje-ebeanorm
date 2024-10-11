@@ -54,7 +54,7 @@ public class BeanDescriptorMapCheck {
         // find a join to that table...
         DeployBeanPropertyAssocOne<?> assocOne = descriptor.findJoinToTable(tableName);
         if (assocOne == null) {
-          String msg = "Error with property " + prop.getFullBeanName() + ". Could not find a Relationship to table " + tableName
+          String msg = "Error with property " + prop + ". Could not find a Relationship to table " + tableName
             + ". Perhaps you could use a @JoinColumn instead.";
           throw new RuntimeException(msg);
         }
@@ -97,7 +97,7 @@ public class BeanDescriptorMapCheck {
     Class<?> targetType = prop.getTargetType();
     DeployBeanInfo<?> info = descriptorMap.descInfo(targetType);
     if (info == null) {
-      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop.getFullBeanName());
+      throw new PersistenceException("Can not find descriptor [" + targetType + "] for " + prop);
     }
     return info.getDescriptor();
   }
@@ -165,7 +165,7 @@ public class BeanDescriptorMapCheck {
       }
     }
     // multiple options so should specify mappedBy property
-    String msg = "Error on " + prop.getFullBeanName() + " missing mappedBy.";
+    String msg = "Error on " + prop + " missing mappedBy.";
     msg += " There are [" + matchSet.size() + "] possible properties in " + targetDesc;
     msg += " that this association could be mapped to. Please specify one using ";
     msg += "the mappedBy attribute on @OneToMany.";
@@ -210,7 +210,7 @@ public class BeanDescriptorMapCheck {
     if (!oneToMany.getCascadeInfo().isSave()) {
       // The property MUST have persist cascading so that inserts work.
       Class<?> targetType = oneToMany.getTargetType();
-      String msg = "Error on " + oneToMany.getFullBeanName() + ". @OneToMany MUST have ";
+      String msg = "Error on " + oneToMany + ". @OneToMany MUST have ";
       msg += "Cascade.PERSIST or Cascade.ALL because this is a unidirectional ";
       msg += "relationship. That is, there is no property of type " + owningType + " on " + targetType;
       throw new PersistenceException(msg);
@@ -274,14 +274,14 @@ public class BeanDescriptorMapCheck {
   protected DeployBeanPropertyAssocOne<?> mappedOneToOne(DeployBeanPropertyAssocOne<?> prop, String mappedBy, DeployBeanDescriptor<?> targetDesc) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + " Can not find mappedBy property [" + targetDesc + "." + mappedBy + "]");
+      throw new PersistenceException("Error on " + prop + " Can not find mappedBy property [" + targetDesc + "." + mappedBy + "]");
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocOne<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property [" + targetDesc + "." + mappedBy + "]is not a OneToOne?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property [" + targetDesc + "." + mappedBy + "]is not a OneToOne?");
     }
     DeployBeanPropertyAssocOne<?> mappedAssocOne = (DeployBeanPropertyAssocOne<?>) mappedProp;
     if (!mappedAssocOne.isOneToOne()) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property [" + targetDesc + "." + mappedBy + "]is not a OneToOne?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property [" + targetDesc + "." + mappedBy + "]is not a OneToOne?");
     }
     return mappedAssocOne;
   }
@@ -364,10 +364,10 @@ public class BeanDescriptorMapCheck {
   protected DeployBeanPropertyAssocOne<?> mappedManyToOne(DeployBeanPropertyAssocMany<?> prop, DeployBeanDescriptor<?> targetDesc, String mappedBy) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + "  Can not find mappedBy property [" + mappedBy + "] " + "in [" + targetDesc + "]");
+      throw new PersistenceException("Error on " + prop + "  Can not find mappedBy property [" + mappedBy + "] " + "in [" + targetDesc + "]");
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocOne<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property [" + mappedBy + "]is not a ManyToOne?" + "in [" + targetDesc + "]");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property [" + mappedBy + "]is not a ManyToOne?" + "in [" + targetDesc + "]");
     }
     return (DeployBeanPropertyAssocOne<?>) mappedProp;
   }
@@ -415,15 +415,15 @@ public class BeanDescriptorMapCheck {
   protected DeployBeanPropertyAssocMany<?> mappedManyToMany(DeployBeanPropertyAssocMany<?> prop, String mappedBy, DeployBeanDescriptor<?> targetDesc) {
     DeployBeanProperty mappedProp = targetDesc.getBeanProperty(mappedBy);
     if (mappedProp == null) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + "  Can not find mappedBy property [" + mappedBy + "] " + "in [" + targetDesc + "]");
+      throw new PersistenceException("Error on " + prop + "  Can not find mappedBy property [" + mappedBy + "] " + "in [" + targetDesc + "]");
     }
     if (!(mappedProp instanceof DeployBeanPropertyAssocMany<?>)) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property [" + targetDesc + "." + mappedBy + "] is not a ManyToMany?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property [" + targetDesc + "." + mappedBy + "] is not a ManyToMany?");
     }
 
     DeployBeanPropertyAssocMany<?> mappedAssocMany = (DeployBeanPropertyAssocMany<?>) mappedProp;
     if (!mappedAssocMany.isManyToMany()) {
-      throw new PersistenceException("Error on " + prop.getFullBeanName() + ". mappedBy property [" + targetDesc + "." + mappedBy + "] is not a ManyToMany?");
+      throw new PersistenceException("Error on " + prop + ". mappedBy property [" + targetDesc + "." + mappedBy + "] is not a ManyToMany?");
     }
     return mappedAssocMany;
   }

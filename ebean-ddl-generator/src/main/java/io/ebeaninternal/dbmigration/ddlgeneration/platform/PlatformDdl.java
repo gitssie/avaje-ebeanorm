@@ -2,7 +2,7 @@ package io.ebeaninternal.dbmigration.ddlgeneration.platform;
 
 import io.ebean.annotation.ConstraintMode;
 import io.ebean.annotation.Platform;
-import io.ebean.config.DatabaseConfig;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DbConstraintNaming;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.config.dbplatform.DbDefaultValue;
@@ -105,7 +105,7 @@ public class PlatformDdl {
   /**
    * Set configuration options.
    */
-  public void configure(DatabaseConfig config) {
+  public void configure(DatabaseBuilder.Settings config) {
     historyDdl.configure(config, this);
     naming = config.getConstraintNaming();
   }
@@ -113,7 +113,7 @@ public class PlatformDdl {
   /**
    * Create a DdlHandler for the specific database platform.
    */
-  public DdlHandler createDdlHandler(DatabaseConfig config) {
+  public DdlHandler createDdlHandler(DatabaseBuilder.Settings config) {
     return new BaseDdlHandler(config, this);
   }
 
@@ -279,7 +279,13 @@ public class PlatformDdl {
     if (type == null) {
       return null;
     }
-    type = extract(type);
+    String[] tmp = type.split(";", -1); // do not discard trailing empty strings
+    int index = extract(tmp);
+    if (index < tmp.length - 1) {
+      // this is a platform specific definition. So do not apply further conversions
+      return tmp[index];
+    }
+    type = tmp[index];
     if (type.contains("[]")) {
       return convertArrayType(type);
     }
@@ -294,18 +300,22 @@ public class PlatformDdl {
       return null;
     }
     String[] tmp = type.split(";", -1); // do not discard trailing empty strings
-    if (tmp.length % 2 == 0) {
-      throw new IllegalArgumentException("You need an odd number of arguments in '" + type + "'. See Issue #2559 for details");
+    return tmp[extract(tmp)]; // else
+  }
+
+  protected int extract(String[] types) {
+    if (types.length % 2 == 0) {
+      throw new IllegalArgumentException("You need an odd number of arguments in '" + String.join(";", types) + "'. See Issue #2559 for details");
     }
-    for (int i = 0; i < tmp.length - 2; i += 2) {
-      String[] platforms = tmp[i].split(",");
+    for (int i = 0; i < types.length - 2; i += 2) {
+      String[] platforms = types[i].split(",");
       for (String plat : platforms) {
         if (platform.isPlatform(Platform.valueOf(plat.toUpperCase(Locale.ENGLISH)))) {
-          return tmp[i + 1];
+          return i + 1;
         }
       }
     }
-    return tmp[tmp.length - 1]; // else
+    return types.length - 1; // else
   }
 
   /**
@@ -354,7 +364,7 @@ public class PlatformDdl {
     StringBuilder sb = new StringBuilder("create sequence ");
     sb.append(quote(sequenceName));
     sb.append(identity.sequenceOptions(sequenceStartWith, sequenceIncrementBy, sequenceCache));
-    sb.append(";");
+    sb.append(';');
     return sb.toString();
   }
 

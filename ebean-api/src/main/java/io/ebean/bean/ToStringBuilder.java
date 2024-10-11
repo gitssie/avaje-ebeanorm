@@ -1,7 +1,5 @@
 package io.ebean.bean;
 
-import io.ebean.common.BeanMap;
-
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -47,7 +45,7 @@ public final class ToStringBuilder {
       id.putIfAbsent(bean, 0);
     }
     if (counter <= MAX) {
-      sb.append(bean.getClass().getSimpleName()).append("@").append(counter).append("(");
+      sb.append(bean.getClass().getSimpleName()).append('@').append(counter).append('(');
     }
   }
 
@@ -79,7 +77,7 @@ public final class ToStringBuilder {
    */
   public void end() {
     if (counter <= MAX) {
-      sb.append(")");
+      sb.append(')');
     }
   }
 
@@ -92,7 +90,7 @@ public final class ToStringBuilder {
     } else {
       sb.append(", ");
     }
-    sb.append(name).append(":");
+    sb.append(name).append(':');
   }
 
   private void value(Object value) {
@@ -112,7 +110,7 @@ public final class ToStringBuilder {
     } else {
       String content = String.valueOf(value);
       if (content.length() > TRIM_LENGTH) {
-        content = content.substring(0, TRIM_LENGTH) + " <trimmed>";
+        content = content.substring(0, TRIM_LENGTH) + " (trimmed)";
       }
       sb.append(content);
       if (sb.length() >= MAX_TOTAL_CONTENT) {
@@ -127,20 +125,20 @@ public final class ToStringBuilder {
       sb.append("{}");
     } else {
       boolean firstElement = true;
-      sb.append("{");
+      sb.append('{');
       for (Map.Entry<?, ?> entry : map.entrySet()) {
         if (firstElement) {
           firstElement = false;
         } else {
           sb.append(", ");
         }
-        sb.append(entry.getKey()).append(":");
+        sb.append(entry.getKey()).append(':');
         value(entry.getValue());
         if (counter > MAX) {
           return;
         }
       }
-      sb.append("}");
+      sb.append('}');
     }
   }
 
@@ -153,7 +151,7 @@ public final class ToStringBuilder {
       return;
     }
     boolean firstElement = true;
-    sb.append("[");
+    sb.append('[');
     for (Object o : c) {
       if (firstElement) {
         firstElement = false;
@@ -165,7 +163,7 @@ public final class ToStringBuilder {
         return;
       }
     }
-    sb.append("]");
+    sb.append(']');
   }
 
   private boolean push(Object bean) {
@@ -180,7 +178,7 @@ public final class ToStringBuilder {
     Integer idx = id.putIfAbsent(bean, counter++);
     if (idx != null) {
       --counter;
-      sb.append(bean.getClass().getSimpleName()).append("@").append(idx);
+      sb.append(bean.getClass().getSimpleName()).append('@').append(idx);
       return false;
     }
     first = true;

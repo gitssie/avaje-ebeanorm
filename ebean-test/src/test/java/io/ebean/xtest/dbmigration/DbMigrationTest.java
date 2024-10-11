@@ -2,6 +2,7 @@ package io.ebean.xtest.dbmigration;
 
 import io.ebean.*;
 import io.ebean.annotation.Platform;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.dbplatform.DbHistorySupport;
 import io.ebean.datasource.DataSourcePool;
@@ -57,6 +58,10 @@ public class DbMigrationTest extends BaseTestCase {
       "migtest_ckey_detail",
       "migtest_ckey_parent",
       "migtest_e_basic",
+      "migtest_e_test_binary",
+      "migtest_e_test_varchar",
+      "migtest_e_test_lob",
+      "migtest_e_test_json",
       "migtest_e_enum",
       "migtest_e_history",
       "migtest_e_history2",
@@ -83,9 +88,15 @@ public class DbMigrationTest extends BaseTestCase {
       "`migtest_QuOtEd`",
       "migtest_QuOtEd",
       "\"migtest_QuOtEd\"",
+      "drop_main_drop_ref_many",
+      "drop_ref_one_to_one",
+      "drop_ref_many",
+      "drop_ref_one",
+      "drop_main",
       "table",
       "\"table\"",
       "`table`");
+
     ((DataSourcePool)server().dataSource()).offline();
     ((DataSourcePool)server().dataSource()).online();
 
@@ -205,7 +216,7 @@ public class DbMigrationTest extends BaseTestCase {
     if (history == null) {
       return;
     }
-    DatabaseConfig config = new DatabaseConfig();
+    DatabaseBuilder config = new DatabaseConfig();
     config.setName(server().name());
     config.loadFromProperties(server().pluginApi().config().getProperties());
     config.setDataSource(server().dataSource());
@@ -277,7 +288,7 @@ public class DbMigrationTest extends BaseTestCase {
 
   // do some history tests with V1.1 models
   private void testReservedKeywords() {
-    DatabaseConfig config = new DatabaseConfig();
+    DatabaseBuilder config = new DatabaseConfig();
     config.setName(server().name());
     config.loadFromProperties(server().pluginApi().config().getProperties());
     config.setDataSource(server().dataSource());

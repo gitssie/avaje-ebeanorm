@@ -61,18 +61,19 @@ final class CQueryUpdate implements SpiProfileTransactionEvent, CancelableQuery 
   /**
    * Execute the update or delete statement returning the row count.
    */
+  @SuppressWarnings("resource")
   public int execute() throws SQLException {
     long startNano = System.nanoTime();
     try {
       SpiTransaction t = transaction();
       profileOffset = t.profileOffset();
-      Connection conn = t.getInternalConnection();
+      Connection conn = t.internalConnection();
       lock.lock();
       try {
         query.checkCancelled();
         pstmt = conn.prepareStatement(sql);
-        if (query.getTimeout() > 0) {
-          pstmt.setQueryTimeout(query.getTimeout());
+        if (query.timeout() > 0) {
+          pstmt.setQueryTimeout(query.timeout());
         }
         bindLog = predicates.bind(pstmt, conn);
       } finally {
@@ -109,11 +110,12 @@ final class CQueryUpdate implements SpiProfileTransactionEvent, CancelableQuery 
     pstmt = null;
   }
 
+  @SuppressWarnings("resource")
   @Override
   public void profile() {
     transaction()
       .profileStream()
-      .addQueryEvent(query.profileEventId(), profileOffset, desc.name(), rowCount, query.getProfileId());
+      .addQueryEvent(query.profileEventId(), profileOffset, desc.name(), rowCount, query.profileId());
   }
 
   @Override

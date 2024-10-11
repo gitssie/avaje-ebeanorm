@@ -1,12 +1,12 @@
 package io.ebeaninternal.server.deploy;
 
-import io.ebean.Query;
 import io.ebean.Transaction;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.BeanCollectionAdd;
 import io.ebean.bean.EntityBean;
 import io.ebean.common.BeanList;
 import io.ebeaninternal.api.SpiEbeanServer;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonWriter;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class BeanListHelp<T> extends BaseCollectionHelp<T> {
   public final BeanCollectionAdd getBeanCollectionAdd(Object bc, String mapKey) {
     if (bc instanceof BeanList<?>) {
       BeanList<?> bl = (BeanList<?>) bc;
-      if (bl.getActualList() == null) {
+      if (bl.actualList() == null) {
         bl.setActualList(new ArrayList<>());
       }
       return bl;
@@ -68,12 +68,6 @@ public class BeanListHelp<T> extends BaseCollectionHelp<T> {
   }
 
   @Override
-  public final void refresh(SpiEbeanServer server, Query<?> query, Transaction t, EntityBean parentBean) {
-    BeanList<?> newBeanList = (BeanList<?>) server.findList(query, t);
-    refresh(newBeanList, parentBean);
-  }
-
-  @Override
   public final void refresh(BeanCollection<?> bc, EntityBean parentBean) {
     BeanList<?> newBeanList = (BeanList<?>) bc;
     List<?> currentList = (List<?>) many.getValue(parentBean);
@@ -85,7 +79,7 @@ public class BeanListHelp<T> extends BaseCollectionHelp<T> {
     } else if (currentList instanceof BeanList<?>) {
       // normally this case, replace just the underlying list
       BeanList<?> currentBeanList = (BeanList<?>) currentList;
-      currentBeanList.setActualList(newBeanList.getActualList());
+      currentBeanList.setActualList(newBeanList.actualList());
       currentBeanList.setModifyListening(many.modifyListenMode());
 
     } else {
@@ -108,7 +102,7 @@ public class BeanListHelp<T> extends BaseCollectionHelp<T> {
           return;
         }
       }
-      list = beanList.getActualList();
+      list = beanList.actualList();
     } else {
       list = (List<?>) collection;
     }

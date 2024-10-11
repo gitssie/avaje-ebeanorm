@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.type;
 
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.platform.postgres.PostgresPlatform;
 import io.ebean.core.type.ScalarType;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DefaultTypeManagerTest {
 
   private DefaultTypeManager create() {
-    DatabaseConfig serverConfig = new DatabaseConfig();
+    var serverConfig = new DatabaseConfig();
     serverConfig.setDatabasePlatform(new PostgresPlatform());
     BootupClasses bootupClasses = new BootupClasses();
     return new DefaultTypeManager(serverConfig, bootupClasses);
@@ -57,7 +58,7 @@ public class DefaultTypeManagerTest {
       assertThat(true).isFalse().as("never get here");
 
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 
@@ -72,7 +73,7 @@ public class DefaultTypeManagerTest {
       typeManager.enumType(Month.class, EnumType.STRING);
       assertThat(true).isFalse().as("never get here");
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 
@@ -90,7 +91,7 @@ public class DefaultTypeManagerTest {
       typeManager.enumType(DayOfWeek.class, EnumType.ORDINAL);
       assertThat(true).isFalse().as("never get here");
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 
@@ -105,7 +106,7 @@ public class DefaultTypeManagerTest {
       typeManager.enumType(DayOfWeek.class, EnumType.STRING);
       assertThat(true).isFalse().as("never get here");
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage()).contains("It is mapped using 2 different modes when only one is supported");
+      assertThat(e.getMessage()).contains("It is mapped using 2 of (ORDINAL, STRING or an Ebean mapping) when only one is supported.");
     }
   }
 

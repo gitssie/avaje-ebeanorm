@@ -10,7 +10,6 @@ import io.ebeaninternal.api.SpiTransaction;
 import io.ebeaninternal.server.core.OrmQueryEngine;
 import io.ebeaninternal.server.core.OrmQueryRequest;
 import io.ebeaninternal.server.core.SpiResultSet;
-import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.persist.Binder;
 
 import javax.persistence.PersistenceException;
@@ -52,6 +51,10 @@ public final class DefaultOrmQueryEngine implements OrmQueryEngine {
    * Flushes the jdbc batch by default unless explicitly turned off on the transaction.
    */
   private <T> void flushJdbcBatchOnQuery(OrmQueryRequest<T> request) {
+    if (request.query().isUsingFuture()) {
+      // future queries never invoke a flush
+      return;
+    }
     SpiTransaction t = request.transaction();
     if (t.isFlushOnQuery()) {
       // before we perform a query, we need to flush any
@@ -129,9 +132,7 @@ public final class DefaultOrmQueryEngine implements OrmQueryEngine {
     SpiQuery<T> query = request.query();
     if (result != null && request.isBeanCachePutMany()) {
       // load the individual beans into the bean cache
-      BeanDescriptor<T> descriptor = request.descriptor();
-      Collection<T> c = result.getActualDetails();
-      descriptor.cacheBeanPutAll(c);
+      request.descriptor().cacheBeanPutAll(result.actualDetails());
     }
 
     request.mergeCacheHits(result);
@@ -140,7 +141,7 @@ public final class DefaultOrmQueryEngine implements OrmQueryEngine {
       result.setReadOnly(true);
       request.putToQueryCache(result);
       if (Boolean.FALSE.equals(query.isReadOnly())) {
-        result = result.getShallowCopy();
+        result = result.shallowCopy();
       }
     }
     return result;

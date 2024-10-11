@@ -1,7 +1,11 @@
 package io.ebean.xtest.event;
 
 
-import io.ebean.*;
+import io.ebean.BeanState;
+import io.ebean.DB;
+import io.ebean.Database;
+import io.ebean.DatabaseFactory;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.event.BeanPostLoad;
 import io.ebean.xtest.BaseTestCase;
@@ -45,7 +49,7 @@ public class BeanPostLoadTest extends BaseTestCase {
 
   private Database createDatabase() {
 
-    DatabaseConfig config = new DatabaseConfig();
+    DatabaseBuilder config = new DatabaseConfig();
 
     config.setName("h2ebasicver");
     config.loadFromProperties();
@@ -55,7 +59,7 @@ public class BeanPostLoadTest extends BaseTestCase {
 
     config.setRegister(false);
     config.setDefaultServer(false);
-    config.getClasses().add(EBasicVer.class);
+    config.addClass(EBasicVer.class);
 
     config.add(postLoad);
 

@@ -29,13 +29,13 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public EntityBean getOwner() {
-    return proxy.getOwner();
+  public EntityBean owner() {
+    return proxy.owner();
   }
 
   @Override
-  public PersistenceContext getPersistenceContext() {
-    return proxy.getPersistenceContext();
+  public PersistenceContext persistenceContext() {
+    return proxy.persistenceContext();
   }
 
   @Override
@@ -49,8 +49,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Object getOwnerId() {
-    return proxy.getOwnerId();
+  public Object ownerId() {
+    return proxy.ownerId();
   }
 
   @Override
@@ -59,13 +59,13 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Object getEmbeddedOwner() {
-    return proxy.getEmbeddedOwner();
+  public Object embeddedOwner() {
+    return proxy.embeddedOwner();
   }
 
   @Override
-  public int getEmbeddedOwnerIndex() {
-    return proxy.getEmbeddedOwnerIndex();
+  public int embeddedOwnerIndex() {
+    return proxy.embeddedOwnerIndex();
   }
 
   @Override
@@ -231,8 +231,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Object getOrigValue(int propertyIndex) {
-    return proxy.getOrigValue(propertyIndex);
+  public Object origValue(int propertyIndex) {
+    return proxy.origValue(propertyIndex);
   }
 
   @Override
@@ -241,13 +241,13 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public String getProperty(int propertyIndex) {
-    return proxy.getProperty(propertyIndex);
+  public String property(int propertyIndex) {
+    return proxy.property(propertyIndex);
   }
 
   @Override
-  public int getPropertyLength() {
-    return proxy.getPropertyLength();
+  public int propertyLength() {
+    return proxy.propertyLength();
   }
 
   @Override
@@ -321,18 +321,18 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Set<String> getLoadedPropertyNames() {
-    return proxy.getLoadedPropertyNames();
+  public Set<String> loadedPropertyNames() {
+    return proxy.loadedPropertyNames();
   }
 
   @Override
-  public boolean[] getDirtyProperties() {
-    return proxy.getDirtyProperties();
+  public boolean[] dirtyProperties() {
+    return proxy.dirtyProperties();
   }
 
   @Override
-  public Set<String> getDirtyPropertyNames() {
-    return proxy.getDirtyPropertyNames();
+  public Set<String> dirtyPropertyNames() {
+    return proxy.dirtyPropertyNames();
   }
 
   @Override
@@ -346,8 +346,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Map<String, ValuePair> getDirtyValues() {
-    return proxy.getDirtyValues();
+  public Map<String, ValuePair> dirtyValues() {
+    return proxy.dirtyValues();
   }
 
   @Override
@@ -361,8 +361,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public StringBuilder getDirtyPropertyKey() {
-    return proxy.getDirtyPropertyKey();
+  public StringBuilder dirtyPropertyKey() {
+    return proxy.dirtyPropertyKey();
   }
 
   @Override
@@ -371,23 +371,23 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public StringBuilder getLoadedPropertyKey() {
-    return proxy.getLoadedPropertyKey();
+  public StringBuilder loadedPropertyKey() {
+    return proxy.loadedPropertyKey();
   }
 
   @Override
-  public boolean[] getLoaded() {
-    return proxy.getLoaded();
+  public boolean[] loaded() {
+    return proxy.loaded();
   }
 
   @Override
-  public int getLazyLoadPropertyIndex() {
-    return proxy.getLazyLoadPropertyIndex();
+  public int lazyLoadPropertyIndex() {
+    return proxy.lazyLoadPropertyIndex();
   }
 
   @Override
-  public String getLazyLoadProperty() {
-    return proxy.getLazyLoadProperty();
+  public String lazyLoadProperty() {
+    return proxy.lazyLoadProperty();
   }
 
   @Override
@@ -444,7 +444,7 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
 
   @Override
   public void preSetter(boolean intercept, int propertyIndex, Object oldValue, Object newValue) {
-    int lazyIndex = owner.getLazyLoadPropertyIndex();
+    int lazyIndex = owner.lazyLoadPropertyIndex();
     if (intercept == false && (lazyIndex == elementIndex || lazyIndex == slotIndex)) {
       proxy.setLoadedProperty(propertyIndex);
     } else {
@@ -508,8 +508,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public int getSortOrder() {
-    return proxy.getSortOrder();
+  public int sortOrder() {
+    return proxy.sortOrder();
   }
 
   @Override
@@ -533,8 +533,8 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public Map<String, Exception> getLoadErrors() {
-    return proxy.getLoadErrors();
+  public Map<String, Exception> loadErrors() {
+    return proxy.loadErrors();
   }
 
   @Override

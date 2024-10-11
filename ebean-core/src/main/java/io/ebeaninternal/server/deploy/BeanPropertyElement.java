@@ -64,7 +64,7 @@ public class BeanPropertyElement<T> extends BeanProperty {
 
   @Override
   public Object getCacheDataValueOrig(EntityBeanIntercept ebi) {
-    return cacheDataConvert(ebi.getOrigValue(propertyIndex));
+    return cacheDataConvert(ebi.origValue(propertyIndex));
   }
 
   @Override

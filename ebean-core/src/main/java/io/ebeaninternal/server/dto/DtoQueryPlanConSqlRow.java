@@ -14,7 +14,7 @@ public class DtoQueryPlanConSqlRow extends DtoQueryPlanBase {
     this.dtoColumns = new String[dtoColumns.length];
     StringBuilder buf = new StringBuilder();
     for (int i = 0; i < dtoColumns.length; i++) {
-      this.dtoColumns[i] = toCamelCase(buf, dtoColumns[i].getLabel());
+      this.dtoColumns[i] = toCamelCase(buf, dtoColumns[i].label());
     }
   }
 

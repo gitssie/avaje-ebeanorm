@@ -149,7 +149,7 @@ final class XAnnotationAssocManys extends XAnnotationAssoc {
 
   private void checkSelfManyToMany(DeployBeanPropertyAssocMany<?> prop) {
     if (prop.getTargetType().equals(descriptor.getBeanType())) {
-      throw new IllegalStateException("@ManyToMany mapping for " + prop.getFullBeanName() + " requires explicit @JoinTable with joinColumns & inverseJoinColumns. Refer issue #2157");
+      throw new IllegalStateException("@ManyToMany mapping for " + prop + " requires explicit @JoinTable with joinColumns & inverseJoinColumns. Refer issue #2157");
     }
   }
 

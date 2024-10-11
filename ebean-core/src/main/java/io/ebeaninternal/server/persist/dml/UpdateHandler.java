@@ -31,19 +31,19 @@ public final class UpdateHandler extends DmlHandler {
    */
   @Override
   public void bind() throws SQLException {
-    SpiUpdatePlan updatePlan = meta.getUpdatePlan(persistRequest);
+    SpiUpdatePlan updatePlan = meta.updatePlan(persistRequest);
     if (updatePlan.isEmptySetClause()) {
       emptySetClause = true;
       return;
     }
 
-    sql = updatePlan.getSql();
+    sql = updatePlan.sql();
     SpiTransaction t = persistRequest.transaction();
     PreparedStatement pstmt;
     if (persistRequest.isBatched()) {
-      pstmt = getPstmtBatch(t, sql, persistRequest, false);
+      pstmt = pstmtBatch(t, sql, persistRequest, false);
     } else {
-      pstmt = getPstmt(t, sql, false);
+      pstmt = pstmt(t, sql, false);
     }
     dataBind = bind(pstmt);
     meta.bind(persistRequest, this, updatePlan);

@@ -19,11 +19,11 @@ final class SqlTreeNodeRoot extends SqlTreeNodeBean {
   /**
    * Specify for SqlSelect to include an Id property or not.
    */
-  SqlTreeNodeRoot(STreeType desc, SqlTreeProperties props, List<SqlTreeNode> myList, boolean withId, TableJoin includeJoin,
-                  STreePropertyAssocMany many, SpiQuery.TemporalMode temporalMode, boolean disableLazyLoad, boolean readOnly, boolean sqlDistinct, String baseTable) {
+  SqlTreeNodeRoot(STreeType desc, SqlTreeProperties props, List<SqlTreeNode> myList, boolean withId,
+                  STreePropertyAssocMany many, SqlTreeCommon common, boolean sqlDistinct, String baseTable) {
 
-    super(desc, props, myList, withId, many, temporalMode, disableLazyLoad, readOnly);
-    this.includeJoin = includeJoin;
+    super(desc, props, myList, withId, many, common);
+    this.includeJoin = common.includeJoin();
     this.sqlDistinct = sqlDistinct;
     this.baseTable = baseTable;
   }
@@ -45,7 +45,7 @@ final class SqlTreeNodeRoot extends SqlTreeNodeBean {
   public void appendDistinctOn(DbSqlContext ctx, boolean subQuery) {
     if (readId) {
       ctx.pushTableAlias(prefix);
-      appendSelectId(ctx, idBinder.getBeanProperty());
+      appendSelectId(ctx, idBinder.beanProperty());
       ctx.popTableAlias();
       super.appendDistinctOn(ctx, subQuery);
     }
@@ -66,13 +66,10 @@ final class SqlTreeNodeRoot extends SqlTreeNodeBean {
    */
   @Override
   public SqlJoinType appendFromBaseTable(DbSqlContext ctx, SqlJoinType joinType) {
-    ctx.append(baseTable);
-    ctx.append(" ").append(baseTableAlias);
-    ctx.appendFromForUpdate();
+    ctx.append(baseTable).append(" ").append(baseTableAlias).appendFromForUpdate();
     if (includeJoin != null) {
-      String a1 = baseTableAlias;
-      String a2 = "int_"; // unique alias for intersection join
-      includeJoin.addJoin(joinType, a1, a2, ctx);
+      // unique alias for intersection join
+      includeJoin.addJoin(joinType, baseTableAlias, "int_", ctx);
     }
     return joinType;
   }

@@ -3,9 +3,12 @@ package io.ebeaninternal.server.core;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.api.SpiSqlUpdate;
 import io.ebeaninternal.api.SpiTransaction;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.persist.BatchControl;
 import io.ebeaninternal.server.persist.PersistExecute;
 import io.ebeaninternal.server.persist.TrimLogSql;
+
+import java.util.List;
 
 /**
  * Persist request specifically for CallableSql.
@@ -65,7 +68,7 @@ public final class PersistRequestUpdateSql extends PersistRequest {
    * Add this request to BatchControl to flush later.
    */
   public void addToFlushQueue(int pos) {
-    BatchControl control = transaction.getBatchControl();
+    BatchControl control = transaction.batchControl();
     if (control == null) {
       control = persistExecute.createBatchControl(transaction);
     }
@@ -156,6 +159,14 @@ public final class PersistRequestUpdateSql extends PersistRequest {
    */
   @Override
   public void postExecute() {
+    if (sqlType != SqlType.SQL_INSERT && !transaction.isAutoPersistUpdates()) {
+      List<BeanDescriptor<?>> descriptors = server.descriptors(tableName);
+      if (descriptors != null) {
+        for (BeanDescriptor<?> descriptor : descriptors) {
+          descriptor.contextClear(transaction.persistenceContext());
+        }
+      }
+    }
     if (startNanos > 0) {
       persistExecute.collectSqlUpdate(label, startNanos);
     }
@@ -167,13 +178,13 @@ public final class PersistRequestUpdateSql extends PersistRequest {
       // this is used to invalidate cached objects etc
       switch (sqlType) {
         case SQL_INSERT:
-          transaction.getEvent().add(tableName, true, false, false);
+          transaction.event().add(tableName, true, false, false);
           break;
         case SQL_UPDATE:
-          transaction.getEvent().add(tableName, false, true, false);
+          transaction.event().add(tableName, false, true, false);
           break;
         case SQL_DELETE:
-          transaction.getEvent().add(tableName, false, false, true);
+          transaction.event().add(tableName, false, false, true);
           break;
         case SQL_UNKNOWN:
           transaction.markNotQueryOnly();

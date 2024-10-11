@@ -3,6 +3,7 @@ package io.ebeaninternal.server.querydefn;
 
 import io.ebean.*;
 import io.ebeaninternal.api.BindValuesKey;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.server.core.OrmQueryRequest;
 import io.ebeaninternal.server.core.OrmQueryRequestTestHelper;
 import io.ebeaninternal.server.expression.BaseExpressionTest;
@@ -20,20 +21,20 @@ public class DefaultOrmQueryTest extends BaseExpressionTest {
     DefaultOrmQuery<Customer> q1 = (DefaultOrmQuery<Customer>) DB.find(Customer.class)
       .forUpdate().where().eq("id", 42).query();
 
-    assertThat(q1.getUseBeanCache()).isSameAs(CacheMode.OFF);
+    assertThat(q1.beanCacheMode()).isSameAs(CacheMode.OFF);
   }
 
   @Test
   public void checkForId_when_eqId_then_translatedTo_setId() {
 
     DefaultOrmQuery<Order> q1 = (DefaultOrmQuery<Order>) DB.find(Order.class).where().eq("id", 42).query();
-    assertThat(q1.getWhereExpressions()).isNotNull();
+    assertThat(q1.whereExpressions()).isNotNull();
     assertThat(q1.getId()).isNull();
 
     assertThat(q1.isFindById()).isTrue();
 
     assertThat(q1.getId()).isEqualTo(42);
-    assertThat(q1.getWhereExpressions()).isNull();
+    assertThat(q1.whereExpressions()).isNull();
   }
 
   @Test
@@ -52,6 +53,32 @@ public class DefaultOrmQueryTest extends BaseExpressionTest {
     assertThat(q1.getId()).isEqualTo(42);
     assertThat(q1.isFindById()).isTrue();
     assertThat(q1.getId()).isEqualTo(42);
+  }
+
+  @Test
+  void when_distinctOn_then_planChanges() {
+    DefaultOrmQuery<Order> q1 = (DefaultOrmQuery<Order>) DB.find(Order.class).distinctOn("name");
+    DefaultOrmQuery<Order> q2 = (DefaultOrmQuery<Order>) DB.find(Order.class);
+
+    prepare(q1, q2);
+    assertThat(q1.createQueryPlanKey()).isNotEqualTo(q2.createQueryPlanKey());
+  }
+
+  @Test
+  void when_distinctOn_match() {
+    DefaultOrmQuery<Order> q1 = (DefaultOrmQuery<Order>) DB.find(Order.class).distinctOn("name");
+    DefaultOrmQuery<Order> q2 = (DefaultOrmQuery<Order>) DB.find(Order.class).distinctOn("name");
+
+    prepare(q1, q2);
+    assertThat(q1.createQueryPlanKey()).isEqualTo(q2.createQueryPlanKey());
+    assertThat(bindKey(q1)).isEqualTo(bindKey(q2));
+  }
+
+  @Test
+  void when_distinctOn_copy() {
+    DefaultOrmQuery<Order> q1 = (DefaultOrmQuery<Order>) DB.find(Order.class).distinctOn("name");
+    SpiQuery<Order> copy = q1.copy();
+    assertThat(copy.distinctOn()).isEqualTo("name");
   }
 
   @Test

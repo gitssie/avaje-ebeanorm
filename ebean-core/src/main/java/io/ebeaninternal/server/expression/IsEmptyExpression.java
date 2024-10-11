@@ -1,12 +1,9 @@
 package io.ebeaninternal.server.expression;
 
-import io.ebeaninternal.api.BindValuesKey;
-import io.ebeaninternal.api.ManyWhereJoins;
-import io.ebeaninternal.api.SpiExpression;
-import io.ebeaninternal.api.SpiExpressionRequest;
+import io.ebean.util.SplitName;
+import io.ebeaninternal.api.*;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.el.ElPropertyValue;
-import io.ebean.util.SplitName;
 
 import java.io.IOException;
 
@@ -53,7 +50,7 @@ final class IsEmptyExpression extends AbstractExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
+  public void addBindValues(SpiExpressionBind request) {
     // no bind values
   }
 
@@ -78,14 +75,13 @@ final class IsEmptyExpression extends AbstractExpression {
    * Append an exists subQuery for the property.
    */
   static void isEmptySql(SpiExpressionRequest request, ElPropertyValue prop, boolean empty, String propertyPath) {
-
     if (empty) {
       request.append("not ");
     }
     request
-      .append("exists (select 1 from ")
-      .append(prop.assocIsEmpty(request, propertyPath))
-      .append(")");
+      .append("exists (select 1 ")
+      .parse(prop.assocIsEmpty(request, propertyPath))
+      .append(')');
   }
 
   /**
@@ -98,7 +94,7 @@ final class IsEmptyExpression extends AbstractExpression {
     } else {
       builder.append("IsNotEmpty[");
     }
-    builder.append(propName).append("]");
+    builder.append(propName).append(']');
   }
 
   @Override

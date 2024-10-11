@@ -3,6 +3,7 @@ package io.ebeaninternal.server.expression;
 import io.ebean.LikeType;
 import io.ebeaninternal.api.BindValuesKey;
 import io.ebeaninternal.api.SpiExpression;
+import io.ebeaninternal.api.SpiExpressionBind;
 import io.ebeaninternal.api.SpiExpressionRequest;
 import io.ebeaninternal.server.el.ElPropertyValue;
 
@@ -23,8 +24,7 @@ final class NativeILikeExpression extends AbstractExpression {
   }
 
   @Override
-  public void addBindValues(SpiExpressionRequest request) {
-
+  public void addBindValues(SpiExpressionBind request) {
     ElPropertyValue prop = getElProp(request);
     if (prop != null && prop.isDbEncrypted()) {
       // bind the key as well as the value
@@ -36,14 +36,12 @@ final class NativeILikeExpression extends AbstractExpression {
 
   @Override
   public void addSql(SpiExpressionRequest request) {
-
     String pname = propName;
     ElPropertyValue prop = getElProp(request);
     if (prop != null && prop.isDbEncrypted()) {
       pname = prop.beanProperty().decryptProperty(propName);
     }
-
-    request.append(pname).append(" ilike ?");
+    request.property(pname).append(" ilike ?");
   }
 
   /**
@@ -51,7 +49,7 @@ final class NativeILikeExpression extends AbstractExpression {
    */
   @Override
   public void queryPlanHash(StringBuilder builder) {
-    builder.append("NativeILike[").append(propName).append("]");
+    builder.append("NativeILike[").append(propName).append(']');
   }
 
   @Override
