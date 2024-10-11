@@ -35,6 +35,7 @@ public class BeanPropertyElement<T> extends BeanProperty {
     }
     if (!properties.isEmpty() && beanDescriptor == null) {
       DeployBeanDescriptor dp = new DeployBeanDescriptor(null, Map.class, null);
+      dp.setProperties(new String[0]);
       dp.setName(ElementBean.class.getSimpleName());
       BeanProperty[] propertiesIndex = new BeanProperty[properties.size()];
       for (BeanProperty property : properties) {

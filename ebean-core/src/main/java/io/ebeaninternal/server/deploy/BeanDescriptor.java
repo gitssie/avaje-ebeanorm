@@ -235,6 +235,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private SpiEbeanServer ebeanServer;
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
+  private boolean customClass;
 
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
@@ -282,6 +283,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.tablespaceMeta = deploy.getTablespaceMeta();
     this.storageEngine = deploy.getStorageEngine();
     this.elementBean = deploy.getElementBean();
+    this.customClass = readCustomClass();
     this.autoTunable = beanFinder == null && (entityType == EntityType.ORM || entityType == EntityType.VIEW);
     // helper object used to derive lists of properties
     DeployBeanPropertyLists listHelper = new DeployBeanPropertyLists(owner, this, deploy);
@@ -1709,7 +1711,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       throw new UnsupportedOperationException("cannot create entity bean for abstract entity " + name());
     }
     try {
-      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
+      EntityBean bean = customClass ? createPrototypeEntityBean(beanType) : (EntityBean) prototypeEntityBean._ebean_newInstance();
       if (beanPostConstructListener != null) {
         beanPostConstructListener.autowire(bean); // calls all registered listeners
         beanPostConstructListener.postConstruct(bean); // calls first the @PostConstruct method and then the listeners
@@ -3419,13 +3421,21 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     }
   }
 
-  public EntityBean elementBean(EntityBean bean){
+  private boolean readCustomClass() {
+    if (prototypeEntityBean == null) {
+      return false;
+    }
+    Object bean = prototypeEntityBean._ebean_newInstance();
+    return bean.getClass() != beanType;
+  }
+
+  public EntityBean elementBean(EntityBean bean) {
     return elementBean == null ? null : elementBean.apply(bean);
   }
 
-  public void setElementBeanLoadedLazy(EntityBean bean){
+  public void setElementBeanLoadedLazy(EntityBean bean) {
     bean = elementBean(bean);
-    if (bean != null){
+    if (bean != null) {
       bean._ebean_getIntercept().setLoadedLazy();
     }
   }
