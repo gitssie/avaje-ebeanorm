@@ -199,7 +199,7 @@ public class TenantDeployCreateProperties {
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
-    readAnnotations.readInitial(entity, info); //initial base scalar properties
+    readAnnotations.readInitial(info); //initial base scalar properties
     return info;
   }
 

@@ -9,10 +9,7 @@ import io.ebean.config.NamingConvention;
 import io.ebean.config.TableName;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.CamelCaseHelper;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
-import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.BeanTable;
-import io.ebeaninternal.server.deploy.PropertyForeignKey;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocMany;
@@ -41,9 +38,9 @@ import java.util.Set;
 /**
  * Read the deployment annotation for Assoc Many beans.
  */
-final class AnnotationAssocManys extends AnnotationAssoc {
+class AnnotationAssocManys extends AnnotationAssoc {
 
-  AnnotationAssocManys(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorManager factory) {
+  AnnotationAssocManys(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorMap factory) {
     super(info, readConfig, factory);
   }
 
@@ -68,7 +65,7 @@ final class AnnotationAssocManys extends AnnotationAssoc {
     }
   }
 
-  private void read(DeployBeanPropertyAssocMany<?> prop) {
+  protected void read(DeployBeanPropertyAssocMany<?> prop) {
     OneToMany oneToMany = get(prop, OneToMany.class);
     if (oneToMany != null) {
       readToOne(oneToMany, prop);
@@ -173,6 +170,10 @@ final class AnnotationAssocManys extends AnnotationAssoc {
 
   @SuppressWarnings("unchecked")
   private void readElementCollection(DeployBeanPropertyAssocMany<?> prop, ElementCollection elementCollection) {
+    if(!(this.factory instanceof BeanDescriptorManager)){
+      return;
+    }
+    BeanDescriptorManager factory = (BeanDescriptorManager) this.factory;
     prop.setElementCollection();
     if (!elementCollection.targetClass().equals(void.class)) {
       prop.setTargetType(elementCollection.targetClass());

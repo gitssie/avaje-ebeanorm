@@ -1,7 +1,6 @@
 package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.config.DatabaseConfig;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
 import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
@@ -27,10 +26,10 @@ public class XReadAnnotations {
    * to resolve the relationships etc.
    * </p>
    */
-  public void readInitial(XEntity entity, DeployBeanInfo<?> info) {
+  public void readInitial(DeployBeanInfo<?> info) {
     try {
-      new XAnnotationClass(entity, info, readConfig).parse();
-      new XAnnotationFields(entity, info, readConfig, createProperties).parse();
+      new XAnnotationClass(info, readConfig).parse();
+      new XAnnotationFields(info, readConfig, createProperties).parse();
     } catch (RuntimeException e) {
       throw new RuntimeException("Error reading annotations for " + info, e);
     }

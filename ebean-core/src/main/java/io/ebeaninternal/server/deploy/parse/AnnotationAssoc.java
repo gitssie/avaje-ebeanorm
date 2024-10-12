@@ -2,14 +2,15 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.config.BeanNotRegisteredException;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
+import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.BeanTable;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 
 abstract class AnnotationAssoc extends AnnotationParser {
 
-  final BeanDescriptorManager factory;
+  final BeanDescriptorMap factory;
 
-  AnnotationAssoc(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorManager factory) {
+  AnnotationAssoc(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorMap factory) {
     super(info, readConfig);
     this.factory = factory;
   }

@@ -35,7 +35,7 @@ import java.util.function.Function;
 /**
  * Read the field level deployment annotations.
  */
-final class AnnotationFields extends AnnotationParser {
+class AnnotationFields extends AnnotationParser {
 
   /**
    * If present read Jackson JsonIgnore.
@@ -196,7 +196,7 @@ final class AnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initValidation(DeployBeanProperty prop) {
+  protected void initValidation(DeployBeanProperty prop) {
     if (readConfig.isValidationNotNull(prop)) {
       prop.setNullable(false);
     }
