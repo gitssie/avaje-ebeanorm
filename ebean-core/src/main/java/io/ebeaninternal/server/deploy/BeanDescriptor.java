@@ -236,7 +236,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private SpiEbeanServer ebeanServer;
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
-  private boolean customClass;
+  private boolean dynamicClass;
 
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
@@ -284,7 +284,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.tablespaceMeta = deploy.getTablespaceMeta();
     this.storageEngine = deploy.getStorageEngine();
     this.elementBean = deploy.getElementBean();
-    this.customClass = readCustomClass();
+    this.dynamicClass = readDynamicClass();
     this.autoTunable = beanFinder == null && (entityType == EntityType.ORM || entityType == EntityType.VIEW);
     // helper object used to derive lists of properties
     DeployBeanPropertyLists listHelper = new DeployBeanPropertyLists(owner, this, deploy);
@@ -1737,7 +1737,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       throw new UnsupportedOperationException("cannot create entity bean for abstract entity " + name());
     }
     try {
-      EntityBean bean = customClass ? createPrototypeEntityBean(beanType) : (EntityBean) prototypeEntityBean._ebean_newInstance();
+      EntityBean bean = dynamicClass ? createPrototypeEntityBean(beanType) : (EntityBean) prototypeEntityBean._ebean_newInstance();
       if (beanPostConstructListener != null) {
         beanPostConstructListener.autowire(bean); // calls all registered listeners
         beanPostConstructListener.postConstruct(bean); // calls first the @PostConstruct method and then the listeners
@@ -3440,12 +3440,16 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     }
   }
 
-  private boolean readCustomClass() {
+  private boolean readDynamicClass() {
     if (prototypeEntityBean == null) {
       return false;
     }
     Object bean = prototypeEntityBean._ebean_newInstance();
     return bean.getClass() != beanType;
+  }
+
+  public boolean isDynamicEntity(){
+    return elementBean != null;
   }
 
   public EntityBean elementBean(EntityBean bean) {

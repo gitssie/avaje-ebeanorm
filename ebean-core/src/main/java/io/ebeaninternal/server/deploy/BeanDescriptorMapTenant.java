@@ -14,6 +14,7 @@ import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -23,14 +24,14 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;
   protected final List<BeanDescriptor<?>> elementDescriptors = new LinkedList<>();
-  protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
-  protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
-  protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
+  protected final Map<String, BeanTable> beanTableMap = new ConcurrentHashMap<>();
+  protected final Map<String, BeanDescriptor<?>> descMap = new ConcurrentHashMap<>();
+  protected final Map<String, BeanDescriptor<?>> descQueueMap = new ConcurrentHashMap<>();
   protected final List<BeanDescriptorConsumer> descListeners = new LinkedList<>();
-  protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
-  protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
-  protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
-  protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
+  protected final Map<String, BeanManager<?>> beanManagerMap = new ConcurrentHashMap<>();
+  protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new ConcurrentHashMap<>();
+  protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new ConcurrentHashMap<>();
+  protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new ConcurrentHashMap<>();
 
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
@@ -202,7 +203,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   private void registerBeanDescriptor(BeanDescriptorMapTemporal factory) {
     setEbeanServer(factory.descMap, factory);
+    elementDescriptors.addAll(factory.elementDescriptors);
     descMap.putAll(factory.descMap);
+    descQueueMap.putAll(factory.descQueueMap);
     beanManagerMap.putAll(factory.beanManagerMap);
     descInfoMap.putAll(factory.descInfoMap);
     beanTableMap.putAll(factory.beanTableMap);
@@ -229,7 +232,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected void setEbeanServer(Map<String, BeanDescriptor<?>> descMap, BeanDescriptorMapTemporal factory) {
     //10.ebeanServer
     for (BeanDescriptor<?> desc : descMap.values()) {
-      if (!factory.beanManagerMap.containsKey(desc.fullName())) {
+      if (!desc.isEmbedded() && !factory.beanManagerMap.containsKey(desc.fullName())) {
         beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
         desc.setEbeanServer(beanDescriptorManager.ebeanServer);
       }
@@ -252,9 +255,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected boolean isChanged(Class<?> beanClass, XEntity entity) {
-    String etag = entity.generateEtag();
-    String oldEtag = getDesc(beanClass).dbComment();
-    return !etag.equals(oldEtag);
+    //String etag = entity.generateEtag();
+    //String oldEtag = getDesc(beanClass).dbComment();
+    return true;
   }
 
   @Override

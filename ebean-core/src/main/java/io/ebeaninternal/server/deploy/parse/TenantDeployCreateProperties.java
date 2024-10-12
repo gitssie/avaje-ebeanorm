@@ -67,18 +67,13 @@ public class TenantDeployCreateProperties {
       return;
     }
     try {
-      Collection<XField> fields = entity.getFields();
       int i = 0;
-      DeployBeanProperty property;
-      for (XField field : fields) {
-        property = desc.getBeanProperty(field.getName());
-        if (property != null) {
-          changeBeanProperty(desc, property, field, beanType);
+      for (XField field : entity.getFields()) {
+        DeployBeanProperty prop = desc.getBeanProperty(field.getName());
+        if (prop != null) {
           continue;
         }
-        i++;
-        DeployBeanProperty prop = createProp(desc, field, beanType);
-        addProperty(i, desc, prop);
+        addProperty(i++, desc, createProp(desc, field, beanType));
       }
     } catch (PersistenceException ex) {
       throw ex;
@@ -92,7 +87,7 @@ public class TenantDeployCreateProperties {
       // set a order that gives priority to inherited properties
       // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
       int sortOverride = prop.getSortOverride();
-      prop.setSortOrder((1 * 10000 + 100 - index + sortOverride));
+      prop.setSortOrder((10 * 10000 + 100 - index + sortOverride));
 
       DeployBeanProperty replaced = desc.addBeanProperty(prop);
       if (replaced != null && !replaced.isTransient()) {
@@ -191,30 +186,21 @@ public class TenantDeployCreateProperties {
   }
 
   public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    if (info.getDescriptor().readCustomSlot().length == 0) {
+      return info;
+    }
     if (entity == null) {
       entity = entityProvider.getEntity(beanClass);
     }
-    if (!isCustomEntity(entity, info.getDescriptor())) {
+    if (entity == null || entity.getFields().isEmpty()) {
       return info;
     }
     DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
-    readAnnotations.readInitial(entity, info); //初始化基本属性
-//    readAnnotations.readAssociations(info, factory); //读取关联信息
+    readAnnotations.readInitial(entity, info); //initial base scalar properties
     return info;
-  }
-
-  protected boolean isCustomEntity(XEntity entity, DeployBeanDescriptor desc) {
-    if (entity.getBeanType() != desc.getBeanType()) {
-      return true;
-    }
-    return entity.getFields().size() > 0 || entity.isCustom();
-  }
-
-  public boolean isChanged(Class<?> entityClass) {
-    return entityProvider.isChanged(entityClass);
   }
 
   protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {

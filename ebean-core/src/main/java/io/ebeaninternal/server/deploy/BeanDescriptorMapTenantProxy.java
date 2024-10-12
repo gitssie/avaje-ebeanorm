@@ -106,7 +106,7 @@ public class BeanDescriptorMapTenantProxy implements BeanDescriptorMap {
     return proxy.isTableManaged(tableName);
   }
 
-  void clear() {
+  protected void clear() {
     temporal = null;
   }
 }

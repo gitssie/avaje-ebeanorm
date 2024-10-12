@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy.meta;
 
 import io.ebean.annotation.*;
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
@@ -1145,5 +1146,21 @@ public class DeployBeanDescriptor<T> {
 
   public DatabaseConfig getConfig() {
     return config;
+  }
+
+  public DeployBeanProperty[] readCustomSlot() {
+    DeployBeanProperty ccp = null;
+    DeployBeanProperty slot = null;
+    for (DeployBeanProperty prop : propertiesAll()) {
+      if (ccp == null && prop.getPropertyType() == ElementBean.class) {
+        ccp = prop;
+      } else if (slot == null && prop.isTransient() && prop.getPropertyType() == int.class && prop.getName().equals("__slot__")) {
+        slot = prop;
+      }
+    }
+    if (ccp == null || slot == null) {
+      return new DeployBeanProperty[0];
+    }
+    return new DeployBeanProperty[]{ccp, slot};
   }
 }

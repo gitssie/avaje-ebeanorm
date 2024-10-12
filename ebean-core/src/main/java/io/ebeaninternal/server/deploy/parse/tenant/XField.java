@@ -6,6 +6,7 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class XField {
   private String label;
@@ -157,21 +158,19 @@ public class XField {
     ToStringBuilder builder = new ToStringBuilder();
     builder.start(this);
     builder.add("name", name);
+    builder.add("type", type);
+    builder.add("targetType", targetType);
     builder.add("enabled", enabled);
+    builder.add("nullable", nullable);
     builder.add("required", required);
     builder.add("createable", createable);
     builder.add("updateable", updateable);
     builder.add("minLength", minLength);
     builder.add("maxLength", maxLength);
     if (annotations != null) {
-      Object[] arr = annotations.keySet().toArray(new Object[0]);
-      Arrays.sort(arr);
-      for (Object key : arr) {
-        Annotation o = annotations.get(key);
-        builder.start(o);
-        builder.add("toString", o.toString());
-        builder.end();
-      }
+      List<String> arr = annotations.values().stream().map(e -> e.toString()).collect(Collectors.toList());
+      Collections.sort(arr);
+      builder.add("annotations", arr);
     }
     builder.end();
     return builder.toString();

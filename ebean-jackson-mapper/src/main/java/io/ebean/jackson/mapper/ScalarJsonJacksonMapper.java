@@ -55,7 +55,7 @@ public final class ScalarJsonJacksonMapper implements ScalarJsonMapper {
         return field;
       }
     }
-    throw new IllegalStateException("AnnotatedField not found to match " + req.name());
+    return null;
   }
 
   private AnnotatedClass annotatedClass(ScalarJsonRequest req) {
@@ -152,9 +152,14 @@ public final class ScalarJsonJacksonMapper implements ScalarJsonMapper {
       this.objectReader = (ObjectMapper)jsonManager.mapper();
       this.pgType = jsonManager.postgresType(dbType);
       this.docType = docType;
-      final JacksonTypeHelper helper = new JacksonTypeHelper(field, objectReader);
-      this.deserType = helper.type();
-      this.objectWriter = helper.objectWriter();
+      if (field != null) {
+        final JacksonTypeHelper helper = new JacksonTypeHelper(field, objectReader);
+        this.deserType = helper.type();
+        this.objectWriter = helper.objectWriter();
+      } else {
+        this.deserType = objectReader.constructType(cls);
+        this.objectWriter = objectReader.writerFor(deserType);
+      }
     }
 
     @Override

@@ -3,7 +3,6 @@ package io.ebeaninternal.server.deploy;
 import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.InterceptReadWrite;
-import io.ebean.bean.StaticEntity;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
@@ -21,7 +20,9 @@ public class BeanDescriptorMapTemporal {
   private final BeanDescriptorMapTenantProxy proxyMap;
   private final BeanDescriptorMapCheck mapCheck;
   private final BeanDescriptorMapContext context;
+  protected final List<BeanDescriptor<?>> elementDescriptors = new LinkedList<>();
   protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
+  protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
   protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
   protected final List<BeanDescriptorConsumer> descListeners = new LinkedList<>();
   protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
@@ -38,7 +39,6 @@ public class BeanDescriptorMapTemporal {
   private final List<BeanDescriptor<?>> descriptors = new ArrayList<>();
   private final Map<String, String> withHistoryTables = new HashMap<>();
   private final Map<String, String> draftTables = new HashMap<>();
-  private final Class<StaticEntity> staticEntityClass = StaticEntity.class;
 
   public BeanDescriptorMapTemporal(BeanDescriptorManagerTenant proxy, BeanDescriptorMapContext context, XReadAnnotations readAnnotations, TenantDeployCreateProperties createProperties) {
     this.proxy = proxy;
@@ -109,7 +109,6 @@ public class BeanDescriptorMapTemporal {
   protected BeanDescriptor<?> registerDescriptor(DeployBeanInfo<?> info, List<BeanDescriptor<?>> descriptors) {
     BeanDescriptor<?> desc = new BeanDescriptor<>(proxyMap, info.getDescriptor());
     descMap.put(desc.type().getName(), desc);
-    /*
     if (desc.isDocStoreMapped()) {
       descQueueMap.put(desc.docStoreQueueId(), desc);
     }
@@ -117,7 +116,7 @@ public class BeanDescriptorMapTemporal {
       if (many.isElementCollection()) {
         elementDescriptors.add(many.elementDescriptor());
       }
-    }*/
+    }
     descriptors.add(desc);
     return desc;
   }
@@ -224,10 +223,6 @@ public class BeanDescriptorMapTemporal {
     // create BeanManager for each non-embedded entity bean
     for (BeanDescriptor<?> d : descMap) {
       d.initLast();
-      if (!d.isEmbedded()) {
-//        beanManagerMap.put(d.fullName(), beanManagerFactory.create(d));
-//        checkForValidEmbeddedId(d);
-      }
     }
   }
 
@@ -275,18 +270,12 @@ public class BeanDescriptorMapTemporal {
     // Set the BeanReflectGetter and BeanReflectSetter that typically
     // use generated code. NB: Due to Bug 166 so now doing this for
     // abstract classes as well.
-    DeployBeanProperty ccp = null;
-    DeployBeanProperty slot = null;
-    for (DeployBeanProperty prop : desc.propertiesAll()) {
-      if (ccp == null && prop.getPropertyType() == ElementBean.class) {
-        ccp = prop;
-      } else if (slot == null && prop.isTransient() && prop.getPropertyType() == int.class && prop.getName().equals("__slot__")) {
-        slot = prop;
-      }
-    }
-    if (ccp == null || slot == null) {
+    DeployBeanProperty[] customSlot = desc.readCustomSlot();
+    if (customSlot.length == 0) {
       return;
     }
+    DeployBeanProperty ccp = customSlot[0];
+    DeployBeanProperty slot = customSlot[1];
     ccp.setTransient();
     ccp.setEmbedded();
     ccp.setUnmappedJson();
@@ -463,7 +452,9 @@ public class BeanDescriptorMapTemporal {
       value.clear();
     }
     proxyMap.clear();
+    elementDescriptors.clear();
     descMap.clear();
+    descQueueMap.clear();
     descInfoMap.clear();
     descListeners.clear();
     beanTableMap.clear();
@@ -489,10 +480,10 @@ public class BeanDescriptorMapTemporal {
 
     public boolean initialise() {
       if (beanManager != null) {
-        if (staticEntityClass.isAssignableFrom(beanClass)) { //这里先认为StaticEntity子类本身不是、且不依赖动态类
+        if (info.getDescriptor().readCustomSlot().length == 0) {//not a dynamic bean
           registerBeanManager(beanManager);
         } else {
-          registerDescriptor(info, descriptors);
+          registerDescriptor(info, descriptors); //a dynamic bean that to deploy associations
           readDeployAssociations(info.getDescriptor());
         }
         return true;
