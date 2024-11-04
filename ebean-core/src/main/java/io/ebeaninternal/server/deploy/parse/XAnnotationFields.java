@@ -1,13 +1,12 @@
 package io.ebeaninternal.server.deploy.parse;
 
-import io.ebean.annotation.DbMigration;
-import io.ebean.annotation.Index;
-import io.ebean.annotation.Indices;
+import io.ebean.annotation.*;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
 import io.ebeaninternal.server.deploy.parse.tenant.annotation.XTenantId;
+import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.DefaultGeneratedProperty;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
@@ -21,6 +20,7 @@ import java.util.Set;
 
 public class XAnnotationFields extends AnnotationFields {
   private TenantDeployCreateProperties createProperties;
+  private DefaultGeneratedProperty defaultValueGeneratedProperty = new DefaultGeneratedProperty();
   private transient XField field;
 
   XAnnotationFields(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, TenantDeployCreateProperties createProperties) {
@@ -88,6 +88,14 @@ public class XAnnotationFields extends AnnotationFields {
       if (maxSize != null && maxSize > 0) {
         prop.setDbLength(maxSize);
       }
+    }
+  }
+
+  @Override
+  protected void initConvert(DeployBeanProperty prop) {
+    super.initConvert(prop);
+    if (has(prop, DbDefault.class)) {
+      prop.setGeneratedProperty(defaultValueGeneratedProperty);
     }
   }
 

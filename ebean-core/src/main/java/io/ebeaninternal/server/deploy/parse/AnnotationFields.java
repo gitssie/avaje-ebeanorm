@@ -284,7 +284,7 @@ class AnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initConvert(DeployBeanProperty prop) {
+  protected void initConvert(DeployBeanProperty prop) {
     Convert convert = get(prop, Convert.class);
     if (convert != null && Function.class.isAssignableFrom(convert.converter())) {
       try {
