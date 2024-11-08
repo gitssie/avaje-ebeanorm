@@ -20,6 +20,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static java.lang.System.Logger.Level.*;
 
@@ -206,7 +207,49 @@ public class TenantDeployCreateProperties {
     return desc;
   }
 
-  protected LinkedHashMap<String, DeployBeanProperty> copyBeanProperty(DeployBeanDescriptor<?> desc, LinkedHashMap<String, DeployBeanProperty> propMap) {
-    return new LinkedHashMap<>(propMap);
+  protected LinkedHashMap<String, DeployBeanProperty> copyBeanProperty(DeployBeanDescriptor<?> desc, LinkedHashMap<String, DeployBeanProperty> propMap) throws Exception {
+    LinkedHashMap res = new LinkedHashMap();
+    for (Map.Entry<String, DeployBeanProperty> entry : propMap.entrySet()) {
+      DeployBeanProperty prop = entry.getValue();
+      DeployBeanProperty targetProp;
+      if (prop.getClass().equals(DeployBeanPropertyAssocOne.class)) {
+        targetProp = new DeployBeanPropertyAssocOne(desc, ((DeployBeanPropertyAssocOne<?>) prop).getTargetType());
+      } else if (prop.getClass().equals(DeployBeanPropertyAssocMany.class)) {
+        targetProp = new DeployBeanPropertyAssocMany(desc, ((DeployBeanPropertyAssocMany<?>) prop).getTargetType(), ((DeployBeanPropertyAssocMany<?>) prop).getManyType());
+      } else if (prop.getClass().equals(DeployBeanPropertySimpleCollection.class)) {
+        targetProp = new DeployBeanPropertySimpleCollection(desc, ((DeployBeanPropertySimpleCollection<?>) prop).getTargetType(), ((DeployBeanPropertySimpleCollection<?>) prop).getManyType());
+      } else {
+        targetProp = new DeployBeanProperty(desc, prop.getPropertyType(), prop.getGenericType());
+      }
+      copyProps(prop, targetProp);
+      res.put(entry.getKey(), targetProp);
+    }
+    return res;
+  }
+
+  private void copyProps(DeployBeanProperty prop, DeployBeanProperty targetProp) throws Exception {
+    copyProps(prop, targetProp, DeployBeanProperty.class.getDeclaredFields());
+    if (prop instanceof DeployBeanPropertyAssoc) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssoc.class.getDeclaredFields());
+    }
+    if (prop instanceof DeployBeanPropertyAssocOne) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssocOne.class.getDeclaredFields());
+    }
+    if (prop instanceof DeployBeanPropertyAssocMany) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssocMany.class.getDeclaredFields());
+    }
+  }
+
+  private void copyProps(DeployBeanProperty source, DeployBeanProperty target, Field[] fields) throws Exception {
+    for (Field field : fields) {
+      field.setAccessible(true);
+      if (Modifier.isStatic(field.getModifiers())) {
+        continue;
+      }
+      if (field.getName().equals("desc")) {
+        continue;
+      }
+      field.set(target, field.get(source));
+    }
   }
 }

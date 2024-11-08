@@ -235,8 +235,8 @@ public class BeanDescriptorMapTemporal {
       deploy(assoc.getTargetType());
     }
     for (DeployBeanProperty prop : desc.propertiesAssocMany()) {
-      DeployBeanPropertyAssoc assoc = (DeployBeanPropertyAssoc) prop;
-      if (assoc.isId() || assoc.isTransient() || assoc.isEmbedded()) {
+      DeployBeanPropertyAssocMany assoc = (DeployBeanPropertyAssocMany) prop;
+      if (assoc.isId() || assoc.isTransient() || assoc.isEmbedded() || assoc.isElementCollection()) {
         continue;
       }
       deploy(assoc.getTargetType());

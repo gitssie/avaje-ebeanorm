@@ -247,6 +247,7 @@ class AnnotationAssocManys extends AnnotationAssoc {
       scalar = false;
       DeployBeanPropertyAssocOne valueProp = new DeployBeanPropertyAssocOne<>(elementDescriptor, elementType);
       valueProp.setName("value");
+      valueProp.setDbColumn("value");
       valueProp.setEmbedded();
       valueProp.setElementProperty();
       valueProp.setSortOrder(sortOrder++);

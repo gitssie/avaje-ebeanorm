@@ -37,6 +37,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected final TenantDeployCreateProperties createProperties;
   protected final Map<Class<?>, DeployBeanInfo<?>> rootInfoMap;
 
+  private final ThreadLocal<BeanDescriptorMapTemporal> current = new ThreadLocal<>();
 
   public BeanDescriptorMapTenant(Object tenantId, BeanDescriptorManagerTenant beanDescriptorManager) {
     this.tenantId = tenantId;
@@ -112,7 +113,11 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public BeanTable beanTable(Class<?> beanClass) {
-    throw new UnsupportedOperationException();
+    BeanDescriptorMapTemporal that = current.get();
+    if (that != null) {
+      return that.beanTable(beanClass);
+    }
+    return beanTableMap.get(beanClass.getName());
   }
 
   @Override
@@ -128,6 +133,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public <T> BeanDescriptor<T> getDesc(Class<T> beanClass) {
+    BeanDescriptorMapTemporal that = current.get();
+    if (that != null) {
+      return that.desc(beanClass);
+    }
     return (BeanDescriptor<T>) descMap.get(beanClass.getName());
   }
 
@@ -194,11 +203,21 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected void deployLocked(BeanDescriptorMapContext context, Class<?> entityClass, XEntity entity) {
-    BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
-    factory.deploy(entityClass, entity);
-    factory.initialise();
-    registerBeanDescriptor(factory);
-    factory.clear();
+    BeanDescriptorMapTemporal factory = current.get();
+    if (factory == null) {
+      factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
+      current.set(factory);
+      try {
+        factory.deploy(entityClass, entity);
+        factory.initialise();
+        registerBeanDescriptor(factory);
+      } finally {
+        factory.clear();
+        current.remove();
+      }
+    } else {
+      factory.deploy(entityClass, entity);
+    }
   }
 
   private void registerBeanDescriptor(BeanDescriptorMapTemporal factory) {
