@@ -174,9 +174,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public boolean redeploy(Class<?> entityClass, XEntity entity) {
-    if (!isDeployed(entityClass)) { //it's a lazy deploy
-      return false;
-    }
     lock.lock();
     try {
       if (isChanged(entityClass, entity)) {
@@ -264,7 +261,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
       BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
       BeanDescriptorMapTemporal.DeployInfo newInfo = factory.createDeployBeanInfo(beanClass, entity);
-      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo.info);
+      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo);
       factory.initialise();
       factory.clear();
       return desc;

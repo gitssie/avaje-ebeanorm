@@ -92,10 +92,9 @@ public class BeanDescriptorMapTemporal {
     //1.createListeners();
     //2.readEntityDeploymentInitial
     DeployInfo info = createDeployBeanInfo(entityClass, entity);
-    if (info.initialise()) {
-      return;
+    if (!info.initialise()) {
+      deployInternal(info.info, descriptors);
     }
-    deployInternal(info.info, descriptors);
   }
 
   protected void deployInternal(DeployBeanInfo<?> info, List<BeanDescriptor<?>> descriptors) {
@@ -330,8 +329,10 @@ public class BeanDescriptorMapTemporal {
     };
   }
 
-  protected <T> BeanDescriptor<T> deployInfo(Class<T> beanClass, DeployBeanInfo<?> info) {
-    deployInternal(info, descriptors);
+  protected <T> BeanDescriptor<T> deployInfo(Class<T> beanClass, DeployInfo info) {
+    if (!info.initialise()) {
+      deployInternal(info.info, descriptors);
+    }
     return getDesc(beanClass);
   }
 
