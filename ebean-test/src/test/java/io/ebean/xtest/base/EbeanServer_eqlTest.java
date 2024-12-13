@@ -1,15 +1,14 @@
 package io.ebean.xtest.base;
 
-import io.ebean.DB;
-import io.ebean.DatabaseFactory;
-import io.ebean.Query;
-import io.ebean.Transaction;
+import io.ebean.*;
 import io.ebean.bean.EntityBean;
 import io.ebean.test.LoggedSql;
 import io.ebean.test.UserContext;
 import io.ebean.xtest.BaseTestCase;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.server.TenantContainerFactory;
 import io.ebeaninternal.server.core.DefaultServer;
+import io.ebeaninternal.server.core.SpiOrmQueryRequest;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.BeanDescriptorManagerProvider;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
@@ -226,6 +225,26 @@ public class EbeanServer_eqlTest extends BaseTestCase {
       assertSql(query).endsWith("order by t0.id limit 100");
     }
   }
+
+  //@Test
+  public void basicSQL() {
+
+    ResetBasicData.reset();
+
+    String sql = "select name where billingAddress.line1='JACK' order by id limit 100";
+    sql = "where billingAddress.line1='JACK' order by id limit 100";
+
+    Query<Customer> query = server().createQuery(Customer.class, sql);
+    query.setMaxRows(0);
+
+    ExpressionList where = query.where();
+    query.findList();
+
+    //SpiOrmQueryRequest<?> request = buildQueryRequest(SpiQuery.Type.LIST, query, transaction);
+
+    assertSql(query).endsWith("order by t0.id limit 100");
+  }
+
 
   @Test
   public void basic_via_Ebean_defaultServer() {

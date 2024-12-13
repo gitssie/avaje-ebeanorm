@@ -1507,6 +1507,6 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   }
 
   public boolean isCustom(){
-    return field == null;
+    return field == null && fieldIndex != null && fieldIndex.length > 0;
   }
 }
