@@ -21,6 +21,7 @@ import io.ebeaninternal.server.deploy.BeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
 import io.ebeaninternal.server.el.ElPropertyValue;
+import io.ebeaninternal.server.query.STreeType;
 import io.ebeaninternal.server.querydefn.OrmQueryProperties;
 
 import java.sql.Timestamp;
@@ -37,6 +38,7 @@ public final class DLoadContext implements LoadContext {
   private final BeanDescriptor<?> rootDescriptor;
   private final Map<String, DLoadBeanContext> beanMap = new HashMap<>();
   private final Map<String, DLoadManyContext> manyMap = new HashMap<>();
+  private final Map<String, DLoadComputedContext> computedMap = new HashMap<>(6);
   private final DLoadBeanContext rootBeanContext;
   private final boolean asDraft;
   private final Timestamp asOf;
@@ -271,6 +273,11 @@ public final class DLoadContext implements LoadContext {
     getManyContext(path, many).register(bc);
   }
 
+  @Override
+  public void register(String path, BeanProperty property, BeanCollection<?> bc) {
+    getComputedContext(path, property).register(bc);
+  }
+
   int batchSize(OrmQueryProperties props) {
     if (props == null) {
       return defaultBatchSize;
@@ -298,6 +305,10 @@ public final class DLoadContext implements LoadContext {
     } else {
       beanMap.put(path, createBeanContext(path, props));
     }
+  }
+
+  DLoadComputedContext getComputedContext(String path, BeanProperty property) {
+    return computedMap.computeIfAbsent(path, p -> new DLoadComputedContext(this, property, path, null));
   }
 
   DLoadManyContext getManyContext(String path, BeanPropertyAssocMany<?> many) {

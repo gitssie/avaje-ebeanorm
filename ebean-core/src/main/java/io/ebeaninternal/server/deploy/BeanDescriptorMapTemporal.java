@@ -302,7 +302,7 @@ public class BeanDescriptorMapTemporal {
       BeanElementPropertyAccess access = new BeanElementPropertyAccess(elementBean, i);
       DeployBeanProperty prop = properties.get(i);
       prop.setPropertyIndex(slotIndex);
-      prop.setFieldIndex(new int[]{propertyIndex, i});
+      prop.setFieldIndex(i);
       prop.setGetter(access);
       prop.setSetter(access);
     }

@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.annotation.Index;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.config.EncryptDeploy;
 import io.ebean.config.EncryptDeploy.Mode;
 import io.ebean.config.IdGenerator;
@@ -10,6 +11,7 @@ import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebean.core.type.ScalarType;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.DbMigrationInfo;
 import io.ebeaninternal.server.deploy.IndexDefinition;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
@@ -20,6 +22,8 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
 import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.EmptyGeneratedProperty;
 import io.ebeaninternal.server.properties.BeanPropertyConvertGetter;
+import io.ebeaninternal.server.properties.BeanPropertyGetter;
+import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
@@ -148,6 +152,7 @@ class AnnotationFields extends AnnotationParser {
     initDbJson(prop);
     initFormula(prop);
     initConvert(prop);
+    initComputed(prop);
     initVersion(prop);
     initWhen(prop);
     initWhoProperties(prop);
@@ -284,17 +289,46 @@ class AnnotationFields extends AnnotationParser {
     }
   }
 
+  private void initComputed(DeployBeanProperty prop) {
+    Class<?> type = prop.getPropertyType();
+    if (Computed.class != type) {
+      return;
+    }
+    ScalarType<?> scalarType = util.typeManager().dbComputedType(type, prop.getGenericType(), prop.isNullable());
+    if (scalarType != null) {
+      if (prop.getDesc().getEntityType() != BeanDescriptor.EntityType.ORM) {
+        throw new RuntimeException("Does not mapped to ORM which is " + scalarType.getClass());
+      } else if (prop.getDesc().idProperty() == null) {
+        throw new RuntimeException("Does not mapped to @Id property in ORM which is " + scalarType.getClass());
+      }
+      int dbType = scalarType.jdbcType();
+      prop.setDbType(dbType);
+      prop.setScalarType(scalarType);
+    }
+  }
+
+  private <T> T newInstance(Convert convert) {
+    try {
+      Constructor<T> constructor = convert.converter().getDeclaredConstructor();
+      constructor.setAccessible(true);
+      return constructor.newInstance();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
   protected void initConvert(DeployBeanProperty prop) {
     Convert convert = get(prop, Convert.class);
+    //custom defines getter
     if (convert != null && Function.class.isAssignableFrom(convert.converter())) {
-      try {
-        Constructor<Function> constructor = convert.converter().getDeclaredConstructor();
-        constructor.setAccessible(true);
-        prop.setGetter(new BeanPropertyConvertGetter(constructor.newInstance()));
-        prop.setGeneratedProperty(new EmptyGeneratedProperty());
-      } catch (Exception e) {
-        throw new IllegalArgumentException(e);
-      }
+      prop.setGetter(new BeanPropertyConvertGetter(newInstance(convert)));
+      prop.setGeneratedProperty(new EmptyGeneratedProperty());
+    } else if (convert != null && BeanPropertyGetter.class.isAssignableFrom(convert.converter())) {
+      prop.setGetter(newInstance(convert));
+    }
+    //custom defines setter
+    if (convert != null && BeanPropertySetter.class.isAssignableFrom(convert.converter())) {
+      prop.setSetter(newInstance(convert));
     }
   }
 

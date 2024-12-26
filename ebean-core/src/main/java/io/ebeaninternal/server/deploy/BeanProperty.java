@@ -2,10 +2,7 @@ package io.ebeaninternal.server.deploy;
 
 import com.fasterxml.jackson.core.JsonToken;
 import io.ebean.ValuePair;
-import io.ebean.bean.EntityBean;
-import io.ebean.bean.EntityBeanIntercept;
-import io.ebean.bean.MutableValueInfo;
-import io.ebean.bean.PersistenceContext;
+import io.ebean.bean.*;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.DbPlatformType;
@@ -16,6 +13,7 @@ import io.ebean.plugin.Property;
 import io.ebean.text.StringParser;
 import io.ebean.util.SplitName;
 import io.ebeaninternal.api.CoreLog;
+import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.api.SpiExpressionRequest;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonReader;
@@ -113,7 +111,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    */
   final String name;
   final int propertyIndex;
-  final int[] fieldIndex;
+  final int fieldIndex;
   private final Field field;
   private final Class<?> propertyType;
   private final String dbBind;
@@ -829,7 +827,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     return propertyIndex;
   }
 
-  public int[] fieldIndex() {
+  public int fieldIndex() {
     return fieldIndex;
   }
 
@@ -1506,7 +1504,11 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     }
   }
 
-  public boolean isCustom(){
-    return field == null && fieldIndex != null && fieldIndex.length > 0;
+  public boolean isCustom() {
+    return field == null && fieldIndex >= 0;
+  }
+
+  public void setEbeanServer(SpiEbeanServer server) {
+
   }
 }

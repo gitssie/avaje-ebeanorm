@@ -697,6 +697,10 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     return intercept;
   }
 
+  public BeanElementHelper helper() {
+    return helper;
+  }
+
   /**
    * Return true if this property is loaded (full bean or included in partial bean).
    */

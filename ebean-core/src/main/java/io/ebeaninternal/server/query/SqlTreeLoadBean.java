@@ -1,14 +1,12 @@
 package io.ebeaninternal.server.query;
 
-import io.ebean.bean.BeanCollection;
-import io.ebean.bean.EntityBean;
-import io.ebean.bean.EntityBeanIntercept;
-import io.ebean.bean.PersistenceContext;
+import io.ebean.bean.*;
 import io.ebean.core.type.ScalarDataReader;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.SpiQuery.Mode;
 import io.ebeaninternal.server.deploy.BeanElementHelper;
+import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.DbReadContext;
 import io.ebeaninternal.server.deploy.InheritInfo;
 import io.ebeaninternal.server.deploy.id.IdBinder;
@@ -59,7 +57,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
     this.partialObject = node.partialObject;
     this.properties = node.properties;
     this.pathMap = node.pathMap;
-    this.children =  node.createLoadChildren();
+    this.children = node.createLoadChildren();
     this.loadingChildProperty = loadingChildProperty();
   }
 
@@ -87,7 +85,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
       return children[0].singleAttributeReader();
     }
     if (properties[0] instanceof STreePropertyAssocOne) {
-      STreePropertyAssocOne assocOne = (STreePropertyAssocOne)properties[0];
+      STreePropertyAssocOne assocOne = (STreePropertyAssocOne) properties[0];
       if (assocOne.isAssocId()) {
         return assocOne.idReader();
       }
@@ -212,7 +210,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
       localBean = null;
       // ... but there may exist as reference bean in parent which has to be marked as deleted.
       if (parentBean != null && nodeBeanProp instanceof STreePropertyAssocOne) {
-        contextBean = ((STreePropertyAssocOne)nodeBeanProp).valueAsEntityBean(parentBean);
+        contextBean = ((STreePropertyAssocOne) nodeBeanProp).valueAsEntityBean(parentBean);
         if (contextBean != null) {
           desc.markAsDeleted(contextBean);
           if (CoreLog.markedAsDeleted.isLoggable(DEBUG)) {
@@ -258,6 +256,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
         ctx.setCurrentPrefix(prefix, pathMap);
         if (readIdNormal) {
           createListProxies();
+          createComputedProxies();
         }
         if (temporalMode == SpiQuery.TemporalMode.DRAFT) {
           localDesc.setDraft(localBean);
@@ -266,7 +265,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
 
         EntityBeanIntercept ebi = localBean._ebean_getIntercept();
         ebi.setPersistenceContext(persistenceContext);
-        BeanElementHelper helper = new BeanElementHelper(localDesc,localBean,ebi);
+        BeanElementHelper helper = new BeanElementHelper(localDesc, localBean, ebi);
 
         if (Mode.LAZYLOAD_BEAN == queryMode) {
           // Lazy Load does not reset the dirty state
@@ -319,6 +318,26 @@ class SqlTreeLoadBean implements SqlTreeLoad {
                 ctx.register(many.asMany(), ref);
               }
             }
+          }
+        }
+      }
+    }
+
+    /**
+     * Create lazy computed proxies for the aggregation that is
+     * included in the actual query.
+     */
+    private void createComputedProxies() {
+      boolean forceNewReference = queryMode == Mode.REFRESH_BEAN;
+      for (STreeProperty prop : localDesc.propsAggregate()) {
+        // create a proxy for the many (deferred fetching)
+        BeanCollection<?> ref = prop.createReference(localBean, forceNewReference);
+        if (ref != null) {
+          if (disableLazyLoad) {
+            ref.setDisableLazyLoad(true);
+          }
+          if (!ref.isRegisteredWithLoadContext()) {
+            ctx.register((BeanProperty) prop, ref);
           }
         }
       }

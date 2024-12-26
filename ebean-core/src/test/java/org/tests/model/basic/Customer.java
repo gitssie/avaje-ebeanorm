@@ -111,7 +111,6 @@ public class Customer extends BasicDomain implements BiConsumer<String, Object>,
 
   @Embedded
   @DbJson
-  @Convert(converter = Status.class)
   private ElementBean custom = new ElementBean();
   @Transient
   private final int __slot__ = 0;

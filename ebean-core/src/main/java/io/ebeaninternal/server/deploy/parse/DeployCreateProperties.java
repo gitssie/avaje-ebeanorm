@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.api.CoreLog;
@@ -166,7 +167,8 @@ public class DeployCreateProperties {
       || (AnnotationUtil.has(field, DbJsonB.class))
       || (AnnotationUtil.has(field, DbArray.class))
       || (AnnotationUtil.has(field, DbMap.class))
-      || (AnnotationUtil.has(field, UnmappedJson.class));
+      || (AnnotationUtil.has(field, UnmappedJson.class))
+      || Computed.class == field.getType();
   }
 
   private boolean isTransientField(Field field) {

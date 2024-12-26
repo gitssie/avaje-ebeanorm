@@ -2,6 +2,7 @@ package io.ebeaninternal.server.type;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.JsonConfig;
 import io.ebean.config.PlatformConfig;
@@ -272,6 +273,19 @@ public final class DefaultTypeManager implements TypeManager {
       return dbArrayTypeSet(valueType, nullable);
     } else {
       throw new IllegalStateException("@DbArray does not support type " + type);
+    }
+  }
+
+  @Override
+  public ScalarType<?> dbComputedType(Class<?> type, Type genericType, boolean nullable) {
+    if (genericType == null || !(genericType instanceof ParameterizedType)) {
+      return null;
+    }
+    if (type.equals(Computed.class)) {
+      Type valueType = valueType(genericType);
+      return ScalarTypeComputed.factory().typeFor(valueType, nullable);
+    } else {
+      throw new IllegalStateException("Computed does not support type " + type);
     }
   }
 

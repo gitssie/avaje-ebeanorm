@@ -5,8 +5,11 @@ import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.ObjectGraphNode;
 import io.ebean.bean.PersistenceContext;
 import io.ebeaninternal.server.core.OrmQueryRequest;
+import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
+import io.ebeaninternal.server.query.STreeProperty;
+import io.ebeaninternal.server.query.STreeType;
 
 /**
  * Controls the loading of reference objects for a query instance.
@@ -51,6 +54,7 @@ public interface LoadContext {
    */
   void register(String path, BeanPropertyAssocMany<?> many, BeanCollection<?> bc);
 
+  void register(String path, BeanProperty property, BeanCollection<?> bc);
   /**
    * Use soft-references for streaming queries, so unreachable entries can be garbage collected.
    */

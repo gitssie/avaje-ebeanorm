@@ -1,9 +1,11 @@
 package org.tests.model.aggregation;
 
+import io.ebean.bean.Computed;
 import io.ebean.xtest.BaseTestCase;
 import io.ebean.DB;
 import io.ebean.Query;
 import io.ebean.test.LoggedSql;
+import io.ebeaninternal.api.SpiQuery;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -242,6 +244,50 @@ public class TestAggregationTopLevel extends BaseTestCase {
     assertThat(sql).hasSize(1);
 
     assertThat(sqlOf(query)).contains("select t0.id, t0.name, sum(t1.total_kms) from dmachine t0 left join d_machine_stats t1 on t1.machine_id = t0.id where t0.name = ? group by t0.id, t0.name order by t0.id");
+  }
+
+  @Test
+  public void testComputedFormular(){
+    SpiQuery<DMachine> query = (SpiQuery<DMachine>) DB.find(DMachine.class);
+//    query.setMode(SpiQuery.Mode.LAZYLOAD_COMPUTED);
+    List<DMachine> dataList = query.findList();
+    for (DMachine m : dataList) {
+      Computed<BigDecimal> value = m.getSumCost2();
+      System.out.println(value.get());
+    }
+
+  }
+
+  @Test
+  public void testComputedAggregation(){
+    SpiQuery<DMachine> query = (SpiQuery<DMachine>) DB.find(DMachine.class);
+//    query.setMode(SpiQuery.Mode.LAZYLOAD_COMPUTED);
+    List<DMachine> dataList = query.findList();
+    for (DMachine m : dataList) {
+      Computed<BigDecimal> value = m.getSumCost();
+      System.out.println(value.get());
+    }
+
+  }
+
+  @Test
+  public void testComputedScalar(){
+    DMachine machine = new DMachine(null,"FOR TEST");
+    machine.setValue(Computed.of(BigDecimal.valueOf(100)));
+    DB.save(machine);
+
+    machine.setValue(Computed.of(BigDecimal.valueOf(200)));;
+    DB.update(machine);
+
+    SpiQuery<DMachine> query = (SpiQuery<DMachine>) DB.find(DMachine.class);
+    query.setMode(SpiQuery.Mode.LAZYLOAD_COMPUTED);
+    List<DMachine> dataList = query.findList();
+    for (DMachine m : dataList) {
+      Computed<BigDecimal> value = m.getValue();
+      if(value != null) {
+        System.out.println(value.get());
+      }
+    }
   }
 
   @Test

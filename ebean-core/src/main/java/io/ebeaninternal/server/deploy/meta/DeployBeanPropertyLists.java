@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.meta;
 
 import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
+import io.ebean.bean.Computed;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
@@ -172,6 +173,10 @@ public final class DeployBeanPropertyLists {
    * Allocate the property to a list.
    */
   private void allocateToList(BeanProperty prop) {
+    if (prop.isFormula() && prop.isComputed()) {
+      aggs.add(prop);
+      return;
+    }
     if (prop.isTransient()) {
       transients.add(prop);
       if (prop.isDraft()) {
@@ -455,6 +460,9 @@ public final class DeployBeanPropertyLists {
     }
     if (deployProp.getPropertyType() == ElementBean.class) {
       return new BeanPropertyElement(desc, deployProp);
+    }
+    if (deployProp.getPropertyType() == Computed.class){
+      return new BeanPropertyComputed(desc, deployProp);
     }
     if (deployProp.isJsonMapper()) {
       return new BeanPropertyJsonMapper(desc, deployProp);

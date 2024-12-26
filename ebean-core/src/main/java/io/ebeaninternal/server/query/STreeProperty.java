@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.query;
 
+import io.ebean.bean.EntityBean;
 import io.ebean.core.type.ScalarDataReader;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.DbReadContext;
@@ -28,7 +29,7 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    * Return true if the property is the Id.
    */
   boolean isId();
-  
+
   /**
    * Returns true, if this is a lob property from db-perspective.
    */
@@ -38,7 +39,6 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    * Return true if the property is an embedded type.
    */
   boolean isEmbedded();
-
   /**
    * Return true if the property is an aggregation.
    */
@@ -55,6 +55,10 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    * Return true if the property is a formula.
    */
   boolean isFormula();
+
+  default boolean isComputed()  {
+    return false;
+  }
 
   /**
    * Return the encryption key as a string value (when the property is encrypted).
@@ -96,4 +100,7 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    */
   void appendFrom(DbSqlContext ctx, SqlJoinType joinType, String manyWhere);
 
+  default <T> T createReference(EntityBean localBean, boolean forceNewReference) {
+    return null;
+  }
 }

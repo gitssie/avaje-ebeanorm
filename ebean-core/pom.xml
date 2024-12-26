@@ -8,7 +8,7 @@
 
   <artifactId>ebean-core</artifactId>
   <packaging>jar</packaging>
-  <version>13.13.2-SNAPSHOT</version>
+  <version>13.13.3-SNAPSHOT</version>
 
   <name>ebean core</name>
   <description>ebean core module</description>
