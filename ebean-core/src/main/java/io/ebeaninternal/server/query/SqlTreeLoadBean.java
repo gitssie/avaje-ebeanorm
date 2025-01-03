@@ -329,7 +329,7 @@ class SqlTreeLoadBean implements SqlTreeLoad {
      */
     private void createComputedProxies() {
       boolean forceNewReference = queryMode == Mode.REFRESH_BEAN;
-      for (STreeProperty prop : localDesc.propsAggregate()) {
+      for (STreeProperty prop : localDesc.propsComputed()) {
         // create a proxy for the many (deferred fetching)
         BeanCollection<?> ref = prop.createReference(localBean, forceNewReference);
         if (ref != null) {

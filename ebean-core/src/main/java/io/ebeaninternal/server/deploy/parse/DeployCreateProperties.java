@@ -122,7 +122,7 @@ public class DeployCreateProperties {
   @SuppressWarnings({"unchecked"})
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field) {
     Class<?> propertyType = field.getType();
-    if (isSpecialScalarType(field)) {
+    if (isSpecialScalarType(field) || isComputedType(propertyType)) { //check for Computed<T> scalar type (scalar,aggregation,formular)
       return new DeployBeanProperty(desc, propertyType, field.getGenericType());
     }
     // check for Collection type (list, set or map)
@@ -167,8 +167,11 @@ public class DeployCreateProperties {
       || (AnnotationUtil.has(field, DbJsonB.class))
       || (AnnotationUtil.has(field, DbArray.class))
       || (AnnotationUtil.has(field, DbMap.class))
-      || (AnnotationUtil.has(field, UnmappedJson.class))
-      || Computed.class == field.getType();
+      || (AnnotationUtil.has(field, UnmappedJson.class));
+  }
+
+  private boolean isComputedType(Class<?> propertyType){
+    return Computed.class == propertyType;
   }
 
   private boolean isTransientField(Field field) {

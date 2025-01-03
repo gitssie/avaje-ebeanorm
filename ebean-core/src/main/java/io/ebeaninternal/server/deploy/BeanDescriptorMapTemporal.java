@@ -299,8 +299,8 @@ public class BeanDescriptorMapTemporal {
     propMap = Collections.unmodifiableMap(propMap);
     Function<EntityBean, EntityBean> elementBean = elementBeanSupplier(propertyIndex, slotIndex, propertiesName, propMap);
     for (int i = 0; i < properties.size(); i++) {
-      BeanElementPropertyAccess access = new BeanElementPropertyAccess(elementBean, i);
       DeployBeanProperty prop = properties.get(i);
+      BeanElementPropertyAccess access = new BeanElementPropertyAccess(elementBean, i, prop.getScalarType());
       prop.setPropertyIndex(slotIndex);
       prop.setFieldIndex(i);
       prop.setGetter(access);

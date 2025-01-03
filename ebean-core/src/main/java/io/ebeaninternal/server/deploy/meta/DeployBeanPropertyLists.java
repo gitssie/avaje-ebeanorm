@@ -36,6 +36,7 @@ public final class DeployBeanPropertyLists {
   private final List<BeanPropertyAssocMany<?>> manys = new ArrayList<>();
   private final List<BeanProperty> nonManys = new ArrayList<>();
   private final List<BeanProperty> aggs = new ArrayList<>();
+  private final List<BeanProperty> computeds = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> ones = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> onesImported = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> embedded = new ArrayList<>();
@@ -173,9 +174,11 @@ public final class DeployBeanPropertyLists {
    * Allocate the property to a list.
    */
   private void allocateToList(BeanProperty prop) {
-    if (prop.isFormula() && prop.isComputed()) {
-      aggs.add(prop);
-      return;
+    if (prop.isComputed()) {
+      computeds.add(prop);
+      if (prop.isFormula()) {
+        return;
+      }
     }
     if (prop.isTransient()) {
       transients.add(prop);
@@ -315,6 +318,10 @@ public final class DeployBeanPropertyLists {
 
   public BeanProperty[] getAggregates() {
     return aggs.toArray(new BeanProperty[0]);
+  }
+
+  public BeanProperty[] getComputeds(){
+    return computeds.toArray(new BeanProperty[0]);
   }
 
   public BeanPropertyAssocMany<?>[] getMany() {

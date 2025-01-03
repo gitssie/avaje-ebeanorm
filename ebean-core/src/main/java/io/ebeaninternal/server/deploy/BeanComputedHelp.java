@@ -1,8 +1,8 @@
 package io.ebeaninternal.server.deploy;
 
+import io.ebean.bean.BeanCollection;
 import io.ebean.bean.BeanCollectionLoader;
 import io.ebean.bean.EntityBean;
-import io.ebean.bean.Computed;
 import io.ebean.common.LazyComputed;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.server.loadcontext.ComputedLoader;
@@ -23,8 +23,8 @@ public class BeanComputedHelp {
     this.loader = new ComputedLoader(loader);
   }
 
-  public Computed<?> createReference(EntityBean localBean) {
-    Computed<?> beanList = new LazyComputed<>(loader, localBean, propertyName);
+  public BeanCollection<?> createReference(EntityBean localBean) {
+    BeanCollection<?> beanList = new LazyComputed<>(loader, localBean, propertyName);
     return beanList;
   }
 }

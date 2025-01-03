@@ -251,7 +251,7 @@ public final class SqlTreeBuilder {
 
     if(query.getMode() != SpiQuery.Mode.LAZYLOAD_COMPUTED){
       for (STreeProperty thatProp : props.props()) {
-        if(thatProp.isComputed()){
+        if (thatProp.isComputed() && !thatProp.isEmbedded()) {
           props.remove(thatProp);
         }
       }

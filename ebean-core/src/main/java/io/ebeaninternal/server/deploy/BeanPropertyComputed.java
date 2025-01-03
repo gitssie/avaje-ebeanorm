@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy;
 
+import io.ebean.bean.BeanCollection;
 import io.ebean.bean.Computed;
 import io.ebean.bean.EntityBean;
 import io.ebean.common.ValueComputed;
@@ -66,11 +67,11 @@ public class BeanPropertyComputed extends BeanProperty {
   }
 
   @Override
-  public <T> T createReference(EntityBean localBean, boolean forceNewReference) {
+  public BeanCollection<?> createReference(EntityBean localBean, boolean forceNewReference) {
     if (computedHelp != null) {
-      Computed<?> ref = computedHelp.createReference(localBean);
+      BeanCollection<?> ref = computedHelp.createReference(localBean);
       setValue(localBean, ref);
-      return (T) ref;
+      return ref;
     }
     return null;
   }

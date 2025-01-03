@@ -1,6 +1,5 @@
 package io.ebean.common;
 
-import io.ebean.DB;
 import io.ebean.ExpressionList;
 import io.ebean.bean.*;
 
@@ -66,12 +65,12 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
 
   @Override
   public void removeBean(T bean) {
-    this.value = null;
+    this.value = new Object[0];
   }
 
   private void lazyLoadValue(boolean onlyIds) {
     if (loader == null) {
-      loader = (BeanCollectionLoader) DB.byName(ebeanServerName);
+      throw new IllegalStateException("Lazy Computed Loader is null");
     }
     loader.loadMany(this, onlyIds);
   }
@@ -107,12 +106,24 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
+  public T get() {
+    init();
+    if (value.length == 1) {
+      return (T) value[0];
+    } else {
+      return null;
+    }
+  }
+
+  @Override
   public int size() {
+    init();
     return value == null ? 0 : value.length;
   }
 
   @Override
   public boolean isEmpty() {
+    init();
     return value == null || value.length == 0;
   }
 
@@ -235,16 +246,6 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   @Override
   public void setFilterMany(ExpressionList<?> filterMany) {
 
-  }
-
-  @Override
-  public T get() {
-    init();
-    if (value.length == 1) {
-      return (T) value[0];
-    } else {
-      return null;
-    }
   }
 
   @Override

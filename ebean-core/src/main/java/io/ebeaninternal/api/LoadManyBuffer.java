@@ -4,6 +4,7 @@ import io.ebean.bean.BeanCollection;
 import io.ebean.bean.ObjectGraphNode;
 import io.ebean.bean.PersistenceContext;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
+import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
 
 /**
@@ -31,7 +32,7 @@ public interface LoadManyBuffer {
    */
   boolean removeFromBuffer(BeanCollection<?> collection);
 
-  BeanPropertyAssocMany<?> getBeanProperty();
+  BeanProperty getBeanProperty();
 
   ObjectGraphNode getObjectGraphNode();
 

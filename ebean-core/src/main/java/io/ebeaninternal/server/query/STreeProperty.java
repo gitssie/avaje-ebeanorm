@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.query;
 
+import io.ebean.bean.BeanCollection;
 import io.ebean.bean.EntityBean;
 import io.ebean.core.type.ScalarDataReader;
 import io.ebean.core.type.ScalarType;
@@ -100,7 +101,7 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    */
   void appendFrom(DbSqlContext ctx, SqlJoinType joinType, String manyWhere);
 
-  default <T> T createReference(EntityBean localBean, boolean forceNewReference) {
+  default BeanCollection<?> createReference(EntityBean localBean, boolean forceNewReference) {
     return null;
   }
 }

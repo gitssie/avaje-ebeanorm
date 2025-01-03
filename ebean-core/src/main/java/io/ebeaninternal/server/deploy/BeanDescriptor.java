@@ -179,6 +179,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private final BeanProperty orderColumn;
   private final BeanProperty[] propertiesNonMany;
   private final BeanProperty[] propertiesAggregate;
+  private final BeanProperty[] propertiesComputed;
   private final BeanPropertyAssocMany<?>[] propertiesMany;
   private final BeanPropertyAssocMany<?>[] propertiesManySave;
   private final BeanPropertyAssocMany<?>[] propertiesManyDelete;
@@ -317,6 +318,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.propertiesMany = listHelper.getMany();
     this.propertiesNonMany = listHelper.getNonMany();
     this.propertiesAggregate = listHelper.getAggregates();
+    this.propertiesComputed = listHelper.getComputeds();
     this.propertiesManySave = listHelper.getManySave();
     this.propertiesManyDelete = listHelper.getManyDelete();
     this.propertiesManyToMany = listHelper.getManyToMany();
@@ -3222,8 +3224,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   @Override
-  public STreeProperty[] propsAggregate() {
-    return propertiesAggregate;
+  public STreeProperty[] propsComputed() {
+    return propertiesComputed;
   }
 
   @Override

@@ -281,9 +281,9 @@ public final class DefaultTypeManager implements TypeManager {
     if (genericType == null || !(genericType instanceof ParameterizedType)) {
       return null;
     }
-    if (type.equals(Computed.class)) {
-      Type valueType = valueType(genericType);
-      return ScalarTypeComputed.factory().typeFor(valueType, nullable);
+    Type valueType = valueType(genericType);
+    if (type.equals(Computed.class) && valueType instanceof Class<?>) {
+      return type((Class<?>) valueType);
     } else {
       throw new IllegalStateException("Computed does not support type " + type);
     }

@@ -49,7 +49,7 @@ public interface STreeType {
    */
   STreeProperty[] propsBaseScalar();
 
-  STreeProperty[] propsAggregate();
+  STreeProperty[] propsComputed();
 
   /**
    * Return the embedded bean properties.

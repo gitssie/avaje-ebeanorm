@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.ManyType;
@@ -96,7 +97,7 @@ public class TenantDeployCreateProperties {
 
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field) {
     Class<?> propertyType = field.getType();
-    if (isSpecialScalarType(field)) {
+    if (isSpecialScalarType(field) || isComputedType(propertyType)) {
       XGenericType genericType = (XGenericType) field.getAnnotation(GenericType.class);
       Type gType = genericType != null ? genericType.genericType() : field.getType();
       return new DeployBeanProperty(desc, propertyType, gType);
@@ -141,6 +142,10 @@ public class TenantDeployCreateProperties {
       || (field.has(DbArray.class))
       || (field.has(DbMap.class))
       || (field.has(UnmappedJson.class));
+  }
+
+  private boolean isComputedType(Class<?> propertyType){
+    return Computed.class == propertyType;
   }
 
   private boolean isTransientField(XField field) {

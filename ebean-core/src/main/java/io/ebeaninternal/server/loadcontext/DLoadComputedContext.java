@@ -1,33 +1,25 @@
 package io.ebeaninternal.server.loadcontext;
 
 import io.ebean.CacheMode;
-import io.ebean.SqlRow;
 import io.ebean.bean.BeanCollection;
 import io.ebean.bean.BeanCollectionLoader;
 import io.ebean.bean.ObjectGraphNode;
 import io.ebean.bean.PersistenceContext;
-import io.ebean.core.type.DataReader;
 import io.ebean.core.type.ScalarType;
-import io.ebean.meta.MetricVisitor;
-import io.ebeaninternal.api.*;
-import io.ebeaninternal.server.core.BindPadding;
-import io.ebeaninternal.server.core.DtoQueryRequest;
+import io.ebeaninternal.api.LoadManyBuffer;
+import io.ebeaninternal.api.LoadSecondaryQuery;
+import io.ebeaninternal.api.SpiEbeanServer;
+import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.server.core.OrmQueryRequest;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
-import io.ebeaninternal.server.dto.DtoMappingRequest;
-import io.ebeaninternal.server.dto.DtoQueryPlan;
-import io.ebeaninternal.server.query.STreeType;
-import io.ebeaninternal.server.querydefn.DefaultDtoQuery;
 import io.ebeaninternal.server.querydefn.OrmQueryProperties;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 /**
  * ToMany bean load context.
@@ -178,8 +170,8 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
     abstract void clear();
 
     @Override
-    public BeanPropertyAssocMany<?> getBeanProperty() {
-      throw new UnsupportedOperationException();
+    public BeanProperty getBeanProperty() {
+      return context.property;
     }
 
     @Override
@@ -255,6 +247,9 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
       query.setType(SpiQuery.Type.ID_LIST);
       query.setPersistenceContext(persistenceContext);
 
+      // potentially changes the joins, selected properties, cache mode
+      this.configureQuery(query);
+
       query.asDto(Object[].class).findEach(data -> {
         Object id = scalarId.toBeanType(data[0]);
         BeanCollection bc = idList.get(id);
@@ -262,28 +257,6 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
           bc.addBean(scalarType.toBeanType(data[1]));
         }
       });
-    }
-  }
-
-  public static class ComputedLoadDtoQueryPlan implements DtoQueryPlan {
-    public ComputedLoadDtoQueryPlan() {
-    }
-
-    @Override
-    public Object readRow(DataReader dataReader) throws SQLException {
-      DtoMappingRequest request;
-
-      return null;
-    }
-
-    @Override
-    public void collect(long exeMicros) {
-
-    }
-
-    @Override
-    public void visit(MetricVisitor visitor) {
-
     }
   }
 
