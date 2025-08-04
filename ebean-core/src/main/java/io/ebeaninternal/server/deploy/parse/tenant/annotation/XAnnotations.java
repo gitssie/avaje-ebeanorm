@@ -11,7 +11,7 @@ public class XAnnotations {
   }
 
   private void initClassMap() {
-    annotationClass.put("XColumn", XColumn.class);
+    annotationClass.put("Column", XColumn.class);
     annotationClass.put("DbDefault", XDbDefault.class);
     annotationClass.put("DBJson", XDbJson.class);
     annotationClass.put("DBMap", XDbMap.class);
