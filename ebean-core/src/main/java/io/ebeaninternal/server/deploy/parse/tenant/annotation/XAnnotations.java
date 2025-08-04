@@ -30,6 +30,8 @@ public class XAnnotations {
 
     annotationClass.put("ChangeLog", XChangeLog.class);
 
+    annotationClass.put("Aggregation", XAggregation.class);
+
   }
 
   public Class<?> getClass(String name) {
@@ -38,5 +40,13 @@ public class XAnnotations {
 
   public Class<?> getEntityAnnotationClass(String name) {
     return annotationClass.get(name);
+  }
+
+  public Class<?> getAnnotationClass(String name) {
+    return annotationClass.get(name);
+  }
+
+  public void put(String name, Class<?> cls) {
+    annotationClass.put(name, cls);
   }
 }
