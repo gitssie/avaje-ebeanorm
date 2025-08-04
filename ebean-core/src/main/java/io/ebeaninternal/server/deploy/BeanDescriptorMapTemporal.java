@@ -305,6 +305,9 @@ public class BeanDescriptorMapTemporal {
       prop.setFieldIndex(i);
       prop.setGetter(access);
       prop.setSetter(access);
+      if (prop.isAggregation()) {
+        prop.setAggregationPrefix(DetermineAggPath.manyPath(prop.getRawAggregation(), desc));
+      }
     }
     desc.setElementBean(elementBean);
   }

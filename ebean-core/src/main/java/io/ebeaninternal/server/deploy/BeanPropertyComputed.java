@@ -23,6 +23,7 @@ public class BeanPropertyComputed extends BeanProperty {
 
   @Override
   public void initialise(BeanDescriptorInitContext initContext) {
+    super.initialise(initContext);
     if (isAggregation() || isFormula()) {
       computedHelp = new BeanComputedHelp(name);
       isScalar = false;
