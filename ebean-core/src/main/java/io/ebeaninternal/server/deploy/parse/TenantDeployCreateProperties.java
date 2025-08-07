@@ -192,7 +192,7 @@ public class TenantDeployCreateProperties {
   }
 
   protected DeployBeanDescriptor<?> copyDescriptor(XEntity entity, DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
-    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null, entity.getId(), entity.getVersion());
+    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null, entity.getId() == null ? 0 : entity.getId(), entity.getVersion());
     Field[] fields = descriptor.getClass().getDeclaredFields();
     for (Field field : fields) {
       field.setAccessible(true);
