@@ -1,18 +1,18 @@
 package io.ebeaninternal.server.deploy.parse.tenant;
 
 import io.ebean.bean.ToStringBuilder;
-import io.ebean.util.AnnotationUtil;
-import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class XField {
+  private Long id;
   private String label;
   private String name;
   private Class<?> type;
   private Class<?> targetType;
+  private String targetTypeName;
 
   private boolean enabled = true;
   private boolean nullable = true;
@@ -24,6 +24,8 @@ public class XField {
 
   private Integer minLength = null;
   private Integer maxLength = null;
+  private Integer decimalLength;
+  private Integer integerLength;
   private Map<Class<? extends Annotation>, Annotation> annotations;
 
   public XField(String name) {
@@ -34,6 +36,14 @@ public class XField {
     this.name = name;
     this.type = type;
     this.annotations = new HashMap<>();
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 
   public String getLabel() {
@@ -63,6 +73,14 @@ public class XField {
 
   public void setTargetType(Class<?> targetType) {
     this.targetType = targetType;
+  }
+
+  public String getTargetTypeName() {
+    return targetTypeName;
+  }
+
+  public void setTargetTypeName(String targetTypeName) {
+    this.targetTypeName = targetTypeName;
   }
 
   public boolean isEnabled() {
@@ -111,6 +129,22 @@ public class XField {
 
   public void setMinLength(Integer minLength) {
     this.minLength = minLength;
+  }
+
+  public Integer getDecimalLength() {
+    return decimalLength;
+  }
+
+  public void setDecimalLength(Integer decimalLength) {
+    this.decimalLength = decimalLength;
+  }
+
+  public Integer getIntegerLength() {
+    return integerLength;
+  }
+
+  public void setIntegerLength(Integer integerLength) {
+    this.integerLength = integerLength;
   }
 
   public Integer getMaxLength() {

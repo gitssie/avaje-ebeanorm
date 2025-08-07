@@ -41,7 +41,9 @@ public class XAnnotationAssocOnes extends AnnotationAssocOnes {
       if (prop instanceof DeployBeanPropertyAssocOne<?>) {
         if (prop.getField() == null) {
           XField field = entity.getField(prop.getName());
-          parseField(field, (DeployBeanPropertyAssocOne<?>) prop);
+          if (field != null) {
+            parseField(field, (DeployBeanPropertyAssocOne<?>) prop);
+          }
         }
       }
     }

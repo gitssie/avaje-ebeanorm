@@ -49,6 +49,10 @@ public interface BeanDescriptorMap {
    */
   <T> BeanDescriptor<T> descriptor(Class<T> entityType);
 
+  default <T> BeanDescriptor<T> descriptor(Class<T> entityType,T bean){
+    return descriptor(entityType);
+  }
+
   default <T> void listenDescriptor(Class<?> entityType, Class<T> targetClass, Consumer<BeanDescriptor<T>> consumer) {
   }
 

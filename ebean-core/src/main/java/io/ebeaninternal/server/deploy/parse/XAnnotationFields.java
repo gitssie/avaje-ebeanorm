@@ -49,6 +49,7 @@ public class XAnnotationFields extends AnnotationFields {
 
   private void parseField(XField field, DeployBeanProperty prop) {
     this.field = field;
+    prop.setPropertyId(field.getId() == null ? 0L : field.getId());
     prop.initAnnotations(new HashSet<>(field.getAnnotations()));
     if (prop instanceof DeployBeanPropertyAssoc<?>) {
       readAssocOne((DeployBeanPropertyAssoc<?>) prop);
@@ -87,6 +88,14 @@ public class XAnnotationFields extends AnnotationFields {
       Integer maxSize = field.getMaxLength();
       if (maxSize != null && maxSize > 0) {
         prop.setDbLength(maxSize);
+      }
+      if (Number.class.isAssignableFrom(prop.getPropertyType())) {
+        if (field.getIntegerLength() != null && field.getIntegerLength() > 0) {
+          prop.setDbLength(field.getIntegerLength());
+        }
+        if (field.getDecimalLength() != null && field.getDecimalLength() > 0) {
+          prop.setDbScale(field.getDecimalLength());
+        }
       }
     }
   }

@@ -145,6 +145,7 @@ public class DeployBeanProperty {
   private final DeployDocPropertyOptions docMapping = new DeployDocPropertyOptions();
   private int propertyIndex;
   private int fieldIndex = -1;
+  private long propertyId;
   private BeanPropertyGetter getter;
   private BeanPropertySetter setter;
   /**
@@ -1151,5 +1152,13 @@ public class DeployBeanProperty {
 
   boolean isJsonType() {
     return mutationDetection != null;
+  }
+
+  public long getPropertyId() {
+    return propertyId;
+  }
+
+  public void setPropertyId(long propertyId) {
+    this.propertyId = propertyId;
   }
 }

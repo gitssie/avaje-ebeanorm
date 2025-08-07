@@ -144,7 +144,7 @@ public class TenantDeployCreateProperties {
       || (field.has(UnmappedJson.class));
   }
 
-  private boolean isComputedType(Class<?> propertyType){
+  private boolean isComputedType(Class<?> propertyType) {
     return Computed.class == propertyType;
   }
 
@@ -183,7 +183,7 @@ public class TenantDeployCreateProperties {
     if (entity == null || entity.getFields().isEmpty()) {
       return info;
     }
-    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
+    DeployBeanDescriptor desc = copyDescriptor(entity, info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
     info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
@@ -191,8 +191,8 @@ public class TenantDeployCreateProperties {
     return info;
   }
 
-  protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
-    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null);
+  protected DeployBeanDescriptor<?> copyDescriptor(XEntity entity, DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
+    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null, entity.getId(), entity.getVersion());
     Field[] fields = descriptor.getClass().getDeclaredFields();
     for (Field field : fields) {
       field.setAccessible(true);

@@ -239,6 +239,9 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private Function<EntityBean, EntityBean> elementBean;
   private boolean dynamicClass;
 
+  private long deployId;
+  private long deployVersion;
+
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
     this.multiValueSupported = owner.isMultiValueSupported();
@@ -363,7 +366,9 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
         propertiesIndex[i] = propMap.get(ebi.getProperty(i));
       }
     }
-    idSelect = initIdSelect();
+    this.idSelect = initIdSelect();
+    this.deployId = deploy.getDeployId();
+    this.deployVersion = deploy.getDeployVersion();
   }
 
   String initIdSelect() {
@@ -3455,7 +3460,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     return bean.getClass() != beanType;
   }
 
-  public boolean isDynamicEntity(){
+  public boolean isDynamicEntity() {
     return elementBean != null;
   }
 
@@ -3463,10 +3468,18 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     return elementBean == null ? null : elementBean.apply(bean);
   }
 
-  public void setElementBeanLoadedLazy(EntityBean bean){
+  public void setElementBeanLoadedLazy(EntityBean bean) {
     bean = elementBean(bean);
-    if (bean != null){
+    if (bean != null) {
       bean._ebean_getIntercept().setLoadedLazy();
     }
+  }
+
+  public long getDeployId(){
+    return deployId;
+  }
+
+  public long getDeployVersion(){
+    return deployVersion;
   }
 }

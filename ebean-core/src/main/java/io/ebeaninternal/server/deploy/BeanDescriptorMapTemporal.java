@@ -448,7 +448,7 @@ public class BeanDescriptorMapTemporal {
   }
 
   public <T> void listenDescriptor(Class<?> entityType, Class<T> targetClass, Consumer<BeanDescriptor<T>> consumer) {
-    descListeners.add(new BeanDescriptorConsumer(entityType, targetClass, consumer));
+    descListeners.add(new BeanDescriptorConsumer<>(entityType, targetClass, consumer));
   }
 
   protected void clear() {
@@ -474,9 +474,9 @@ public class BeanDescriptorMapTemporal {
   protected class DeployInfo {
     protected final Class<?> beanClass;
     protected final DeployBeanInfo<?> info;
-    protected final BeanManager beanManager;
+    protected final BeanManager<?> beanManager;
 
-    public DeployInfo(final Class<?> beanClass, DeployBeanInfo<?> info, BeanManager beanManager) {
+    public DeployInfo(final Class<?> beanClass, DeployBeanInfo<?> info, BeanManager<?> beanManager) {
       this.beanClass = beanClass;
       this.info = info;
       this.beanManager = beanManager;

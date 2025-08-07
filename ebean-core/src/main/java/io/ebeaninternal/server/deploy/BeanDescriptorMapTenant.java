@@ -255,7 +255,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     }
   }
 
-  public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
+  public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) {
     lock.lock();
     try {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);

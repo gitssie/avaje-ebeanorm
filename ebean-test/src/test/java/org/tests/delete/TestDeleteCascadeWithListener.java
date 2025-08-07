@@ -36,7 +36,7 @@ public class TestDeleteCascadeWithListener extends BaseTestCase {
     }
     awaitListenerPropagation();
 
-    List<Object> beans = DcListener.deletedBeans();
+    List<Object> beans = .DcListener.deletedBeans();
     assertThat(beans).hasSize(3);
   }
 
