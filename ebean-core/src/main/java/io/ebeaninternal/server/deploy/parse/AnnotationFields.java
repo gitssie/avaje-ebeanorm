@@ -330,6 +330,10 @@ class AnnotationFields extends AnnotationParser {
     if (convert != null && BeanPropertySetter.class.isAssignableFrom(convert.converter())) {
       prop.setSetter(newInstance(convert));
     }
+    //custom generated
+    if (convert != null && GeneratedProperty.class.isAssignableFrom(convert.converter())) {
+      prop.setGeneratedProperty(newInstance(convert));
+    }
   }
 
   private void initVersion(DeployBeanProperty prop) {

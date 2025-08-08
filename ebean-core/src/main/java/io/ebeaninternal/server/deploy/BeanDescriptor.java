@@ -203,6 +203,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   BeanProperty[] propertiesIndex;
   private final BeanProperty[] propertiesGenInsert;
   private final BeanProperty[] propertiesGenUpdate;
+  private final BeanProperty[] propertiesGenDelete;
   private final List<BeanProperty[]> propertiesUnique = new ArrayList<>();
   private final boolean idOnlyReference;
   private BeanNaturalKey beanNaturalKey;
@@ -327,6 +328,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.propertiesManyToMany = listHelper.getManyToMany();
     this.propertiesGenInsert = listHelper.getGeneratedInsert();
     this.propertiesGenUpdate = listHelper.getGeneratedUpdate();
+    this.propertiesGenDelete = listHelper.getGeneratedDelete();
     this.idOnlyReference = isIdOnlyReference(propertiesBaseScalar);
     boolean noRelationships = propertiesOne.length + propertiesMany.length == 0;
     this.cacheSharableBeans = noRelationships && deploy.getCacheOptions().isReadOnly();
@@ -3378,6 +3380,14 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    */
   public BeanProperty[] propertiesGenUpdate() {
     return propertiesGenUpdate;
+  }
+
+  /**
+   * Return the properties set as generated values on delete.
+   * @return
+   */
+  public BeanProperty[] propertiesGenDelete() {
+    return propertiesGenDelete;
   }
 
   public void jsonWriteDirty(SpiJsonWriter writeJson, EntityBean bean, boolean[] dirtyProps) throws IOException {

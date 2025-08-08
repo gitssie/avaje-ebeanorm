@@ -19,18 +19,12 @@ public class BeanElementPropertyAccess implements BeanPropertyGetter, BeanProper
   @Override
   public Object get(EntityBean bean) {
     Object value = elementBean.apply(bean)._ebean_getField(fieldIndex);
-    if (value != null && scalarType != null) {
-      value = scalarType.toBeanType(value);
-    }
     return value;
   }
 
   @Override
   public Object getIntercept(EntityBean bean) {
     Object value = elementBean.apply(bean)._ebean_getFieldIntercept(fieldIndex);
-    if (value != null && scalarType != null) {
-      value = scalarType.toBeanType(value);
-    }
     return value;
   }
 

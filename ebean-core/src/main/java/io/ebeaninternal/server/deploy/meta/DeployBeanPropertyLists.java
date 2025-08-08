@@ -393,6 +393,17 @@ public final class DeployBeanPropertyLists {
     return list.toArray(new BeanProperty[0]);
   }
 
+  public BeanProperty[] getGeneratedDelete() {
+    List<BeanProperty> list = new ArrayList<>();
+    for (BeanProperty prop : nonTransients) {
+      GeneratedProperty gen = prop.generatedProperty();
+      if (gen != null && gen.includeInDelete()) {
+        list.add(prop);
+      }
+    }
+    return list.toArray(new BeanProperty[0]);
+  }
+
   /**
    * Mode used to determine which BeanPropertyAssoc to include.
    */
