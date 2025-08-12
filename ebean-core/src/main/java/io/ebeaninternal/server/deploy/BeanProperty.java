@@ -44,6 +44,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
@@ -115,6 +116,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   private final long propertyId;
   private final Field field;
   private final Class<?> propertyType;
+  private final Type genericType;
   private final String dbBind;
   final String dbColumn;
   private final String elPrefix;
@@ -245,6 +247,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.lob = isLobType(dbType);
     this.propertyType = deploy.getPropertyType();
     this.field = deploy.getField();
+    this.genericType = deploy.getGenericType();
     this.docOptions = deploy.getDocPropertyOptions();
     this.elPlaceHolder = tableAliasIntern(descriptor, deploy.getElPlaceHolder(), false, null);
     this.elPlaceHolderEncrypted = tableAliasIntern(descriptor, deploy.getElPlaceHolder(), dbEncrypted, dbColumn);
@@ -340,8 +343,9 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.dbType = source.dbType(true);
     this.scalarType = source.scalarType;
     this.lob = isLobType(dbType);
-    this.propertyType = source.type();
-    this.field = source.field();
+    this.propertyType = source.propertyType;
+    this.field = source.field;
+    this.genericType = source.genericType;
     this.docOptions = source.docOptions;
     this.unmappedJson = source.unmappedJson;
     this.elPrefix = override.replace(source.elPrefix, source.dbColumn);
@@ -941,6 +945,13 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
 
   public boolean isArrayType() {
     return scalarType instanceof ScalarTypeArray;
+  }
+
+  /**
+   * Return the generic type for this property.
+   */
+  public Type getGenericType() {
+    return genericType;
   }
 
   /**

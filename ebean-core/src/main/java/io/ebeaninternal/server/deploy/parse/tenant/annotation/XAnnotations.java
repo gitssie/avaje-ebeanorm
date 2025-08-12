@@ -14,6 +14,7 @@ public class XAnnotations {
     annotationClass.put("Column", XColumn.class);
     annotationClass.put("DbDefault", XDbDefault.class);
     annotationClass.put("DBJson", XDbJson.class);
+    annotationClass.put("DBJsonB", XDbJsonB.class);
     annotationClass.put("DBMap", XDbMap.class);
     annotationClass.put("GeneratedValue", XGeneratedValue.class);
     annotationClass.put("Convert", XConvert.class);
