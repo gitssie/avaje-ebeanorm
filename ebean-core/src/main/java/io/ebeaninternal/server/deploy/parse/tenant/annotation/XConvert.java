@@ -2,11 +2,13 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import javax.persistence.Convert;
 import java.lang.annotation.Annotation;
+import java.util.Map;
 
 public class XConvert implements Convert {
   private Class converter;
   private String attributeName = "";
   private boolean disableConversion = false;
+  private Map<String, Object> attributes;
 
   public XConvert() {
   }
@@ -57,5 +59,13 @@ public class XConvert implements Convert {
 
   public void setDisableConversion(boolean disableConversion) {
     this.disableConversion = disableConversion;
+  }
+
+  public Map<String, Object> getAttributes() {
+    return attributes;
+  }
+
+  public void setAttributes(Map<String, Object> attributes) {
+    this.attributes = attributes;
   }
 }

@@ -202,7 +202,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected void deployLocked(BeanDescriptorMapContext context, Class<?> entityClass, XEntity entity) {
     BeanDescriptorMapTemporal factory = current.get();
     if (factory == null) {
-      factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
+      factory = new BeanDescriptorMapTemporal(tenantId, beanDescriptorManager, context, readAnnotations, createProperties);
       current.set(factory);
       try {
         factory.deploy(entityClass, entity);
@@ -259,7 +259,7 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
     lock.lock();
     try {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
-      BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
+      BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(tenantId, beanDescriptorManager, context, readAnnotations, createProperties);
       BeanDescriptorMapTemporal.DeployInfo newInfo = factory.createDeployBeanInfo(beanClass, entity);
       BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo);
       factory.initialise();

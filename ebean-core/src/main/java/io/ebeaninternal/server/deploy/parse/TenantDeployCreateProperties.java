@@ -169,16 +169,16 @@ public class TenantDeployCreateProperties {
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
-    return createDeployBeanInfo(null, beanClass, info, readAnnotations);
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Object tenantId, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    return createDeployBeanInfo(tenantId, beanClass, null, info, readAnnotations);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Object tenantId, Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
     if (info.getDescriptor().readCustomSlot().length == 0) {
       return info;
     }
     if (entity == null) {
-      entity = entityProvider.getEntity(beanClass);
+      entity = entityProvider.getEntity(tenantId, beanClass);
     }
     if (entity == null || entity.getFields().isEmpty()) {
       return info;
@@ -186,7 +186,7 @@ public class TenantDeployCreateProperties {
     DeployBeanDescriptor desc = copyDescriptor(entity, info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
-    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
+    info = new DeployBeanInfo<>(info.getUtil(), desc, entity, entityProvider);
     readAnnotations.readInitial(info); //initial base scalar properties
     return info;
   }

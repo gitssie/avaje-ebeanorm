@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class BeanDescriptorMapTemporal {
+  private final Object tenantId;
   private final BeanDescriptorManager proxy;
   private final BeanDescriptorMapTenantProxy proxyMap;
   private final BeanDescriptorMapCheck mapCheck;
@@ -40,7 +41,8 @@ public class BeanDescriptorMapTemporal {
   private final Map<String, String> withHistoryTables = new HashMap<>();
   private final Map<String, String> draftTables = new HashMap<>();
 
-  public BeanDescriptorMapTemporal(BeanDescriptorManagerTenant proxy, BeanDescriptorMapContext context, XReadAnnotations readAnnotations, TenantDeployCreateProperties createProperties) {
+  public BeanDescriptorMapTemporal(Object tenantId, BeanDescriptorManagerTenant proxy, BeanDescriptorMapContext context, XReadAnnotations readAnnotations, TenantDeployCreateProperties createProperties) {
+    this.tenantId = tenantId;
     this.proxy = proxy;
     this.proxyMap = new BeanDescriptorMapTenantProxy(proxy, this);
     this.context = context;
@@ -437,7 +439,7 @@ public class BeanDescriptorMapTemporal {
           "Error - for type " + beanClass);
     }
     try {
-      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(entity, beanClass, info, readAnnotations);
+      DeployBeanInfo<?> newInfo = createProperties.createDeployBeanInfo(tenantId, beanClass, entity, info, readAnnotations);
       if (newInfo == info) { //Class的属性没有发生变化,部署的是同一个
         return new DeployInfo(beanClass, newInfo, proxy.beanManager(beanClass.getName()));
       }

@@ -19,7 +19,7 @@ import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
-import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGeneratedValue;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.EmptyGeneratedProperty;
 import io.ebeaninternal.server.properties.BeanPropertyConvertGetter;
 import io.ebeaninternal.server.properties.BeanPropertyGetter;
@@ -309,11 +309,69 @@ class AnnotationFields extends AnnotationParser {
 
   private <T> T newInstance(Convert convert) {
     try {
-      Constructor<T> constructor = convert.converter().getDeclaredConstructor();
-      constructor.setAccessible(true);
-      return constructor.newInstance();
+      Class<T> converterClass = (Class<T>) convert.converter();
+      Constructor<?>[] constructors = converterClass.getDeclaredConstructors();
+
+      // 按优先级顺序查找匹配的构造器
+      Constructor<T> targetConstructor = null;
+      Object[] args = null;
+
+      // 1. 优先查找 (XEntityFinder, Convert) 构造器
+      for (Constructor<?> constructor : constructors) {
+        Class<?>[] paramTypes = constructor.getParameterTypes();
+        if (paramTypes.length == 2 &&
+          paramTypes[0] == XEntityFinder.class &&
+          paramTypes[1] == Convert.class) {
+          targetConstructor = (Constructor<T>) constructor;
+          args = new Object[]{info.getEntityFinder(), convert};
+          break;
+        }
+      }
+
+      // 2. 查找 (Convert) 构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          Class<?>[] paramTypes = constructor.getParameterTypes();
+          if (paramTypes.length == 1 && paramTypes[0] == Convert.class) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[]{convert};
+            break;
+          }
+        }
+      }
+
+      // 3. 查找 (XEntityFinder) 构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          Class<?>[] paramTypes = constructor.getParameterTypes();
+          if (paramTypes.length == 1 && paramTypes[0] == XEntityFinder.class) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[]{info.getEntityFinder()};
+            break;
+          }
+        }
+      }
+
+      // 4. 查找无参构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          if (constructor.getParameterTypes().length == 0) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[0];
+            break;
+          }
+        }
+      }
+
+      if (targetConstructor == null) {
+        throw new IllegalArgumentException("No suitable constructor found for converter: " + converterClass.getName());
+      }
+
+      targetConstructor.setAccessible(true);
+      return targetConstructor.newInstance(args);
+
     } catch (Exception e) {
-      throw new IllegalArgumentException(e);
+      throw new IllegalArgumentException("Failed to create instance of converter: " + convert.converter().getName(), e);
     }
   }
 
