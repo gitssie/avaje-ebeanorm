@@ -1,5 +1,6 @@
 package io.ebeaninternal.server.deploy;
 
+import io.ebean.bean.DynamicEntity;
 import io.ebean.bean.XEntityProvider;
 import io.ebean.config.CurrentTenantProvider;
 import io.ebeaninternal.api.SpiEbeanServer;
@@ -38,7 +39,7 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
     Object tenantId = tenantProvider.currentId();
-    if (ebeanServer == null || tenantId == null) {
+    if (ebeanServer == null || tenantId == null || notDynamicClass(entityType)) {
       return super.descriptor(entityType);
     }
     BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
@@ -48,7 +49,7 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   @Override
   public <T> BeanManager<T> beanManager(Class<T> entityType) {
     Object tenantId = tenantProvider.currentId();
-    if (ebeanServer == null || tenantId == null) {
+    if (ebeanServer == null || tenantId == null || notDynamicClass(entityType)) {
       return super.beanManager(entityType);
     }
     BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
@@ -60,5 +61,9 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     super.setEbeanServer(internalEbean);
     ebeanServer = internalEbean;
     internalEbean.config().putServiceObject(beanDescriptorManagerProvider);
+  }
+
+  private boolean notDynamicClass(Class<?> entityType) {
+    return !DynamicEntity.class.isAssignableFrom(entityType);
   }
 }

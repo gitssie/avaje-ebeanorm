@@ -5,6 +5,7 @@ import io.ebean.annotation.Cache;
 import io.ebean.annotation.DocStore;
 import io.ebean.annotation.DocStoreMode;
 import io.ebean.annotation.Identity;
+import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
@@ -134,6 +135,9 @@ public class DeployBeanDescriptor<T> {
 
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
+  private long deployId;
+  private long deployVersion;
+
   /**
    * Construct the BeanDescriptor.
    */
@@ -142,6 +146,13 @@ public class DeployBeanDescriptor<T> {
     this.config = config;
     this.beanType = beanType;
   }
+
+  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config,long deployId,long deployVersion) {
+    this(manager,beanType,config);
+    this.deployId = deployId;
+    this.deployVersion = deployVersion;
+  }
+
 
   public BindMaxLength bindMaxLength() {
     return manager.bindMaxLength();
@@ -1134,5 +1145,29 @@ public class DeployBeanDescriptor<T> {
 
   public DatabaseBuilder.Settings getConfig() {
     return config;
+  }
+
+  public DeployBeanProperty[] readCustomSlot() {
+    DeployBeanProperty ccp = null;
+    DeployBeanProperty slot = null;
+    for (DeployBeanProperty prop : propertiesAll()) {
+      if (ccp == null && prop.getPropertyType() == ElementBean.class) {
+        ccp = prop;
+      } else if (slot == null && prop.isTransient() && prop.getPropertyType() == int.class && prop.getName().equals("__slot__")) {
+        slot = prop;
+      }
+    }
+    if (ccp == null || slot == null) {
+      return new DeployBeanProperty[0];
+    }
+    return new DeployBeanProperty[]{ccp, slot};
+  }
+
+  public long getDeployId() {
+    return deployId;
+  }
+
+  public long getDeployVersion() {
+    return deployVersion;
   }
 }

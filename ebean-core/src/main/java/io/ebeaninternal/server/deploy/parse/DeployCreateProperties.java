@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.api.CoreLog;
@@ -118,7 +119,7 @@ public class DeployCreateProperties {
 
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field) {
     Class<?> propertyType = field.getType();
-    if (isSpecialScalarType(field)) {
+    if (isSpecialScalarType(field) || isComputedType(propertyType)) { //check for Computed<T> scalar type (scalar,aggregation,formular)
       return new DeployBeanProperty(desc, propertyType, field.getGenericType());
     }
     // check for Collection type (list, set or map)
@@ -166,6 +167,10 @@ public class DeployCreateProperties {
       || (AnnotationUtil.has(field, DbArray.class))
       || (AnnotationUtil.has(field, DbMap.class))
       || (AnnotationUtil.has(field, UnmappedJson.class));
+  }
+
+  private boolean isComputedType(Class<?> propertyType){
+    return Computed.class == propertyType;
   }
 
   private boolean isTransientField(Field field) {

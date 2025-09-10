@@ -254,6 +254,16 @@ public final class SqlTreeBuilder {
     OrmQueryProperties queryProps = queryDetail.getChunk(prefix, false);
     SqlTreeProperties props = getBaseSelect(desc, queryProps);
 
+    //remove computed properties
+
+    if(query.getMode() != SpiQuery.Mode.LAZYLOAD_COMPUTED){
+      for (STreeProperty thatProp : props.props()) {
+        if (thatProp.isComputed() && !thatProp.isEmbedded()) {
+          props.remove(thatProp);
+        }
+      }
+    }
+
     if (prefix == null && !rawSql) {
       if (props.requireSqlDistinct(manyWhereJoins)) {
         sqlDistinct = true;

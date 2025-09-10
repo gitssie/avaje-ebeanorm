@@ -5,8 +5,10 @@ import io.ebeaninternal.server.util.Md5;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class XEntity {
+  private Long id;
   private String label;
   private String name;
   private Class<?> beanType;
@@ -21,7 +23,7 @@ public class XEntity {
   private boolean updateable = true;
   private boolean queryable = true;
   private boolean feedEnabled = true;
-
+  private long version;
 
   public XEntity() {
     this(null);
@@ -31,6 +33,14 @@ public class XEntity {
     this.beanType = beanType;
     this.fields = new LinkedHashMap<>();
     this.annotations = new HashMap<>();
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 
   public String getLabel() {
@@ -160,23 +170,28 @@ public class XEntity {
     return Md5.hash(toString());
   }
 
+  public long getVersion() {
+    return version;
+  }
+
+  public void setVersion(long version) {
+    this.version = version;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder = new ToStringBuilder();
     builder.start(this);
     builder.add("name", name);
+    builder.add("beanType", beanType);
+    builder.add("tenant", tenant);
     builder.add("disabled", disabled);
     builder.add("createable", createable);
     builder.add("updateable", updateable);
     if (annotations != null) {
-      Object[] arr = annotations.keySet().toArray(new Object[0]);
-      Arrays.sort(arr);
-      for (Object key : arr) {
-        Annotation o = annotations.get(key);
-        builder.start(o);
-        builder.add("toString", o.toString());
-        builder.end();
-      }
+      List<String> arr = annotations.values().stream().map(e -> e.toString()).collect(Collectors.toList());
+      Collections.sort(arr);
+      builder.add("annotations", arr);
     }
     builder.end();
     return builder.toString();

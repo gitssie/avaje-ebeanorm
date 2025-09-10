@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.ManyType;
@@ -20,6 +21,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static java.lang.System.Logger.Level.*;
 
@@ -43,42 +45,19 @@ public class TenantDeployCreateProperties {
     desc.setProperties(properties);
   }
 
-  protected void changeBeanProperty(DeployBeanDescriptor<?> desc, DeployBeanProperty property, XField field, Class<?> beanType) throws Exception {
-    if (!field.getAnnotations().isEmpty()) {
-      if (property.getClass().equals(DeployBeanProperty.class)) {
-        DeployBeanProperty prop = new DeployBeanProperty(desc, property.getPropertyType(), property.getGenericType());
-        Field[] fields = DeployBeanProperty.class.getDeclaredFields();
-        for (Field rField : fields) {
-          rField.setAccessible(true);
-          if (Modifier.isStatic(rField.getModifiers())) {
-            continue;
-          }
-          rField.set(prop, rField.get(property));
-        }
-        prop.setOwningType(beanType);
-        desc.addBeanProperty(prop);
-      }
-    }
-  }
-
   protected void createProperties(DeployBeanDescriptor<?> desc, XEntity entity, Class<?> beanType) {
     if (beanType.equals(Model.class)) {
       // ignore all fields on model (_$dbName)
       return;
     }
     try {
-      Collection<XField> fields = entity.getFields();
       int i = 0;
-      DeployBeanProperty property;
-      for (XField field : fields) {
-        property = desc.getBeanProperty(field.getName());
-        if (property != null) {
-          changeBeanProperty(desc, property, field, beanType);
+      for (XField field : entity.getFields()) {
+        DeployBeanProperty prop = desc.getBeanProperty(field.getName());
+        if (prop != null) {
           continue;
         }
-        i++;
-        DeployBeanProperty prop = createProp(desc, field, beanType);
-        addProperty(i, desc, prop);
+        addProperty(i++, desc, createProp(desc, field, beanType));
       }
     } catch (PersistenceException ex) {
       throw ex;
@@ -92,7 +71,7 @@ public class TenantDeployCreateProperties {
       // set a order that gives priority to inherited properties
       // push Id/EmbeddedId up and CreatedTimestamp/UpdatedTimestamp down
       int sortOverride = prop.getSortOverride();
-      prop.setSortOrder((1 * 10000 + 100 - index + sortOverride));
+      prop.setSortOrder((10 * 10000 + 100 - index + sortOverride));
 
       DeployBeanProperty replaced = desc.addBeanProperty(prop);
       if (replaced != null && !replaced.isTransient()) {
@@ -118,7 +97,7 @@ public class TenantDeployCreateProperties {
 
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, XField field) {
     Class<?> propertyType = field.getType();
-    if (isSpecialScalarType(field)) {
+    if (isSpecialScalarType(field) || isComputedType(propertyType)) {
       XGenericType genericType = (XGenericType) field.getAnnotation(GenericType.class);
       Type gType = genericType != null ? genericType.genericType() : field.getType();
       return new DeployBeanProperty(desc, propertyType, gType);
@@ -165,6 +144,10 @@ public class TenantDeployCreateProperties {
       || (field.has(UnmappedJson.class));
   }
 
+  private boolean isComputedType(Class<?> propertyType) {
+    return Computed.class == propertyType;
+  }
+
   private boolean isTransientField(XField field) {
     //return AnnotationUtil.has(field, Transient.class);
     return false;
@@ -186,39 +169,30 @@ public class TenantDeployCreateProperties {
     return new DeployBeanPropertyAssocMany(desc, targetType, manyType);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
-    return createDeployBeanInfo(null, beanClass, info, readAnnotations);
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Object tenantId, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    return createDeployBeanInfo(tenantId, beanClass, null, info, readAnnotations);
   }
 
-  public <T> DeployBeanInfo<T> createDeployBeanInfo(XEntity entity, Class<?> beanClass, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
-    if (entity == null) {
-      entity = entityProvider.getEntity(beanClass);
-    }
-    if (!isCustomEntity(entity, info.getDescriptor())) {
+  public <T> DeployBeanInfo<T> createDeployBeanInfo(Object tenantId, Class<?> beanClass, XEntity entity, DeployBeanInfo info, XReadAnnotations readAnnotations) throws Exception {
+    if (info.getDescriptor().readCustomSlot().length == 0) {
       return info;
     }
-    DeployBeanDescriptor desc = copyDescriptor(info.getDescriptor(), beanClass);
+    if (entity == null) {
+      entity = entityProvider.getEntity(tenantId, beanClass);
+    }
+    if (entity == null || entity.getFields().isEmpty()) {
+      return info;
+    }
+    DeployBeanDescriptor desc = copyDescriptor(entity, info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
-    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
-    readAnnotations.readInitial(entity, info); //初始化基本属性
-//    readAnnotations.readAssociations(info, factory); //读取关联信息
+    info = new DeployBeanInfo<>(info.getUtil(), desc, entity, entityProvider);
+    readAnnotations.readInitial(info); //initial base scalar properties
     return info;
   }
 
-  protected boolean isCustomEntity(XEntity entity, DeployBeanDescriptor desc) {
-    if (entity.getBeanType() != desc.getBeanType()) {
-      return true;
-    }
-    return entity.getFields().size() > 0 || entity.isCustom();
-  }
-
-  public boolean isChanged(Class<?> entityClass) {
-    return entityProvider.isChanged(entityClass);
-  }
-
-  protected DeployBeanDescriptor<?> copyDescriptor(DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
-    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null);
+  protected DeployBeanDescriptor<?> copyDescriptor(XEntity entity, DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
+    DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null, entity.getId() == null ? 0 : entity.getId(), entity.getVersion());
     Field[] fields = descriptor.getClass().getDeclaredFields();
     for (Field field : fields) {
       field.setAccessible(true);
@@ -238,7 +212,49 @@ public class TenantDeployCreateProperties {
     return desc;
   }
 
-  protected LinkedHashMap<String, DeployBeanProperty> copyBeanProperty(DeployBeanDescriptor<?> desc, LinkedHashMap<String, DeployBeanProperty> propMap) {
-    return new LinkedHashMap<>(propMap);
+  protected LinkedHashMap<String, DeployBeanProperty> copyBeanProperty(DeployBeanDescriptor<?> desc, LinkedHashMap<String, DeployBeanProperty> propMap) throws Exception {
+    LinkedHashMap res = new LinkedHashMap();
+    for (Map.Entry<String, DeployBeanProperty> entry : propMap.entrySet()) {
+      DeployBeanProperty prop = entry.getValue();
+      DeployBeanProperty targetProp;
+      if (prop.getClass().equals(DeployBeanPropertyAssocOne.class)) {
+        targetProp = new DeployBeanPropertyAssocOne(desc, ((DeployBeanPropertyAssocOne<?>) prop).getTargetType());
+      } else if (prop.getClass().equals(DeployBeanPropertyAssocMany.class)) {
+        targetProp = new DeployBeanPropertyAssocMany(desc, ((DeployBeanPropertyAssocMany<?>) prop).getTargetType(), ((DeployBeanPropertyAssocMany<?>) prop).getManyType());
+      } else if (prop.getClass().equals(DeployBeanPropertySimpleCollection.class)) {
+        targetProp = new DeployBeanPropertySimpleCollection(desc, ((DeployBeanPropertySimpleCollection<?>) prop).getTargetType(), ((DeployBeanPropertySimpleCollection<?>) prop).getManyType());
+      } else {
+        targetProp = new DeployBeanProperty(desc, prop.getPropertyType(), prop.getGenericType());
+      }
+      copyProps(prop, targetProp);
+      res.put(entry.getKey(), targetProp);
+    }
+    return res;
+  }
+
+  private void copyProps(DeployBeanProperty prop, DeployBeanProperty targetProp) throws Exception {
+    copyProps(prop, targetProp, DeployBeanProperty.class.getDeclaredFields());
+    if (prop instanceof DeployBeanPropertyAssoc) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssoc.class.getDeclaredFields());
+    }
+    if (prop instanceof DeployBeanPropertyAssocOne) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssocOne.class.getDeclaredFields());
+    }
+    if (prop instanceof DeployBeanPropertyAssocMany) {
+      copyProps(prop, targetProp, DeployBeanPropertyAssocMany.class.getDeclaredFields());
+    }
+  }
+
+  private void copyProps(DeployBeanProperty source, DeployBeanProperty target, Field[] fields) throws Exception {
+    for (Field field : fields) {
+      field.setAccessible(true);
+      if (Modifier.isStatic(field.getModifiers())) {
+        continue;
+      }
+      if (field.getName().equals("desc")) {
+        continue;
+      }
+      field.set(target, field.get(source));
+    }
   }
 }

@@ -53,6 +53,11 @@ public final class SqlTreeProperties {
     }
   }
 
+  public void remove(STreeProperty prop){
+    propsList.remove(prop);
+    propNames.remove(prop.name());
+  }
+
   public STreeProperty[] props() {
     return propsList.toArray(new STreeProperty[0]);
   }

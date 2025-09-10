@@ -4,6 +4,7 @@ import io.ebean.Query;
 import io.ebean.SqlUpdate;
 import io.ebean.Transaction;
 import io.ebean.ValuePair;
+import io.ebean.bean.BeanCollection;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.PersistenceContext;
@@ -54,7 +55,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
   private String deleteByParentIdInSql;
   private BeanPropertyAssocMany<?> relationshipProperty;
   private boolean cacheNotifyRelationship;
-
+  private boolean isComputedEmbedded;
   /**
    * Create based on deploy information of an EmbeddedId.
    */
@@ -81,6 +82,7 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
       for (BeanProperty embeddedProp : embeddedProps) {
         embeddedPropsMap.put(embeddedProp.name(), embeddedProp);
       }
+      isComputedEmbedded = BeanCollection.class.isAssignableFrom(type());
     } else {
       embeddedProps = null;
       embeddedPropsMap = null;
@@ -841,5 +843,24 @@ public class BeanPropertyAssocOne<T> extends BeanPropertyAssoc<T> implements STr
 
   public boolean hasCircularImportedId(BeanDescriptor<?> sourceDesc) {
     return targetDescriptor.hasCircularImportedIdTo(sourceDesc);
+  }
+
+  @Override
+  public boolean isComputed(){
+    return isComputedEmbedded;
+  }
+
+  @Override
+  public BeanCollection<?> createReference(EntityBean localBean, boolean forceNewReference) {
+    if (!isComputedEmbedded) {
+      return null;
+    }
+    Object v = getValue(localBean);
+    if (v instanceof BeanCollection<?>) {
+      BeanCollection<?> bc = (BeanCollection<?>) v;
+      return bc;
+    } else {
+      return null;
+    }
   }
 }

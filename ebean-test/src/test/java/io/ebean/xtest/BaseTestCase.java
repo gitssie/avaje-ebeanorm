@@ -4,9 +4,11 @@ import io.ebean.*;
 import io.ebean.annotation.PersistBatch;
 import io.ebean.annotation.Platform;
 import io.ebean.cache.ServerCacheStatistics;
+import io.ebean.config.DatabaseConfig;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.meta.MetaTimedMetric;
 import io.ebean.meta.ServerMetrics;
+import io.ebean.test.UserContext;
 import io.ebean.util.StringHelper;
 import io.ebean.xtest.base.PlatformCondition;
 import io.ebeaninternal.api.SpiEbeanServer;
@@ -70,7 +72,15 @@ public abstract class BaseTestCase {
       System.out.println("BaseTestCase: -Dprops.file=" + propsFile); // help debug CI
       // First try, if we get the default server. If this fails, all tests will fail.
       DatabaseFactory.initialiseContainerFactory(new TenantContainerFactory());
-      DB.getDefault();
+      DatabaseConfig config = new DatabaseConfig();
+      config.setDefaultServer(true);
+      config.setName("db");
+      config.loadFromProperties();
+      config.setDdlGenerate(true);
+      config.setDdlRun(true);
+      config.setCurrentTenantProvider(() -> UserContext.currentTenantId());
+      DatabaseFactory.create(config);
+      //DB.getDefault();
     } catch (Throwable e) {
       logger.error("Fatal error while getting ebean-server. Exiting...", e);
       System.exit(1);

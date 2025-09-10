@@ -12,7 +12,7 @@ public class XEntityProviderTest implements XEntityProvider {
     return new XEntityFinder() {
 
       @Override
-      public XEntity getEntity(Class<?> beanClass) {
+      public XEntity getEntity(Object tenantId,Class<?> beanClass) {
         if (!beanClass.getName().endsWith("Customer")) {
           XEntity entity = new XEntity(beanClass);
           return entity;
@@ -37,8 +37,13 @@ public class XEntityProviderTest implements XEntityProvider {
       }
 
       @Override
-      public boolean isChanged(Class<?> entityClass) {
+      public boolean isChanged(Object tenantId,Class<?> entityClass) {
         return false;
+      }
+
+      @Override
+      public <S> S getServiceObject(Class<S> clazz) {
+        return null;
       }
     };
   }

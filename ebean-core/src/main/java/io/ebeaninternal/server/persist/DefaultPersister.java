@@ -930,6 +930,10 @@ public final class DefaultPersister implements Persister {
         unloadedForeignKeys.deleteCascade();
       }
     }
+
+    // delete any generated properties
+    deleteGenDelete(request);
+
     request.complete();
     // return true if using JDBC batch (as we can't tell until the batch is flushed)
     return count;
@@ -1212,6 +1216,19 @@ public final class DefaultPersister implements Persister {
             }
           }
         }
+      }
+    }
+  }
+
+  /**
+   * Delete any generated delete properties.
+   * @param request
+   */
+  private void deleteGenDelete(PersistRequestBean<?> request) {
+    DeleteMode deleteMode = request.deleteMode();
+    if (deleteMode.isHard()){
+      for (BeanProperty prop : request.descriptor().propertiesGenDelete()){
+        prop.generatedProperty().deleteRecurse(prop, request.entityBean(), request.transaction());
       }
     }
   }

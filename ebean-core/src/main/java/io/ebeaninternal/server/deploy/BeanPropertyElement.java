@@ -21,7 +21,6 @@ public class BeanPropertyElement<T> extends BeanProperty {
 
   public BeanPropertyElement(BeanDescriptor<?> descriptor, DeployBeanProperty deploy) {
     super(descriptor, deploy);
-
   }
 
   @Override
@@ -39,7 +38,7 @@ public class BeanPropertyElement<T> extends BeanProperty {
       dp.setName(ElementBean.class.getSimpleName());
       BeanProperty[] propertiesIndex = new BeanProperty[properties.size()];
       for (BeanProperty property : properties) {
-        propertiesIndex[property.fieldIndex[1]] = property;
+        propertiesIndex[property.fieldIndex] = property;
       }
       beanDescriptor = new BeanDescriptor(descriptor.owner, dp);
       beanDescriptor.propertiesIndex = propertiesIndex;

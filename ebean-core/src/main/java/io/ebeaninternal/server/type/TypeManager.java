@@ -60,6 +60,8 @@ public interface TypeManager {
    */
   ScalarType<?> dbArrayType(Class<?> type, Type genericType, boolean nullable);
 
+  ScalarType<?> dbComputedType(Class<?> type, Type genericType, boolean nullable);
+
   /**
    * Return the ScalarType used to handle HSTORE (Map<String,String>).
    */

@@ -268,7 +268,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       if (prop.isVersion()) {
         if (isLoadedProperty(prop)) {
           // @Version property must be loaded to be involved
-          Object value = generatedProperty.getUpdateValue(prop, entityBean, now());
+          Object value = generatedProperty.getUpdateValue(prop, entityBean, now(), transaction);
           Object oldVal = prop.getValue(entityBean);
           setVersionValue(value);
           intercept.setOldValue(prop.propertyIndex(), oldVal);
@@ -276,9 +276,11 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       } else {
         // @WhenModified set without invoking interception
         Object oldVal = prop.getValue(entityBean);
-        Object value = generatedProperty.getUpdateValue(prop, entityBean, now());
-        prop.setValueChanged(entityBean, value);
-        intercept.setOldValue(prop.propertyIndex(), oldVal);
+        Object value = generatedProperty.getUpdateValue(prop, entityBean, now(), transaction);
+        if (oldVal != value) {
+          prop.setValueChanged(entityBean, value);
+          intercept.setOldValue(prop.propertyIndex(), oldVal);
+        }
       }
     }
   }
@@ -292,7 +294,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
 
   private void onInsertGeneratedProperties() {
     for (BeanProperty prop : beanDescriptor.propertiesGenInsert()) {
-      Object value = prop.generatedProperty().getInsertValue(prop, entityBean, now());
+      Object value = prop.generatedProperty().getInsertValue(prop, entityBean, now(), transaction);
       prop.setValueChanged(entityBean, value);
     }
   }
@@ -707,6 +709,10 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     return intercept;
   }
 
+  public BeanElementHelper helper() {
+    return helper;
+  }
+
   /**
    * Return true if this property is loaded (full bean or included in partial bean).
    */
@@ -954,13 +960,13 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
         transaction.logSummary("Inserted [{0}] [{1}]{2}", name, (idValue == null ? "" : idValue), draft);
         break;
       case UPDATE:
-        transaction.logSummary("Updated [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("Updated [{0}] [{1}]{2}", name, idValue, draft);
         break;
       case DELETE:
-        transaction.logSummary("Deleted [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("Deleted [{0}] [{1}]{2}", name, idValue, draft);
         break;
       case DELETE_SOFT:
-        transaction.logSummary("SoftDelete [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("SoftDelete [{0}] [{1}]{2}", name, idValue, draft);
         break;
       default:
         break;

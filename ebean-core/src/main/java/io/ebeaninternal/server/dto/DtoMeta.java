@@ -49,12 +49,16 @@ final class DtoMeta {
       // maxArgConst + setters
       return matchMaxArgPlusSetters(request);
     }
-    if (defaultConstructor != null) {
+    if (defaultConstructor != null && DtoQueryPlan.class.isAssignableFrom(dtoType)) {
+      return (DtoQueryPlan) defaultConstructor.defaultConstructor();
+    } else if (defaultConstructor != null) {
       return matchSetters(request);
     } else if (dtoType.equals(Map.class)) {
       return matchHashMap(request);
-    } else if(dtoType.equals(SqlRow.class)){
+    } else if (dtoType.equals(SqlRow.class)) {
       return matchSqlRow(request);
+    } else if(dtoType.isArray()){
+      return matchArray(request);
     }
     String msg = "Unable to map the resultSet columns " + Arrays.toString(cols)
       + " to the bean type ["+dtoType+"] as the number of columns in the resultSet is less than the constructor"
@@ -82,6 +86,10 @@ final class DtoMeta {
     return new DtoQueryPlanConSqlRow(request, dtoColumns);
   }
 
+  private DtoQueryPlan matchArray(DtoMappingRequest request) {
+    DtoColumn[] dtoColumns = request.getColumnMeta();
+    return new DtoQueryPlanConArray(request, dtoColumns);
+  }
 
   DtoReadSet findProperty(String label) {
     String upperLabel = label.toUpperCase();

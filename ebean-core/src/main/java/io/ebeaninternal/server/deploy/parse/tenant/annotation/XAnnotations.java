@@ -11,11 +11,13 @@ public class XAnnotations {
   }
 
   private void initClassMap() {
-    annotationClass.put("XColumn", XColumn.class);
+    annotationClass.put("Column", XColumn.class);
     annotationClass.put("DbDefault", XDbDefault.class);
     annotationClass.put("DBJson", XDbJson.class);
+    annotationClass.put("DBJsonB", XDbJsonB.class);
     annotationClass.put("DBMap", XDbMap.class);
     annotationClass.put("GeneratedValue", XGeneratedValue.class);
+    annotationClass.put("Convert", XConvert.class);
     annotationClass.put("Index", XIndex.class);
     annotationClass.put("JoinColumn", XJoinColumn.class);
     annotationClass.put("Lob", XLob.class);
@@ -30,6 +32,8 @@ public class XAnnotations {
 
     annotationClass.put("ChangeLog", XChangeLog.class);
 
+    annotationClass.put("Aggregation", XAggregation.class);
+
   }
 
   public Class<?> getClass(String name) {
@@ -38,5 +42,13 @@ public class XAnnotations {
 
   public Class<?> getEntityAnnotationClass(String name) {
     return annotationClass.get(name);
+  }
+
+  public Class<?> getAnnotationClass(String name) {
+    return annotationClass.get(name);
+  }
+
+  public void put(String name, Class<?> cls) {
+    annotationClass.put(name, cls);
   }
 }

@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.meta;
 
 import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
+import io.ebean.bean.Computed;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
@@ -35,6 +36,7 @@ public final class DeployBeanPropertyLists {
   private final List<BeanPropertyAssocMany<?>> manys = new ArrayList<>();
   private final List<BeanProperty> nonManys = new ArrayList<>();
   private final List<BeanProperty> aggs = new ArrayList<>();
+  private final List<BeanProperty> computeds = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> ones = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> onesImported = new ArrayList<>();
   private final List<BeanPropertyAssocOne<?>> embedded = new ArrayList<>();
@@ -172,6 +174,12 @@ public final class DeployBeanPropertyLists {
    * Allocate the property to a list.
    */
   private void allocateToList(BeanProperty prop) {
+    if (prop.isComputed()) {
+      computeds.add(prop);
+      if (prop.isFormula()) {
+        return;
+      }
+    }
     if (prop.isTransient()) {
       transients.add(prop);
       if (prop.isDraft()) {
@@ -312,6 +320,10 @@ public final class DeployBeanPropertyLists {
     return aggs.toArray(new BeanProperty[0]);
   }
 
+  public BeanProperty[] getComputeds(){
+    return computeds.toArray(new BeanProperty[0]);
+  }
+
   public BeanPropertyAssocMany<?>[] getMany() {
     return manys.toArray(new BeanPropertyAssocMany[0]);
   }
@@ -375,6 +387,17 @@ public final class DeployBeanPropertyLists {
     for (BeanProperty prop : nonTransients) {
       GeneratedProperty gen = prop.generatedProperty();
       if (gen != null && gen.includeInUpdate()) {
+        list.add(prop);
+      }
+    }
+    return list.toArray(new BeanProperty[0]);
+  }
+
+  public BeanProperty[] getGeneratedDelete() {
+    List<BeanProperty> list = new ArrayList<>();
+    for (BeanProperty prop : nonTransients) {
+      GeneratedProperty gen = prop.generatedProperty();
+      if (gen != null && gen.includeInDelete()) {
         list.add(prop);
       }
     }
@@ -455,6 +478,9 @@ public final class DeployBeanPropertyLists {
     }
     if (deployProp.getPropertyType() == ElementBean.class) {
       return new BeanPropertyElement(desc, deployProp);
+    }
+    if (deployProp.getPropertyType() == Computed.class){
+      return new BeanPropertyComputed(desc, deployProp);
     }
     if (deployProp.isJsonMapper()) {
       return new BeanPropertyJsonMapper(desc, deployProp);

@@ -603,6 +603,11 @@ public final class CQuery<T> implements DbReadContext, CancelableQuery, SpiProfi
     request.loadContext().register(path(many.name()), many, bc);
   }
 
+  @Override
+  public void register(BeanProperty property, BeanCollection<?> bc) {
+    request.loadContext().register(path(property.name()), property, bc);
+  }
+
   /**
    * Return true if this is a raw sql query as opposed to Ebean generated sql.
    */

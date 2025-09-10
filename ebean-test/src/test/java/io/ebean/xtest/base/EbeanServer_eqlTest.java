@@ -3,7 +3,21 @@ package io.ebean.xtest.base;
 import io.ebean.xtest.BaseTestCase;
 import io.ebean.DB;
 import io.ebean.Query;
+import io.ebean.*;
+import io.ebean.bean.EntityBean;
 import io.ebean.test.LoggedSql;
+import io.ebean.test.UserContext;
+import io.ebean.xtest.BaseTestCase;
+import io.ebeaninternal.api.SpiQuery;
+import io.ebeaninternal.server.TenantContainerFactory;
+import io.ebeaninternal.server.core.DefaultServer;
+import io.ebeaninternal.server.core.SpiOrmQueryRequest;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
+import io.ebeaninternal.server.deploy.BeanDescriptorManagerProvider;
+import io.ebeaninternal.server.deploy.BeanPropertyAssocOne;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.implementation.FixedValue;
 import org.junit.jupiter.api.Test;
 import org.tests.model.basic.Customer;
 import org.tests.model.basic.ResetBasicData;
@@ -11,10 +25,55 @@ import org.tests.model.basic.ResetBasicData;
 import javax.persistence.PersistenceException;
 import java.util.List;
 
+import static net.bytebuddy.matcher.ElementMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EbeanServer_eqlTest extends BaseTestCase {
+  protected Class<?> generateCustomEntityClass(ClassLoader parentClassLoader, Class<?> parent, String className) throws NoSuchMethodException {
+    System.out.println(Modifier.isAbstract(parent.getMethod("_ebean_newInstance").getModifiers()));
+    return new ByteBuddy()
+      .subclass(parent)
+      .name(parent.getPackageName() + "." + className)
+      .make()
+      .load(parentClassLoader)
+      .getLoaded();
+  }
+
+  @Test
+  public void testCustomUpdate() throws Exception {
+    DefaultServer server = (DefaultServer) this.server();
+    BeanDescriptorManagerProvider provider = server.config().getServiceObject(BeanDescriptorManagerProvider.class);
+    UserContext.setTenantId(1);
+    int id = 1;
+    Class<?> customClass = generateCustomEntityClass(getClass().getClassLoader(), Customer.class, "QCustomer");
+    Customer customer = (Customer) customClass.getDeclaredConstructor().newInstance();
+
+    customer.setId(id++);
+    customer.setName("客户A");
+
+    server.save(customer);
+
+    customer = (Customer) server.find(customClass, 1);
+    customer.setName("客户B");
+    server.update(customer);
+    server.delete(customer);
+    System.out.println(customer.getClass());
+    System.out.println(customer);
+
+    provider.redeploy(1, customClass, new XEntity());
+  }
+
+
+  @Test
+  public void testUpdate() {
+    DefaultServer server = (DefaultServer) this.server();
+    UserContext.setTenantId(1);
+    int id = 1;
+    Transaction trans = server.beginTransaction();
+    Customer customer = new Customer();
+    customer.setId(id++);
+    customer.setName("客户A");
 
 
   @Test
@@ -35,6 +94,26 @@ public class EbeanServer_eqlTest extends BaseTestCase {
       assertSql(query).endsWith("order by t0.id limit 100");
     }
   }
+
+  //@Test
+  public void basicSQL() {
+
+    ResetBasicData.reset();
+
+    String sql = "select name where billingAddress.line1='JACK' order by id limit 100";
+    sql = "where billingAddress.line1='JACK' order by id limit 100";
+
+    Query<Customer> query = server().createQuery(Customer.class, sql);
+    query.setMaxRows(0);
+
+    ExpressionList where = query.where();
+    query.findList();
+
+    //SpiOrmQueryRequest<?> request = buildQueryRequest(SpiQuery.Type.LIST, query, transaction);
+
+    assertSql(query).endsWith("order by t0.id limit 100");
+  }
+
 
   @Test
   public void basic_via_Ebean_defaultServer() {

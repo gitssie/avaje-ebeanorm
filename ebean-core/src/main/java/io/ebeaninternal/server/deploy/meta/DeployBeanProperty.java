@@ -147,7 +147,8 @@ public class DeployBeanProperty {
   private int dbType;
   private final DeployDocPropertyOptions docMapping = new DeployDocPropertyOptions();
   private int propertyIndex;
-  private int[] fieldIndex = new int[0];
+  private int fieldIndex = -1;
+  private long propertyId;
   private BeanPropertyGetter getter;
   private BeanPropertySetter setter;
   /**
@@ -384,11 +385,11 @@ public class DeployBeanProperty {
     this.propertyIndex = propertyIndex;
   }
 
-  public int[] getFieldIndex() {
+  public int getFieldIndex() {
     return fieldIndex;
   }
 
-  public void setFieldIndex(int[] fieldIndex) {
+  public void setFieldIndex(int fieldIndex) {
     this.fieldIndex = fieldIndex;
   }
 
@@ -1050,7 +1051,7 @@ public class DeployBeanProperty {
   }
 
   public void initMetaAnnotations(Set<Class<?>> metaAnnotationsFilter) {
-    if(field.isEmpty()){
+    if (field.isEmpty()) {
       return;
     }
     metaAnnotations = AnnotationUtil.metaFindAllFor(field.get(), metaAnnotationsFilter);
@@ -1166,5 +1167,13 @@ public class DeployBeanProperty {
           return null;
       }
 
+  }
+
+  public long getPropertyId() {
+    return propertyId;
+  }
+
+  public void setPropertyId(long propertyId) {
+    this.propertyId = propertyId;
   }
 }

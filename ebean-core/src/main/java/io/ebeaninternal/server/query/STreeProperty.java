@@ -57,6 +57,10 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    */
   boolean isFormula();
 
+  default boolean isComputed()  {
+    return false;
+  }
+
   /**
    * Return the encryption key as a string value (when the property is encrypted).
    */

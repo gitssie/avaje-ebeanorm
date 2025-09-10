@@ -15,6 +15,7 @@ import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -24,19 +25,20 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   private final Object tenantId;
   private final BeanDescriptorManagerTenant beanDescriptorManager;
   protected final List<BeanDescriptor<?>> elementDescriptors = new LinkedList<>();
-  protected final Map<String, BeanTable> beanTableMap = new HashMap<>();
-  protected final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
-  protected final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
+  protected final Map<String, BeanTable> beanTableMap = new ConcurrentHashMap<>();
+  protected final Map<String, BeanDescriptor<?>> descMap = new ConcurrentHashMap<>();
+  protected final Map<String, BeanDescriptor<?>> descQueueMap = new ConcurrentHashMap<>();
   protected final List<BeanDescriptorConsumer> descListeners = new LinkedList<>();
-  protected final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
-  protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new HashMap<>();
-  protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
-  protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
+  protected final Map<String, BeanManager<?>> beanManagerMap = new ConcurrentHashMap<>();
+  protected final Map<Class<?>, DeployBeanInfo<?>> descInfoMap = new ConcurrentHashMap<>();
+  protected final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new ConcurrentHashMap<>();
+  protected final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new ConcurrentHashMap<>();
 
   protected final XReadAnnotations readAnnotations;
   protected final TenantDeployCreateProperties createProperties;
   protected final Map<Class<?>, DeployBeanInfo<?>> rootInfoMap;
 
+  private final ThreadLocal<BeanDescriptorMapTemporal> current = new ThreadLocal<>();
 
   public BeanDescriptorMapTenant(Object tenantId, BeanDescriptorManagerTenant beanDescriptorManager) {
     this.tenantId = tenantId;
@@ -112,7 +114,11 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
 
   @Override
   public BeanTable beanTable(Class<?> beanClass) {
-    throw new UnsupportedOperationException();
+    BeanDescriptorMapTemporal that = current.get();
+    if (that != null) {
+      return that.beanTable(beanClass);
+    }
+    return beanTableMap.get(beanClass.getName());
   }
 
   @Override
@@ -128,6 +134,10 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public <T> BeanDescriptor<T> getDesc(Class<T> beanClass) {
+    BeanDescriptorMapTemporal that = current.get();
+    if (that != null) {
+      return that.desc(beanClass);
+    }
     return (BeanDescriptor<T>) descMap.get(beanClass.getName());
   }
 
@@ -165,9 +175,6 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   public boolean redeploy(Class<?> entityClass, XEntity entity) {
-    if (!isDeployed(entityClass)) { //it's a lazy deploy
-      return false;
-    }
     lock.lock();
     try {
       if (isChanged(entityClass, entity)) {
@@ -194,16 +201,28 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected void deployLocked(BeanDescriptorMapContext context, Class<?> entityClass, XEntity entity) {
-    BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
-    factory.deploy(entityClass, entity);
-    factory.initialise();
-    registerBeanDescriptor(factory);
-    factory.clear();
+    BeanDescriptorMapTemporal factory = current.get();
+    if (factory == null) {
+      factory = new BeanDescriptorMapTemporal(tenantId, beanDescriptorManager, context, readAnnotations, createProperties);
+      current.set(factory);
+      try {
+        factory.deploy(entityClass, entity);
+        factory.initialise();
+        registerBeanDescriptor(factory);
+      } finally {
+        factory.clear();
+        current.remove();
+      }
+    } else {
+      factory.deploy(entityClass, entity);
+    }
   }
 
   private void registerBeanDescriptor(BeanDescriptorMapTemporal factory) {
     setEbeanServer(factory.descMap, factory);
+    elementDescriptors.addAll(factory.elementDescriptors);
     descMap.putAll(factory.descMap);
+    descQueueMap.putAll(factory.descQueueMap);
     beanManagerMap.putAll(factory.beanManagerMap);
     descInfoMap.putAll(factory.descInfoMap);
     beanTableMap.putAll(factory.beanTableMap);
@@ -230,20 +249,20 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   protected void setEbeanServer(Map<String, BeanDescriptor<?>> descMap, BeanDescriptorMapTemporal factory) {
     //10.ebeanServer
     for (BeanDescriptor<?> desc : descMap.values()) {
-      if (!factory.beanManagerMap.containsKey(desc.fullName())) {
+      if (!desc.isEmbedded() && !factory.beanManagerMap.containsKey(desc.fullName())) {
         beanManagerMap.put(desc.fullName(), beanDescriptorManager.beanManagerFactory.create(desc));
         desc.setEbeanServer(beanDescriptorManager.ebeanServer);
       }
     }
   }
 
-  public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) throws Exception {
+  public BeanDescriptor<?> createBeanDescriptor(Class<?> beanClass, XEntity entity) {
     lock.lock();
     try {
       BeanDescriptorMapContext context = new BeanDescriptorMapContext(beanTableMap, descMap, descInfoMap, rootInfoMap);
-      BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(beanDescriptorManager, context, readAnnotations, createProperties);
+      BeanDescriptorMapTemporal factory = new BeanDescriptorMapTemporal(tenantId, beanDescriptorManager, context, readAnnotations, createProperties);
       BeanDescriptorMapTemporal.DeployInfo newInfo = factory.createDeployBeanInfo(beanClass, entity);
-      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo.info);
+      BeanDescriptor<?> desc = factory.deployInfo(beanClass, newInfo);
       factory.initialise();
       factory.clear();
       return desc;
@@ -253,9 +272,9 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   protected boolean isChanged(Class<?> beanClass, XEntity entity) {
-    String etag = entity.generateEtag();
-    String oldEtag = getDesc(beanClass).dbComment();
-    return !etag.equals(oldEtag);
+    //String etag = entity.generateEtag();
+    //String oldEtag = getDesc(beanClass).dbComment();
+    return true;
   }
 
   @Override
