@@ -19,9 +19,9 @@ public class BeanDescriptorTenantTest extends BaseTest{
 //    descriptorManager.registerEntity(Customer.class);
     BeanDescriptor<Customer> customerDesc = server.descriptor(Customer.class);
 //    customerDesc.get
-    Customer bean = customerDesc.createReference(null, false, 42, null);
+    Customer bean = customerDesc.createReference(true, false, 42, null);
     assertThat(bean.getId()).isEqualTo(42);
-    Assertions.assertThat(server().beanState(bean).isReadOnly()).isFalse();
+    Assertions.assertThat(server().beanState(bean).isUnmodifiable()).isFalse();
   }
 
 }
