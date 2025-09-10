@@ -26,12 +26,12 @@ public class ComputedLoader implements BeanCollectionLoader {
 
   @Override
   public void loadMany(BeanCollection<?> collection, boolean onlyIds) {
-    loadValueInternal(collection, collection.getOwnerBean(), collection.getPropertyName(), true, onlyIds);
+    loadValueInternal(collection, collection.owner(), collection.propertyName(), true, onlyIds);
   }
 
   private void loadValueInternal(BeanCollection collection, EntityBean parentBean, String propertyName, boolean refresh, boolean onlyIds) {
     EntityBeanIntercept ebi = parentBean._ebean_getIntercept();
-    PersistenceContext pc = ebi.getPersistenceContext();
+    PersistenceContext pc = ebi.persistenceContext();
     BeanDescriptor<?> parentDesc = (BeanDescriptor<?>) server.pluginApi().beanType(parentBean.getClass());
     BeanProperty many = parentDesc.beanProperty(propertyName);
 

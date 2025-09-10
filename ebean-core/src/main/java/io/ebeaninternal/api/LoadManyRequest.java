@@ -88,7 +88,7 @@ public final class LoadManyRequest extends LoadRequest {
   }
 
   private BeanPropertyAssocMany<?> many() {
-    return loadContext.beanProperty();
+    return (BeanPropertyAssocMany<?>)loadContext.beanProperty();
   }
 
   public SpiQuery<?> createQuery(SpiEbeanServer server) {

@@ -40,12 +40,12 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
   DLoadComputedContext(DLoadContext parent, BeanProperty property, String path, OrmQueryProperties queryProps) {
     this.parent = parent;
     this.property = property;
-    this.serverName = parent.getEbeanServer().name();
-    this.fullPath = parent.getFullPath(path);
+    this.serverName = parent.server().name();
+    this.fullPath = parent.fullPath(path);
     this.queryProps = queryProps;
     this.queryFetch = queryProps != null && queryProps.isQueryFetch();
     this.batchSize = parent.batchSize(queryProps);
-    this.objectGraphNode = parent.getObjectGraphNode(path);
+    this.objectGraphNode = parent.objectGraphNode(path);
     // bufferList only required when using query joins (queryFetch)
     this.bufferList = (!queryFetch) ? null : new ArrayList<>();
     this.currentBuffer = createBuffer(batchSize);
@@ -70,9 +70,9 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
   }
 
   void setLabel(SpiQuery<?> query) {
-    String label = parent.getPlanLabel();
+    String label = parent.planLabel();
     if (label != null) {
-      query.setProfilePath(label, fullPath, parent.getProfileLocation());
+      query.setProfilePath(label, fullPath, parent.profileLocation());
     }
   }
 
@@ -86,7 +86,7 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
   }
 
   public String getName() {
-    return parent.getEbeanServer().name();
+    return parent.server().name();
   }
 
   public void register(BeanCollection<?> bc) {
@@ -107,7 +107,7 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
       if (bufferList != null) {
         for (LoadBuffer loadBuffer : bufferList) {
           if (loadBuffer.size() > 0) {
-            loadBuffer.loadValueInternal(parent.getEbeanServer());
+            loadBuffer.loadValueInternal(parent.server());
           }
         }
         if (forEach) {
@@ -123,7 +123,7 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
   }
 
   PersistenceContext getPersistenceContext() {
-    return parent.getPersistenceContext();
+    return parent.persistenceContext();
   }
 
   /**
@@ -170,12 +170,12 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
     abstract void clear();
 
     @Override
-    public BeanProperty getBeanProperty() {
+    public BeanProperty beanProperty() {
       return context.property;
     }
 
     @Override
-    public ObjectGraphNode getObjectGraphNode() {
+    public ObjectGraphNode objectGraphNode() {
       return context.objectGraphNode;
     }
 
@@ -190,17 +190,17 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
     }
 
     @Override
-    public BeanDescriptor<?> getBeanDescriptor() {
+    public BeanDescriptor<?> descriptor() {
       return context.property.descriptor();
     }
 
     @Override
-    public PersistenceContext getPersistenceContext() {
+    public PersistenceContext persistenceContext() {
       return persistenceContext;
     }
 
     @Override
-    public String getFullPath() {
+    public String fullPath() {
       return context.fullPath;
     }
 
@@ -209,7 +209,7 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
       lock.lock();
       try {
         //context.parent.getEbeanServer().loadMany(new LoadManyRequest(this, onlyIds, false));
-        loadValueInternal(context.parent.getEbeanServer());
+        loadValueInternal(context.parent.server());
         // clear the buffer as all entries have been loaded
         clear();
       } finally {
@@ -222,7 +222,7 @@ final class DLoadComputedContext implements LoadSecondaryQuery {
       for (int i = 0; i < size(); i++) {
         BeanCollection<?> bc = get(i);
         if (bc != null) {
-          idList.put(desc.id(bc.getOwnerBean()), bc);
+          idList.put(desc.id(bc.owner()), bc);
           bc.addBean(null);
           bc.setLoader(server); // don't use the load buffer again
         }

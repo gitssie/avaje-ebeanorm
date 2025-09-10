@@ -4,7 +4,7 @@ import io.ebean.bean.BeanCollection;
 import io.ebean.bean.ObjectGraphNode;
 import io.ebean.bean.PersistenceContext;
 import io.ebeaninternal.server.deploy.BeanDescriptor;
-import io.ebeaninternal.server.deploy.BeanPropertyAssocMany;
+import io.ebeaninternal.server.deploy.BeanProperty;
 
 /**
  * A buffer of bean collections for batch lazy loading and secondary query loading.
@@ -31,7 +31,7 @@ public interface LoadManyBuffer {
    */
   boolean removeFromBuffer(BeanCollection<?> collection);
 
-  BeanPropertyAssocMany<?> beanProperty();
+  BeanProperty beanProperty();
 
   ObjectGraphNode objectGraphNode();
 

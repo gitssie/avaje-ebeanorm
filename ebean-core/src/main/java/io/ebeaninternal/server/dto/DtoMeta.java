@@ -87,7 +87,7 @@ final class DtoMeta {
   }
 
   private DtoQueryPlan matchArray(DtoMappingRequest request) {
-    DtoColumn[] dtoColumns = request.getColumnMeta();
+    DtoColumn[] dtoColumns = request.columnMeta();
     return new DtoQueryPlanConArray(request, dtoColumns);
   }
 

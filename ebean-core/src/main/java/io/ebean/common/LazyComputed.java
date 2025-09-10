@@ -5,6 +5,7 @@ import io.ebean.bean.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 
@@ -128,12 +129,12 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public Collection<T> getActualDetails() {
+  public Collection<T> actualDetails() {
     return Collections.EMPTY_LIST;
   }
 
   @Override
-  public Collection<?> getActualEntries() {
+  public Collection<?> actualEntries() {
     return Collections.EMPTY_LIST;
   }
 
@@ -158,7 +159,7 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public ModifyListenMode getModifyListening() {
+  public ModifyListenMode modifyListening() {
     return null;
   }
 
@@ -173,12 +174,12 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public Set<T> getModifyAdditions() {
+  public Set<T> modifyAdditions() {
     return null;
   }
 
   @Override
-  public Set<T> getModifyRemovals() {
+  public Set<T> modifyRemovals() {
     return null;
   }
 
@@ -193,7 +194,7 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public BeanCollection<T> getShallowCopy() {
+  public BeanCollection<T> shallowCopy() {
     return null;
   }
 
@@ -224,12 +225,12 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public EntityBean getOwnerBean() {
+  public EntityBean owner() {
     return ownerBean;
   }
 
   @Override
-  public String getPropertyName() {
+  public String propertyName() {
     return propertyName;
   }
 
@@ -239,7 +240,7 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public ExpressionList<?> getFilterMany() {
+  public ExpressionList<?> filterMany() {
     return null;
   }
 
