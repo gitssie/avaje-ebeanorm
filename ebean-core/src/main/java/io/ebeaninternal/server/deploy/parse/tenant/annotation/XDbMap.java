@@ -3,7 +3,7 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 import io.ebean.annotation.DbMap;
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.Lob;
+import jakarta.persistence.Lob;
 import java.lang.annotation.Annotation;
 
 public class XDbMap implements DbMap {

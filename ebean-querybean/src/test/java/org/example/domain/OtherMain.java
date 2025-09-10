@@ -1,8 +1,8 @@
 package org.example.domain;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import org.example.domain.other.OtherBean;
 
 @SuppressWarnings("unused")

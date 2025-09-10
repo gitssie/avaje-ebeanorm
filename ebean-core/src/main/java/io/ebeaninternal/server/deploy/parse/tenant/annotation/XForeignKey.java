@@ -1,7 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
-import javax.persistence.ConstraintMode;
-import javax.persistence.ForeignKey;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.ForeignKey;
 import java.lang.annotation.Annotation;
 
 /**

@@ -3,8 +3,8 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 import io.ebean.bean.ToStringBuilder;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import java.lang.annotation.Annotation;
 
 public class XGeneratedValue implements GeneratedValue {

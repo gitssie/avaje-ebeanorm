@@ -2,7 +2,7 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 import java.lang.annotation.Annotation;
 
 public class XTransient implements Transient {

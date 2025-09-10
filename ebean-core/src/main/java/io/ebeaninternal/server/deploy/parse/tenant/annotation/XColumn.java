@@ -2,7 +2,7 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.lang.annotation.Annotation;
 
 public class XColumn implements Column {

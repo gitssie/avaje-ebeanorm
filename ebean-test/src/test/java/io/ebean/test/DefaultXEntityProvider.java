@@ -12,9 +12,9 @@ import org.tests.model.basic.Address;
 import org.tests.model.basic.Contact;
 import org.tests.model.basic.Customer;
 
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import java.util.List;
 
 public class DefaultXEntityProvider implements XEntityProvider, AutoConfigure {

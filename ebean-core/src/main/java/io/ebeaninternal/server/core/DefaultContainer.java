@@ -14,7 +14,7 @@ import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClassPathSearch;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.executor.DefaultBackgroundExecutor;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import java.net.URL;
 import java.sql.Connection;

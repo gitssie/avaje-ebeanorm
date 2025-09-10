@@ -4,7 +4,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import io.ebean.search.*;
 
-import javax.persistence.NonUniqueResultException;
+import jakarta.persistence.NonUniqueResultException;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.*;

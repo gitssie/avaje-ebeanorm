@@ -8,7 +8,7 @@ import io.ebeaninternal.server.deploy.InheritInfo;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 
-import javax.persistence.Table;
+import jakarta.persistence.Table;
 
 final class XAnnotationClass {
   private final DeployBeanDescriptor<?> descriptor;

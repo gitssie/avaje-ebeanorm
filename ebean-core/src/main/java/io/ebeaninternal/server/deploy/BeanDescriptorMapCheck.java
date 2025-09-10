@@ -8,7 +8,7 @@ import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.type.TypeManager;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import java.util.*;
 
 import static java.lang.System.Logger.Level.*;

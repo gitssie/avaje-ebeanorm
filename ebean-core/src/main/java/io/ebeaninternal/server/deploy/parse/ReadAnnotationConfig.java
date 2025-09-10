@@ -8,7 +8,7 @@ import io.ebean.DatabaseBuilder;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.util.HashSet;
 import java.util.Set;
 

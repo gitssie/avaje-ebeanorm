@@ -1,6 +1,6 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
-import javax.persistence.Version;
+import jakarta.persistence.Version;
 import java.lang.annotation.Annotation;
 
 public class XVersion implements Version {

@@ -1,6 +1,6 @@
 package org.tests.model.types;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.File;
 

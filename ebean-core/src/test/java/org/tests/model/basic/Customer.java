@@ -5,7 +5,7 @@ import io.ebean.bean.ElementBean;
 import io.ebean.bean.EntityBean;
 import jdk.jfr.Name;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.lang.annotation.Documented;

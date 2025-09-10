@@ -1,7 +1,7 @@
 package org.example.domain.other;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 @SuppressWarnings("unused")
 @Entity

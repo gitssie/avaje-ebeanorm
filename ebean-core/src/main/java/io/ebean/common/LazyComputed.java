@@ -11,7 +11,6 @@ import java.util.Set;
 
 public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   private static final long serialVersionUID = 3365725236140187599L;
-  protected boolean readOnly = true;
   protected boolean disableLazyLoad;
   /**
    * The Database this is associated with. (used for lazy fetch).
@@ -47,7 +46,6 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
     this.ebeanServerName = loader.name();
     this.ownerBean = ownerBean;
     this.propertyName = propertyName;
-    this.readOnly = ownerBean != null && ownerBean._ebean_getIntercept().isReadOnly();
   }
 
   public void setDisableLazyLoad(boolean disableLazyLoad) {
@@ -82,19 +80,10 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
     this.ebeanServerName = loader.name();
   }
 
-  @Override
-  public void setReadOnly(boolean readOnly) {
-    this.readOnly = true;
-  }
-
   public boolean isRegisteredWithLoadContext() {
     return registeredWithLoadContext;
   }
 
-
-  public boolean isReadOnly() {
-    return readOnly;
-  }
 
   @Override
   public void internalAdd(Object bean) {
@@ -194,8 +183,8 @@ public final class LazyComputed<T> implements Computed<T>, BeanCollection<T> {
   }
 
   @Override
-  public BeanCollection<T> shallowCopy() {
-    return null;
+  public Object freeze() {
+    return get();
   }
 
   private synchronized void init() {

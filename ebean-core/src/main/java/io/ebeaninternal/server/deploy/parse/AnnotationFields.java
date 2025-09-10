@@ -29,7 +29,7 @@ import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
 import io.ebeaninternal.server.type.ScalarTypeEncryptedWrapper;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.lang.reflect.Constructor;
 import java.sql.Types;
 import java.util.Set;

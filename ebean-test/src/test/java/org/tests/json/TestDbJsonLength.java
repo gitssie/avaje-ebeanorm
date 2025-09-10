@@ -40,7 +40,7 @@ class TestDbJsonLength {
 
     if (bean.getId() != null) {
       // we expect, that we could NOT save the bean, but this is not true for sqlServer.
-      // we will get a javax.persistence.PersistenceException: Error loading on org.tests.model.json.EBasicJsonMap.content
+      // we will get a jakarta.persistence.PersistenceException: Error loading on org.tests.model.json.EBasicJsonMap.content
       // when we try to load the bean back from DB
       DB.find(EBasicJsonMap.class, bean.getId());
     }

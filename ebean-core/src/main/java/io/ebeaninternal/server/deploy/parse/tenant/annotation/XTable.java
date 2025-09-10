@@ -2,9 +2,9 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.lang.annotation.Annotation;
 
 public class XTable implements Table {

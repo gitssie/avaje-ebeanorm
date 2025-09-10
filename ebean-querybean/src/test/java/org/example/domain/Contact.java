@@ -1,7 +1,7 @@
 package org.example.domain;
 
 import io.ebean.annotation.DbArray;
-import javax.persistence.*;
+import jakarta.persistence.*;
 import org.example.domain.finder.ContactFinder;
 
 import javax.validation.constraints.NotNull;

@@ -2,9 +2,9 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
 import java.lang.annotation.Annotation;
 
 public class XOneToMany implements OneToMany {

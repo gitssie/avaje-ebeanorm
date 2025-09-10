@@ -9,10 +9,10 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
 import io.ebeaninternal.server.deploy.parse.tenant.XField;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.LinkedHashSet;

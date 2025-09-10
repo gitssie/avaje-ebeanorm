@@ -14,8 +14,8 @@ import io.ebeaninternal.server.deploy.parse.tenant.annotation.GenericType;
 import io.ebeaninternal.server.deploy.parse.tenant.annotation.XGenericType;
 import io.ebeaninternal.server.type.TypeManager;
 
-import javax.persistence.PersistenceException;
-import javax.persistence.Transient;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Transient;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;

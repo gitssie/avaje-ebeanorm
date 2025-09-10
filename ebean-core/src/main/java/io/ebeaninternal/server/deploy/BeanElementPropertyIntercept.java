@@ -159,16 +159,6 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   }
 
   @Override
-  public boolean isReadOnly() {
-    return proxy.isReadOnly();
-  }
-
-  @Override
-  public void setReadOnly(boolean readOnly) {
-    proxy.setReadOnly(readOnly);
-  }
-
-  @Override
   public void setForceUpdate(boolean forceUpdate) {
     proxy.setForceUpdate(forceUpdate);
   }
@@ -560,5 +550,10 @@ final class BeanElementPropertyIntercept implements EntityBeanIntercept {
   @Override
   public String mutableNext(int propertyIndex) {
     return proxy.mutableNext(propertyIndex);
+  }
+
+  @Override
+  public boolean freeze() {
+    return proxy.freeze();
   }
 }

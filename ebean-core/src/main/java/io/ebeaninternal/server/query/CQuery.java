@@ -602,6 +602,11 @@ public final class CQuery<T> implements DbReadContext, CancelableQuery, SpiProfi
   }
 
   @Override
+  public void register(BeanProperty property, BeanCollection<?> bc) {
+    request.loadContext().register(path(property.name()), property, bc);
+  }
+
+  @Override
   public boolean includeSecondary(BeanPropertyAssocMany<?> many) {
     return request.loadContext().includeSecondary(many);
   }

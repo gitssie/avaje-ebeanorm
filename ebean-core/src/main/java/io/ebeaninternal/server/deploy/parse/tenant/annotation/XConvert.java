@@ -1,6 +1,6 @@
 package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
-import javax.persistence.Convert;
+import jakarta.persistence.Convert;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 

@@ -2,8 +2,8 @@ package io.ebeaninternal.server.deploy.parse.tenant.annotation;
 
 import io.ebean.bean.ToStringBuilder;
 
-import javax.persistence.ForeignKey;
-import javax.persistence.JoinColumn;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
 import java.lang.annotation.Annotation;
 
 public class XJoinColumn implements JoinColumn {

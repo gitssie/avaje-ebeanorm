@@ -4,7 +4,7 @@ import io.ebean.annotation.Platform;
 import io.ebean.DatabaseBuilder;
 import io.ebean.datasource.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 /**

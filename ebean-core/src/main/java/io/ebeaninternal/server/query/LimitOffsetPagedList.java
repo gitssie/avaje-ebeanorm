@@ -3,7 +3,7 @@ package io.ebeaninternal.server.query;
 import io.ebean.PagedList;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.api.SpiQuery;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import java.util.Collections;
 import java.util.List;

@@ -10,7 +10,7 @@ import io.ebeaninternal.server.bind.DataBind;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.query.SqlBeanLoad;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import java.sql.SQLException;
 
 public class BeanPropertyComputed extends BeanProperty {

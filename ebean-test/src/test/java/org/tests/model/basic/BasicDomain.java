@@ -6,7 +6,7 @@ import io.ebean.annotation.WhenModified;
 import io.ebean.bean.DynamicEntity;
 import io.ebean.bean.ElementBean;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
