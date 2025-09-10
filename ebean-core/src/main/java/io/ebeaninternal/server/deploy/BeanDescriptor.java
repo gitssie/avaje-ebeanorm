@@ -448,9 +448,9 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    */
   public void setEbeanServer(SpiEbeanServer ebeanServer) {
     this.ebeanServer = ebeanServer;
-    for (BeanPropertyAssocMany<?> assocMany : propertiesMany) {
+    for (BeanProperty prop : propMap.values()) {
       // used for creating lazy loading lists etc
-      assocMany.setEbeanServer(ebeanServer);
+      prop.setEbeanServer(ebeanServer);
     }
   }
 
@@ -1772,7 +1772,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   @Override
   public EntityBean createEntityBean2(boolean readOnlyNoIntercept) {
     if (readOnlyNoIntercept) {
-      return (EntityBean) prototypeEntityBean._ebean_newInstanceReadOnly();
+      return dynamicClass ? createPrototypeEntityBean(beanType) : (EntityBean) prototypeEntityBean._ebean_newInstanceReadOnly();
     }
     return createEntityBean(false);
   }

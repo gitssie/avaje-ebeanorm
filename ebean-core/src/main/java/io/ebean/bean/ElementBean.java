@@ -10,8 +10,7 @@ import java.util.*;
 
 public final class ElementBean implements EntityBean, Map<String, Object> {
   private static final long serialVersionUID = 8742536671024715601L;
-  private static final String[] EMPTY_PROP = new String[0];
-  private String[] properties = EMPTY_PROP;
+  private String[] properties = new String[0];
   private EntityBeanIntercept intercept;
   private Map<String, Integer> propMap;
   private Map<String, Object> rawData;
@@ -19,7 +18,7 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
   public ElementBean(Map<String, Object> rawData) {
     this.rawData = rawData;
     this.propMap = Collections.EMPTY_MAP;
-    this.intercept = new InterceptReadWrite(this);
+    this.intercept = new InterceptReadOnly(this);
   }
 
   public ElementBean() {
@@ -108,12 +107,9 @@ public final class ElementBean implements EntityBean, Map<String, Object> {
     return rawData.put(key, newVal);
   }
 
-  public void _ebean_setInterceptProperties(String[] properties, Map<String, Integer> propMap) {
+  public void _ebean_setIntercept(String[] properties, Map<String, Integer> propMap, EntityBeanIntercept intercept) {
     this.properties = properties;
     this.propMap = propMap;
-  }
-
-  public void _ebean_setIntercept(EntityBeanIntercept intercept) {
     this.intercept = intercept;
     for (String key : rawData.keySet()) {
       Integer fieldIndex = propMap.get(key);

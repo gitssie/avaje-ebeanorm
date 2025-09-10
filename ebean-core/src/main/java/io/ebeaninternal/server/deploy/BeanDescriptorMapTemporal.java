@@ -326,9 +326,12 @@ public class BeanDescriptorMapTemporal {
   private Function<EntityBean, EntityBean> elementBeanSupplier(int elementFieldIndex, int slotIndex, String[] properties, Map<String, Integer> propMap) {
     return (bean) -> {
       ElementBean element = (ElementBean) bean._ebean_getField(elementFieldIndex);
+      if (element == null) {
+        element = new ElementBean();
+        bean._ebean_setField(elementFieldIndex, element);
+      }
       if (element._ebean_getPropertyNames() != properties) {
-        element._ebean_setInterceptProperties(properties, propMap);
-        element._ebean_setIntercept(new BeanElementPropertyIntercept(new InterceptReadWrite(element), bean, elementFieldIndex, slotIndex));
+        element._ebean_setIntercept(properties, propMap, new BeanElementPropertyIntercept(new InterceptReadWrite(element), bean, elementFieldIndex, slotIndex));
       }
       return element;
     };
