@@ -2,8 +2,8 @@ package org.tests.model.basic.cache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.UniqueConstraint;
+import javax.persistence.Entity;
+import javax.persistence.UniqueConstraint;
 
 @Cache(naturalKey = "appName")
 @Entity

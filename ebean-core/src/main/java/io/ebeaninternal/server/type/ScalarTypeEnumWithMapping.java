@@ -4,7 +4,7 @@ import io.ebean.core.type.DataBinder;
 import io.ebean.core.type.DataReader;
 import io.ebean.core.type.ScalarType;
 
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedHashSet;

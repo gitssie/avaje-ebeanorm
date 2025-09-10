@@ -21,18 +21,15 @@ import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.type.ScalarTypeWrapper;
 import io.ebeanservice.docstore.api.mapping.DocPropertyOptions;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import javax.persistence.EmbeddedId;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.Version;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Description of a property of a bean. Includes its deployment information such
@@ -125,7 +122,7 @@ public class DeployBeanProperty {
   /**
    * The reflected field.
    */
-  private Field field;
+  private Optional<Field> field;
   /**
    * The bean type.
    */
@@ -150,6 +147,8 @@ public class DeployBeanProperty {
   private int dbType;
   private final DeployDocPropertyOptions docMapping = new DeployDocPropertyOptions();
   private int propertyIndex;
+  private int fieldIndex = -1;
+  private long propertyId;
   private BeanPropertyGetter getter;
   private BeanPropertySetter setter;
   /**
@@ -199,9 +198,10 @@ public class DeployBeanProperty {
   }
 
   public int getSortOverride() {
-    if (field == null) {
+    if (field.isEmpty()) {
       return 0;
     }
+    Field field = this.field.get();
     if (AnnotationUtil.get(field, Id.class) != null) {
       return ID_ORDER;
     } else if (AnnotationUtil.get(field, EmbeddedId.class) != null) {
@@ -219,6 +219,7 @@ public class DeployBeanProperty {
   }
 
   private boolean isAuditProperty() {
+    Field field = this.field.get();
     return (AnnotationUtil.has(field, WhenCreated.class)
       || AnnotationUtil.has(field, WhenModified.class)
       || AnnotationUtil.has(field, WhoModified.class)
@@ -384,6 +385,14 @@ public class DeployBeanProperty {
     this.propertyIndex = propertyIndex;
   }
 
+  public int getFieldIndex() {
+    return fieldIndex;
+  }
+
+  public void setFieldIndex(int fieldIndex) {
+    this.fieldIndex = fieldIndex;
+  }
+
   public BeanPropertyGetter getGetter() {
     return getter;
   }
@@ -446,14 +455,14 @@ public class DeployBeanProperty {
    * Return the bean Field associated with this property.
    */
   public Field getField() {
-    return field;
+    return field == null ? null : field.orElse(null);
   }
 
   /**
    * Set the bean Field associated with this property.
    */
   public void setField(Field field) {
-    this.field = field;
+    this.field = Optional.ofNullable(field);
   }
 
   public boolean isNaturalKey() {
@@ -1042,7 +1051,14 @@ public class DeployBeanProperty {
   }
 
   public void initMetaAnnotations(Set<Class<?>> metaAnnotationsFilter) {
-    metaAnnotations = AnnotationUtil.metaFindAllFor(field, metaAnnotationsFilter);
+    if (field.isEmpty()) {
+      return;
+    }
+    metaAnnotations = AnnotationUtil.metaFindAllFor(field.get(), metaAnnotationsFilter);
+  }
+
+  public void initAnnotations(Set<Annotation> annotations) {
+    metaAnnotations = annotations;
   }
 
   @SuppressWarnings("unchecked")
@@ -1151,5 +1167,13 @@ public class DeployBeanProperty {
           return null;
       }
 
+  }
+
+  public long getPropertyId() {
+    return propertyId;
+  }
+
+  public void setPropertyId(long propertyId) {
+    this.propertyId = propertyId;
   }
 }

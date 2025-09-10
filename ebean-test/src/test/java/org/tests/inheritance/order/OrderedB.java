@@ -1,6 +1,6 @@
 package org.tests.inheritance.order;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class OrderedB extends OrderedParent {

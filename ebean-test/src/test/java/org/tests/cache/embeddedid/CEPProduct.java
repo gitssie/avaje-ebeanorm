@@ -2,7 +2,7 @@ package org.tests.cache.embeddedid;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Cache

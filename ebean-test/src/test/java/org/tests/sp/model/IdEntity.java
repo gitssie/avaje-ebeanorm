@@ -1,6 +1,6 @@
 package org.tests.sp.model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @MappedSuperclass

@@ -3,7 +3,7 @@ package io.ebeaninternal.server.deploy;
 import io.ebean.config.BeanNotRegisteredException;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 
-import jakarta.persistence.Column;
+import javax.persistence.Column;
 import java.util.Map;
 
 /**

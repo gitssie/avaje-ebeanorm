@@ -3,7 +3,7 @@ package org.tests.model.history;
 import io.ebean.annotation.History;
 import org.tests.model.draftable.BaseDomain;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @History
 @Entity

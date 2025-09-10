@@ -1,6 +1,6 @@
 package org.tests.model.pview;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.util.UUID;
 

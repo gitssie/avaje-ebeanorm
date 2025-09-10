@@ -2,8 +2,8 @@ package org.tests.model.cache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 @Entity
 @Cache(enableQueryCache = true, enableBeanCache = true)

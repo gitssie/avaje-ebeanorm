@@ -1,5 +1,7 @@
 package io.ebeaninternal.server.query;
 
+import io.ebean.bean.BeanCollection;
+import io.ebean.bean.EntityBean;
 import io.ebean.core.type.ScalarDataReader;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.DbReadContext;
@@ -57,6 +59,10 @@ public interface STreeProperty extends ScalarDataReader<Object> {
    */
   boolean isFormula();
 
+  default boolean isComputed()  {
+    return false;
+  }
+
   /**
    * Return the encryption key as a string value (when the property is encrypted).
    */
@@ -106,5 +112,8 @@ public interface STreeProperty extends ScalarDataReader<Object> {
 
   default void extraIncludes(Set<String> predicateIncludes) {
     // do nothing
+  }
+  default BeanCollection<?> createReference(EntityBean localBean, boolean forceNewReference) {
+    return null;
   }
 }

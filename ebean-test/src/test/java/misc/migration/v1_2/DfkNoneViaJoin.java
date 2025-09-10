@@ -1,6 +1,6 @@
 package misc.migration.v1_2;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "migtest_fk_none_via_join")

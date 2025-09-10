@@ -1,7 +1,7 @@
 package org.tests.model.basic;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class CarAccessory extends BasicDomain {

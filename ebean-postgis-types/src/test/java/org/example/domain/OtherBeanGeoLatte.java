@@ -9,9 +9,9 @@ import org.geolatte.geom.MultiPolygon;
 import org.geolatte.geom.Point;
 import org.geolatte.geom.Polygon;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Table(name="mybean")

@@ -1,6 +1,6 @@
 package org.tests.model.pview;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 import java.util.UUID;
 

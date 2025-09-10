@@ -2,10 +2,10 @@ package org.example.records;
 
 import io.ebean.Model;
 
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Version;
 
 @Entity
 public class Contact extends Model {

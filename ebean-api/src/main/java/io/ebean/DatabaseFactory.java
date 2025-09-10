@@ -3,7 +3,7 @@ package io.ebean;
 import io.ebean.config.ContainerConfig;
 import io.ebean.service.SpiContainer;
 import io.ebean.service.SpiContainerFactory;
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 import java.util.concurrent.locks.ReentrantLock;
 

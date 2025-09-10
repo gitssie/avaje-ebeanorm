@@ -1,6 +1,6 @@
 package org.tests.inheritance.cascadedelete;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class SimpleBean extends RootBean {

@@ -1,9 +1,9 @@
 package org.tests.model.embedded;
 
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Version;
 
 @Entity
 public class EPerAddr {

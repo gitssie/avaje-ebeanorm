@@ -1,6 +1,6 @@
 package org.tests.query.cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "e_position")

@@ -2,7 +2,7 @@ package org.tests.model.carwheel;
 
 import io.ebean.annotation.Aggregation;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

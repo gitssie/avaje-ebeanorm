@@ -7,6 +7,7 @@ import io.ebean.annotation.Where;
 import io.ebean.config.NamingConvention;
 import io.ebeaninternal.api.CoreLog;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
+import io.ebeaninternal.server.deploy.BeanDescriptorMap;
 import io.ebeaninternal.server.deploy.BeanTable;
 import io.ebeaninternal.server.deploy.PropertyForeignKey;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
@@ -14,19 +15,19 @@ import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
 import io.ebeaninternal.server.deploy.meta.DeployTableJoinColumn;
 import io.ebeaninternal.server.query.SqlJoinType;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 import static java.lang.System.Logger.Level.INFO;
 
 /**
  * Read the deployment annotations for Associated One beans.
  */
-final class AnnotationAssocOnes extends AnnotationAssoc {
+class AnnotationAssocOnes extends AnnotationAssoc {
 
   /**
    * Create with the deploy Info.
    */
-  AnnotationAssocOnes(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorManager factory) {
+  AnnotationAssocOnes(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorMap factory) {
     super(info, readConfig, factory);
   }
 
@@ -42,7 +43,7 @@ final class AnnotationAssocOnes extends AnnotationAssoc {
     }
   }
 
-  private void readAssocOne(DeployBeanPropertyAssocOne<?> prop) {
+  protected void readAssocOne(DeployBeanPropertyAssocOne<?> prop) {
     ManyToOne manyToOne = get(prop, ManyToOne.class);
     if (manyToOne != null) {
       readManyToOne(manyToOne, prop);
@@ -102,11 +103,8 @@ final class AnnotationAssocOnes extends AnnotationAssoc {
     if (nonNull != null) {
       prop.setNullable(false);
     }
-    if (readConfig.isValidationNotNull(prop)) {
-      // overrides optional attribute of ManyToOne etc
-      prop.setNullable(false);
-      prop.getTableJoin().setType(SqlJoinType.INNER);
-    }
+
+    initValidation(prop);
 
     // check for manually defined joins
     BeanTable beanTable = prop.getBeanTable();
@@ -143,6 +141,14 @@ final class AnnotationAssocOnes extends AnnotationAssoc {
 
         beanTable.createJoinColumn(fkeyPrefix, prop.getTableJoin(), true, prop.getSqlFormulaSelect());
       }
+    }
+  }
+
+  protected void initValidation(DeployBeanPropertyAssocOne<?> prop) {
+    if (readConfig.isValidationNotNull(prop)) {
+      // overrides optional attribute of ManyToOne etc
+      prop.setNullable(false);
+      prop.getTableJoin().setType(SqlJoinType.INNER);
     }
   }
 

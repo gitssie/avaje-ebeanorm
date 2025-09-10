@@ -3,6 +3,7 @@ package io.ebeaninternal.server.query;
 import io.ebean.bean.EntityBean;
 import io.ebean.bean.EntityBeanIntercept;
 import io.ebeaninternal.api.SpiQuery.Mode;
+import io.ebeaninternal.server.deploy.BeanElementHelper;
 import io.ebeaninternal.server.deploy.BeanProperty;
 import io.ebeaninternal.server.deploy.DbReadContext;
 
@@ -14,21 +15,22 @@ import io.ebeaninternal.server.deploy.DbReadContext;
  * </p>
  */
 public final class SqlBeanLoad {
-
   private final DbReadContext ctx;
   private final EntityBean bean;
   private final EntityBeanIntercept ebi;
+  private final BeanElementHelper helper;
   private final Class<?> type;
   private final boolean lazyLoading;
   private final boolean rawSql;
 
-  SqlBeanLoad(DbReadContext ctx, Class<?> type, EntityBean bean, Mode queryMode) {
+  SqlBeanLoad(STreeType desc, DbReadContext ctx, Class<?> type, EntityBean bean, Mode queryMode) {
     this.ctx = ctx;
     this.rawSql = ctx.isRawSql();
     this.type = type;
     this.lazyLoading = queryMode == Mode.LAZYLOAD_BEAN;
     this.bean = bean;
     this.ebi = bean == null ? null : bean._ebean_getIntercept();
+    this.helper = new BeanElementHelper(desc, bean, ebi);
   }
 
   /**
@@ -50,7 +52,7 @@ public final class SqlBeanLoad {
       return null;
     }
     if ((bean == null)
-      || (lazyLoading && ebi.isLoadedProperty(prop.propertyIndex()))
+      || (lazyLoading && helper.isLoadedProperty(prop))
       || (type != null && !prop.isAssignableFrom(type))) {
       // ignore this property
       // ... null: bean already in persistence context

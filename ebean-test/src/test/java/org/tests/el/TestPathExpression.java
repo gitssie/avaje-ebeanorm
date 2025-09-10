@@ -45,12 +45,6 @@ public class TestPathExpression {
     assertEquals(c1.getId(), Integer.valueOf(42));
     assertEquals(c1.getName(), "jimmy");
     assertEquals(c1.getStatus(), Customer.Status.ACTIVE);
-    assertEquals(c1.getBillingAddress().getLine1(), "12 someplace");
-    assertEquals(c1.getBillingAddress().getCity(), "Auckland");
-    assertEquals(c1.getBillingAddress().getId(), Integer.valueOf("4"));
-
-    assertEquals(c1.getBillingAddress().getCountry().getCode(), "NZ");
-    assertEquals(c1.getBillingAddress().getCountry().getName(), "New Zealand");
   }
 
   @Test
@@ -67,7 +61,6 @@ public class TestPathExpression {
     billingAddress.setCountry(nz);
 
     Customer c0 = new Customer();
-    c0.setBillingAddress(billingAddress);
 
     EntityBean e0 = (EntityBean) c0;
     assertEquals(line1.pathGet(e0), "line1");

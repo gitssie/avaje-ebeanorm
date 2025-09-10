@@ -46,10 +46,7 @@ public class TestCacheCustomer extends BaseTestCase {
       if (billingAddress != null) {
         billingAddress.getLine1();
       }
-      Address shippingAddress = customer.getShippingAddress();
-      if (shippingAddress != null) {
-        shippingAddress.getLine1();
-      }
+
       List<Contact> contacts = customer.getContacts();
       for (Contact contact : contacts) {
         contact.getFirstName();

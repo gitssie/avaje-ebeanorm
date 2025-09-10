@@ -1,6 +1,6 @@
 package org.tests.inheritance;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 
 @Entity

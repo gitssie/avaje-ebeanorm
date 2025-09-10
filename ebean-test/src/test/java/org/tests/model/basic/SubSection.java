@@ -2,8 +2,8 @@ package org.tests.model.basic;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
 @Cache
 @Entity

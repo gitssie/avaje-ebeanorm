@@ -2,7 +2,7 @@ package org.tests.model.onetoone;
 
 import io.ebean.Finder;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class OtoSdMaster {

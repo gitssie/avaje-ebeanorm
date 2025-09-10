@@ -1,6 +1,6 @@
 package org.tests.model.m2m;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

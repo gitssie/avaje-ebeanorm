@@ -2,7 +2,7 @@ package org.example.records;
 
 import org.jspecify.annotations.NullMarked;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 import java.util.Objects;
 
 @NullMarked

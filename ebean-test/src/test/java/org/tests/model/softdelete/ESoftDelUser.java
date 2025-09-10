@@ -1,8 +1,8 @@
 package org.tests.model.softdelete;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import java.util.List;
 
 @Entity

@@ -2,8 +2,8 @@ package org.tests.batchinsert.o2o;
 
 import io.ebean.annotation.NotNull;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.UUID;
 
 @Entity

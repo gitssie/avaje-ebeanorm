@@ -2,10 +2,10 @@ package org.tests.model.onetoone.album;
 
 import io.ebean.Finder;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToOne;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToOne;
 
 @Entity
 public class Album extends BaseModel {

@@ -5,7 +5,7 @@ import io.ebean.DB;
 import org.junit.jupiter.api.Test;
 import org.tests.model.basic.EBasicWithLifecycleExceptions;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

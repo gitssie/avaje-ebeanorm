@@ -1,6 +1,6 @@
 package org.tests.inheritance.model;
 
-import jakarta.persistence.MappedSuperclass;
+import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
 public class AbstractBaseClass {

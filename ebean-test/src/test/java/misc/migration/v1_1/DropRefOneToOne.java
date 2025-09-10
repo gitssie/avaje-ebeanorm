@@ -1,6 +1,6 @@
 package misc.migration.v1_1;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "drop_ref_one_to_one")

@@ -2,9 +2,9 @@ package org.tests.expression.bitwise;
 
 import io.ebean.Model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Version;
 
 @Entity
 public class BwBean extends Model {

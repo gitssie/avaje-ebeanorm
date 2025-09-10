@@ -1,6 +1,6 @@
 package org.tests.model.map;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

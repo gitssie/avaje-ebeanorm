@@ -6,7 +6,7 @@ import io.ebean.*;
 import io.ebeaninternal.api.SpiExpressionList;
 import io.ebeaninternal.api.SpiQuery;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.util.*;
 
 @NullMarked

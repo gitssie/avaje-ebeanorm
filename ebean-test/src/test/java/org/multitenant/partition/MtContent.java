@@ -1,6 +1,6 @@
 package org.multitenant.partition;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class MtContent extends MtTenantAware {

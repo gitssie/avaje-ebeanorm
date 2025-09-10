@@ -2,9 +2,9 @@ package org.tests.model.basic.cache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * Cached bean for compound natural key.

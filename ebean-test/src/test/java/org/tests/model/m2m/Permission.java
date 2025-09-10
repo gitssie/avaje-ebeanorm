@@ -2,7 +2,7 @@ package org.tests.model.m2m;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.Set;
 import java.util.UUID;
 

@@ -13,7 +13,7 @@ import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.dbmigration.model.CurrentModel;
 import io.ebeaninternal.extraddl.model.ExtraDdlXmlReader;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;

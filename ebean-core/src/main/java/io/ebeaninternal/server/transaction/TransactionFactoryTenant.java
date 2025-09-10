@@ -4,7 +4,7 @@ import io.ebean.config.CurrentTenantProvider;
 import io.ebean.util.JdbcClose;
 import io.ebeaninternal.api.SpiTransaction;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.Connection;
 import java.sql.SQLException;
 

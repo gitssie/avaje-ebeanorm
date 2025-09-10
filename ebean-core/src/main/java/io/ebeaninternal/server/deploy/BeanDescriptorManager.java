@@ -43,9 +43,9 @@ import io.ebeaninternal.xmapping.api.XmapRawSql;
 import io.ebeanservice.docstore.api.DocStoreBeanAdapter;
 import io.ebeanservice.docstore.api.DocStoreFactory;
 
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PersistenceException;
-import jakarta.persistence.Transient;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.PersistenceException;
+import javax.persistence.Transient;
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -58,70 +58,70 @@ import static java.lang.System.Logger.Level.*;
 /**
  * Creates BeanDescriptors.
  */
-public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeManager {
+public class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTypeManager {
 
   private static final System.Logger log = CoreLog.internal;
 
   private static final BeanDescComparator beanDescComparator = new BeanDescComparator();
   public static final String JAVA_LANG_RECORD = "java.lang.Record";
 
-  private final ReadAnnotations readAnnotations;
-  private final TransientProperties transientProperties;
-  private final DeployInherit deplyInherit;
-  private final BeanPropertyAccess beanPropertyAccess = new EnhanceBeanPropertyAccess();
-  private final DeployUtil deployUtil;
-  private final PersistControllerManager persistControllerManager;
-  private final PostLoadManager postLoadManager;
-  private final PostConstructManager postConstructManager;
-  private final BeanFinderManager beanFinderManager;
-  private final PersistListenerManager persistListenerManager;
-  private final BeanQueryAdapterManager beanQueryAdapterManager;
-  private final NamingConvention namingConvention;
-  private final DeployCreateProperties createProperties;
-  private final BeanManagerFactory beanManagerFactory;
-  private final DatabaseBuilder.Settings config;
-  private final ChangeLogListener changeLogListener;
-  private final ChangeLogRegister changeLogRegister;
-  private final ChangeLogPrepare changeLogPrepare;
-  private final DocStoreFactory docStoreFactory;
-  private final MultiValueBind multiValueBind;
-  private final TypeManager typeManager;
-  private final BootupClasses bootupClasses;
-  private final String serverName;
-  private final List<BeanDescriptor<?>> elementDescriptors = new ArrayList<>();
-  private final Map<Class<?>, BeanTable> beanTableMap = new HashMap<>();
-  private final Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
-  private final Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
-  private final Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
-  private final Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
-  private final Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
-  private final DbIdentity dbIdentity;
-  private final DataSource dataSource;
-  private final DatabasePlatform databasePlatform;
-  private final SpiCacheManager cacheManager;
-  private final BackgroundExecutor backgroundExecutor;
-  private final EncryptKeyManager encryptKeyManager;
-  private final IdBinderFactory idBinderFactory;
-  private final BeanLifecycleAdapterFactory beanLifecycleAdapterFactory;
-  private final String asOfViewSuffix;
-  private final boolean jacksonCorePresent;
-  private final int queryPlanTTLSeconds;
-  private final BindMaxLength bindMaxLength;
-  private int entityBeanCount;
-  private List<BeanDescriptor<?>> immutableDescriptorList;
+  protected ReadAnnotations readAnnotations;
+  protected TransientProperties transientProperties;
+  protected DeployInherit deplyInherit;
+  protected BeanPropertyAccess beanPropertyAccess = new EnhanceBeanPropertyAccess();
+  protected DeployUtil deployUtil;
+  protected PersistControllerManager persistControllerManager;
+  protected PostLoadManager postLoadManager;
+  protected PostConstructManager postConstructManager;
+  protected BeanFinderManager beanFinderManager;
+  protected PersistListenerManager persistListenerManager;
+  protected BeanQueryAdapterManager beanQueryAdapterManager;
+  protected NamingConvention namingConvention;
+  protected DeployCreateProperties createProperties;
+  protected BeanManagerFactory beanManagerFactory;
+  protected DatabaseBuilder.Settings config;
+  protected ChangeLogListener changeLogListener;
+  protected ChangeLogRegister changeLogRegister;
+  protected ChangeLogPrepare changeLogPrepare;
+  protected DocStoreFactory docStoreFactory;
+  protected MultiValueBind multiValueBind;
+  protected TypeManager typeManager;
+  protected BootupClasses bootupClasses;
+  protected String serverName;
+  protected List<BeanDescriptor<?>> elementDescriptors = new ArrayList<>();
+  protected Map<Class<?>, BeanTable> beanTableMap = new HashMap<>();
+  protected Map<String, BeanDescriptor<?>> descMap = new HashMap<>();
+  protected Map<String, BeanDescriptor<?>> descQueueMap = new HashMap<>();
+  protected Map<String, BeanManager<?>> beanManagerMap = new HashMap<>();
+  protected Map<String, List<BeanDescriptor<?>>> tableToDescMap = new HashMap<>();
+  protected Map<String, List<BeanDescriptor<?>>> tableToViewDescMap = new HashMap<>();
+  protected DbIdentity dbIdentity;
+  protected DataSource dataSource;
+  protected DatabasePlatform databasePlatform;
+  protected SpiCacheManager cacheManager;
+  protected BackgroundExecutor backgroundExecutor;
+  protected EncryptKeyManager encryptKeyManager;
+  protected IdBinderFactory idBinderFactory;
+  protected BeanLifecycleAdapterFactory beanLifecycleAdapterFactory;
+  protected String asOfViewSuffix;
+  protected boolean jacksonCorePresent;
+  protected int queryPlanTTLSeconds;
+  protected BindMaxLength bindMaxLength;
+  protected int entityBeanCount;
+  protected List<BeanDescriptor<?>> immutableDescriptorList;
   /**
    * Map of base tables to 'with history views' used to support 'as of' queries.
    */
-  private final Map<String, String> asOfTableMap = new HashMap<>();
+  protected Map<String, String> asOfTableMap = new HashMap<>();
   /**
    * Map of base tables to 'draft' tables.
    */
-  private final Map<String, String> draftTableMap = new HashMap<>();
+  protected Map<String, String> draftTableMap = new HashMap<>();
 
   // temporary collections used during startup and then cleared
-  private Map<Class<?>, DeployBeanInfo<?>> deployInfoMap = new HashMap<>();
-  private Set<Class<?>> embeddedIdTypes = new HashSet<>();
-  private List<DeployBeanInfo<?>> embeddedBeans = new ArrayList<>();
+  protected Map<Class<?>, DeployBeanInfo<?>> deployInfoMap = new HashMap<>();
+  protected Set<Class<?>> embeddedIdTypes = new HashSet<>();
+  protected List<DeployBeanInfo<?>> embeddedBeans = new ArrayList<>();
 
   /**
    * Create for a given database dbConfig.
@@ -219,7 +219,7 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
   /**
    * Return the versions between timestamp suffix based on the DbHistorySupport.
    */
-  private String versionsBetweenSuffix(DatabasePlatform databasePlatform, DatabaseBuilder.Settings config) {
+  protected String versionsBetweenSuffix(DatabasePlatform databasePlatform, DatabaseBuilder.Settings config) {
     DbHistorySupport historySupport = databasePlatform.historySupport();
     // with historySupport returns a simple view suffix or the sql2011 versions between timestamp suffix
     return (historySupport == null) ? config.getAsOfViewSuffix() : historySupport.getVersionsBetweenSuffix(config.getAsOfViewSuffix());
@@ -317,10 +317,10 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
       readTableToDescriptor();
       logStatus();
 
-      // clear collections we no longer need
-      embeddedIdTypes = null;
-      embeddedBeans = null;
-      deployInfoMap = null;
+      // to unmodifiable collections that we use late
+      embeddedIdTypes = Collections.unmodifiableSet(embeddedIdTypes);
+      embeddedBeans = Collections.unmodifiableList(embeddedBeans);
+      deployInfoMap = Collections.unmodifiableMap(deployInfoMap);
       return asOfTableMap;
     } catch (BeanNotEnhancedException e) {
       throw e;
@@ -602,7 +602,7 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
       + " If you don't explicitly list the entity classes to use Ebean will search for them in the classpath.";
   }
 
-  private BeanManager<?> beanManager(String beanClassName) {
+  protected BeanManager<?> beanManager(String beanClassName) {
     return beanManagerMap.get(beanClassName);
   }
 
@@ -1203,7 +1203,7 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
   /**
    * Set the Identity generation mechanism.
    */
-  private <T> void setIdGeneration(DeployBeanDescriptor<T> desc) {
+  protected  <T> void setIdGeneration(DeployBeanDescriptor<T> desc) {
     if (desc.getIdGenerator() != null) {
       // already assigned (So custom or UUID)
       return;
@@ -1284,7 +1284,7 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
    * Enums are treated a bit differently in that they always have a ScalarType
    * as one is built for them.
    */
-  private void setScalarType(DeployBeanDescriptor<?> deployDesc) {
+  protected void setScalarType(DeployBeanDescriptor<?> deployDesc) {
     for (DeployBeanProperty prop : deployDesc.propertiesAll()) {
       if (!(prop instanceof DeployBeanPropertyAssoc<?>)) {
         deployUtil.setScalarType(prop);
@@ -1342,7 +1342,7 @@ public final class BeanDescriptorManager implements BeanDescriptorMap, SpiBeanTy
    * also assumed that Embedded beans do NOT themselves contain Embedded beans
    * which contain version properties.
    */
-  private void setConcurrencyMode(DeployBeanDescriptor<?> desc) {
+  protected void setConcurrencyMode(DeployBeanDescriptor<?> desc) {
     if (desc.getConcurrencyMode() != null) {
       // concurrency mode explicitly set during deployment
       return;

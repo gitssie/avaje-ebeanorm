@@ -6,7 +6,7 @@ import io.ebean.Transaction;
 import io.ebean.annotation.TxIsolation;
 import org.junit.jupiter.api.Test;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.Connection;
 
 import static org.assertj.core.api.Assertions.fail;

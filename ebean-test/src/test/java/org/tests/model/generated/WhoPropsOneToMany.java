@@ -5,7 +5,7 @@ import io.ebean.annotation.WhenModified;
 import io.ebean.annotation.WhoCreated;
 import io.ebean.annotation.WhoModified;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**

@@ -1,7 +1,7 @@
 package org.tests.model.softdelete;
 
 import io.ebean.annotation.SoftDelete;
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @SuppressWarnings("unused")
 @Entity

@@ -3,7 +3,7 @@ package org.tests.model.composite;
 
 import io.ebean.annotation.Formula;
 import io.ebean.annotation.Index;
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class DataWithFormula {

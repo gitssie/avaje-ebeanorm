@@ -1,6 +1,6 @@
 package org.tests.o2m.lazy;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

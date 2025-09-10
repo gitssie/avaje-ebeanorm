@@ -1,7 +1,7 @@
 package org.tests.model.mappedsuper;
 
-import jakarta.persistence.MappedSuperclass;
-//import jakarta.persistence.Transient;
+import javax.persistence.MappedSuperclass;
+//import javax.persistence.Transient;
 
 @MappedSuperclass
 public class NotEnhancedMappedSuper {

@@ -1,6 +1,6 @@
 package org.tests.sets;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;

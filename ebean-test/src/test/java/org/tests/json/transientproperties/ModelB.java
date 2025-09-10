@@ -3,7 +3,7 @@ package org.tests.json.transientproperties;
 
 import io.ebean.annotation.Sql;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Sql
 @Entity

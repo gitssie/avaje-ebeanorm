@@ -2,7 +2,7 @@ package org.tests.model.basic;
 
 import io.ebean.annotation.Encrypted;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity

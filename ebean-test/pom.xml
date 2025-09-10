@@ -88,7 +88,7 @@
     </dependency>
 
     <!-- Including JAXB for DB Migration generation with Java 11+ -->
-    <!-- JAVAX-DEPENDENCY-START ___
+    <!-- JAVAX-DEPENDENCY-START -->
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
@@ -100,8 +100,8 @@
       <version>1.2.1</version>
       <scope>provided</scope>
     </dependency>
-    ____ JAVAX-DEPENDENCY-END -->
-    <!-- JAKARTA-DEPENDENCY-START -->
+    <!-- JAVAX-DEPENDENCY-END -->
+    <!-- JAKARTA-DEPENDENCY-START ___
     <dependency>
       <groupId>jakarta.xml.bind</groupId>
       <artifactId>jakarta.xml.bind-api</artifactId>
@@ -113,7 +113,7 @@
       <version>4.0.3</version>
       <scope>runtime</scope>
     </dependency>
-    <!-- JAKARTA-DEPENDENCY-END -->
+    ____ JAKARTA-DEPENDENCY-END -->
 
     <!-- Not strictly required but bring in H2 Driver because we use it so much -->
     <dependency>

@@ -7,7 +7,7 @@ import io.ebean.bean.EntityBean;
  */
 public final class EnhanceBeanPropertyAccess implements BeanPropertyAccess {
 
-  private static final int CACHE_SIZE = 30;
+  private static final int CACHE_SIZE = 50;
 
   private final BeanPropertyGetter[] getters = initGetters();
   private final BeanPropertySetter[] setters = initSetters();

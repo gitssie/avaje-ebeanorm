@@ -1,6 +1,6 @@
 package org.tests.inheritance.abstrakt;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "blockt")

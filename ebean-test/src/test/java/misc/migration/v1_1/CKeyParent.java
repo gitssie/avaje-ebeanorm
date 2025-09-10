@@ -1,6 +1,6 @@
 package misc.migration.v1_1;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

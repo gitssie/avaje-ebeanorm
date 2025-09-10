@@ -1,7 +1,7 @@
 package org.tests.model.basic.xtra;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
 
 
 @Entity

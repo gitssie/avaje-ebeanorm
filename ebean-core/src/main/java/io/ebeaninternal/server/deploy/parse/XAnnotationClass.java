@@ -1,0 +1,60 @@
+package io.ebeaninternal.server.deploy.parse;
+
+import io.ebean.annotation.ChangeLog;
+import io.ebean.config.TableName;
+import io.ebean.event.changelog.ChangeLogFilter;
+import io.ebeaninternal.server.changelog.DefaultChangeLogRegister;
+import io.ebeaninternal.server.deploy.InheritInfo;
+import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntity;
+
+import javax.persistence.Table;
+
+final class XAnnotationClass {
+  private final DeployBeanDescriptor<?> descriptor;
+  private final String asOfViewSuffix;
+  private final String versionsBetweenSuffix;
+  private XEntity entity;
+
+  XAnnotationClass(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig) {
+    this.entity = info.getEntity();
+    this.descriptor = info.getDescriptor();
+    this.asOfViewSuffix = readConfig.getAsOfViewSuffix();
+    this.versionsBetweenSuffix = readConfig.getVersionsBetweenSuffix();
+  }
+
+  public void parse() {
+    if (entity == null) {
+      return;
+    }
+    setTableName();
+    read(descriptor.getBeanType());
+  }
+
+  private void read(Class<?> cls) {
+    String name = entity.getName();
+    if (name != null && name.trim().length() > 0) {
+      descriptor.setName(name);
+    }
+
+    //changelog
+    ChangeLog changeLog = entity.getAnnotation(ChangeLog.class);
+    if (changeLog != null) {
+      boolean includeInserts = descriptor.getConfig().isChangeLogIncludeInserts();
+      DefaultChangeLogRegister changeLogRegister = new DefaultChangeLogRegister(includeInserts);
+      ChangeLogFilter changeLogFilter = changeLogRegister.getChangeFilter(changeLog);
+      if (changeLogFilter != null) {
+        descriptor.setChangeLogFilter(changeLogFilter);
+      }
+    }
+  }
+
+  private void setTableName() {
+    Table table = entity.getAnnotation(Table.class);
+    if (descriptor.isBaseTableType() && table != null) {
+      // default the TableName using NamingConvention.
+      TableName tableName = new TableName((table.catalog()), (table.schema()), (table.name()));
+      descriptor.setBaseTable(tableName, asOfViewSuffix, versionsBetweenSuffix);
+    }
+  }
+}

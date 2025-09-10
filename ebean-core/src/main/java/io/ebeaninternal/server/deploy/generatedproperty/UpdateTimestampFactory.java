@@ -3,7 +3,7 @@ package io.ebeaninternal.server.deploy.generatedproperty;
 import io.ebean.config.ClassLoadConfig;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;

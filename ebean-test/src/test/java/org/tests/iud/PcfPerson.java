@@ -1,11 +1,11 @@
 package org.tests.iud;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jakarta.persistence.CascadeType.ALL;
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 public class PcfPerson extends PcfModel {

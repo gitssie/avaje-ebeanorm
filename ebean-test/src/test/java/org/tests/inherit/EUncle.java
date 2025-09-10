@@ -1,6 +1,6 @@
 package org.tests.inherit;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "rawinherit_uncle")

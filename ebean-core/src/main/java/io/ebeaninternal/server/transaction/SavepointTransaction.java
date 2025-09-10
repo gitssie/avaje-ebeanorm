@@ -5,7 +5,7 @@ import io.ebeaninternal.api.SpiTransactionProxy;
 import io.ebeaninternal.api.TransactionEvent;
 import io.ebeaninternal.server.util.Str;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;

@@ -1,6 +1,6 @@
 package io.ebean;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 /**
  * Thrown when a foreign key constraint is enforced or a field is too large.

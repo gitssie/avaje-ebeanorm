@@ -24,14 +24,22 @@ public final class GeneratedPropertyFactory {
   private final UuidGeneratedProperty generatedUuid = new UuidGeneratedProperty();
   private final GeneratedWhoModified generatedWhoModified;
   private final GeneratedWhoCreated generatedWhoCreated;
+  private final GeneratedWhoTenant generatedWhoTenant;
   private final ClassLoadConfig classLoadConfig;
   private final Map<String, PlatformIdGenerator> idGeneratorMap = new HashMap<>();
+  private final Map<String, IdGenerator> idGeneratorPureMap = new HashMap<>();
 
   public GeneratedPropertyFactory(boolean offlineMode, DatabaseBuilder.Settings config, List<IdGenerator> idGenerators) {
     this.classLoadConfig = config.getClassLoadConfig();
     this.insertFactory = new InsertTimestampFactory(classLoadConfig);
     this.updateFactory = new UpdateTimestampFactory(classLoadConfig);
     CurrentUserProvider currentUserProvider = config.getCurrentUserProvider();
+    CurrentTenantProvider currentTenantProvider = config.getCurrentTenantProvider();
+    if (currentTenantProvider != null) {
+      generatedWhoTenant = new GeneratedWhoTenant(currentTenantProvider);
+    } else {
+      generatedWhoTenant = null;
+    }
     if (currentUserProvider != null) {
       generatedWhoCreated = new GeneratedWhoCreated(currentUserProvider);
       generatedWhoModified = new GeneratedWhoModified(currentUserProvider);
@@ -55,6 +63,7 @@ public final class GeneratedPropertyFactory {
     if (idGenerators != null) {
       for (IdGenerator idGenerator : idGenerators) {
         idGeneratorMap.put(idGenerator.getName(), new CustomIdGenerator(idGenerator));
+        idGeneratorPureMap.put(idGenerator.getName(), idGenerator);
       }
     }
   }
@@ -101,6 +110,13 @@ public final class GeneratedPropertyFactory {
     property.setGeneratedProperty(generatedWhoModified);
   }
 
+  public void setWhoTenant(DeployBeanProperty property) {
+    if (generatedWhoTenant == null) {
+      throw new IllegalStateException("No CurrentTenantProvider has been set so @TenantId is not supported");
+    }
+    property.setGeneratedProperty(generatedWhoTenant);
+  }
+
   /**
    * Return the named custom IdGenerator (wrapped as a PlatformIdGenerator).
    */
@@ -108,6 +124,9 @@ public final class GeneratedPropertyFactory {
     return idGeneratorMap.get(generatorName);
   }
 
+  public IdGenerator getIdGeneratorPure(String generatorName) {
+    return idGeneratorPureMap.get(generatorName);
+  }
   public void setUuid(DeployBeanProperty prop) {
     prop.setGeneratedProperty(generatedUuid);
   }

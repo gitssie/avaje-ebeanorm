@@ -1,6 +1,6 @@
 package org.example.domain.other;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 import java.util.Objects;
 import java.util.UUID;

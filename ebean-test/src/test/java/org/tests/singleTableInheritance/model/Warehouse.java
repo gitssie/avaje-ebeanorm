@@ -1,6 +1,6 @@
 package org.tests.singleTableInheritance.model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.Set;
 
 @Entity

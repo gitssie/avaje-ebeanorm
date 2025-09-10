@@ -12,7 +12,7 @@ import io.ebeaninternal.server.deploy.IntersectionRow;
 import io.ebeaninternal.server.persist.dml.GenerateDmlRequest;
 import io.ebeaninternal.server.persist.dmlbind.BindableRequest;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 
 /**

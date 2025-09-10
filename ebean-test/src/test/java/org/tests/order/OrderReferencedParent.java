@@ -2,7 +2,7 @@ package org.tests.order;
 
 import io.ebean.annotation.Index;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @MappedSuperclass

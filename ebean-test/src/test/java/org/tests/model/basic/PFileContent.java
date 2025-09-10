@@ -1,7 +1,7 @@
 package org.tests.model.basic;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Lob;
+import javax.persistence.Entity;
+import javax.persistence.Lob;
 
 @Entity
 public class PFileContent extends BasicDomain {

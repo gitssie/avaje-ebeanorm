@@ -1,6 +1,6 @@
 package misc.migration.v1_2;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

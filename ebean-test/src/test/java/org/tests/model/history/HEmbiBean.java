@@ -3,9 +3,9 @@ package org.tests.model.history;
 import io.ebean.Model;
 import io.ebean.annotation.History;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Version;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Version;
 
 @Entity
 @History

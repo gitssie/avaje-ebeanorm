@@ -2,9 +2,9 @@ package org.tests.model.softdelete;
 
 import io.ebean.annotation.SoftDelete;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Version;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Version;
 
 @MappedSuperclass
 public class BaseSoftDelete {

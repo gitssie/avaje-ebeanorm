@@ -2,7 +2,7 @@ package org.tests.model.onetoone.calcd;
 
 import io.ebean.Model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "calcd_input")

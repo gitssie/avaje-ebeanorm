@@ -1,8 +1,8 @@
 package org.tests.timezone;
 
 import javax.annotation.Nullable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.time.LocalTime;
 
 @Entity

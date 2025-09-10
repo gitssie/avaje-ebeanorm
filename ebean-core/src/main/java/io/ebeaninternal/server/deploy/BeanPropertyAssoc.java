@@ -28,7 +28,7 @@ import io.ebeanservice.docstore.api.mapping.DocMappingBuilder;
 import io.ebeanservice.docstore.api.mapping.DocPropertyMapping;
 import io.ebeanservice.docstore.api.support.DocStructure;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -119,6 +119,7 @@ public abstract class BeanPropertyAssoc<T> extends BeanProperty implements STree
 
   void initialiseTargetDescriptor(BeanDescriptorInitContext initContext) {
     targetDescriptor = descriptor.descriptor(targetType);
+    descriptor.owner.listenDescriptor(descriptor.type(), targetType, (e) -> this.targetDescriptor = e);
     if (!isTransient) {
       targetIdBinder = targetDescriptor.idBinder();
       targetInheritInfo = targetDescriptor.inheritInfo();

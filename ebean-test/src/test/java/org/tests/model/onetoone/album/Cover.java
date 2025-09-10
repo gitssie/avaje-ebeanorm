@@ -6,9 +6,9 @@ import io.ebean.annotation.SoftDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PreRemove;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.PreRemove;
 
 @Entity
 public class Cover extends Model {

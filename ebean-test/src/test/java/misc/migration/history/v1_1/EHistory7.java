@@ -1,9 +1,9 @@
 package misc.migration.history.v1_1;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * detects a bug where dropHistoryTable is not applied correctly

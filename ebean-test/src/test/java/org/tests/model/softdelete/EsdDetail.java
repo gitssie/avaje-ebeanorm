@@ -1,7 +1,7 @@
 package org.tests.model.softdelete;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class EsdDetail extends BaseSoftDelete {

@@ -1,7 +1,7 @@
 package org.tests.model.composite;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
 
 @Entity
 public class CkeUser {

@@ -1,8 +1,12 @@
 package org.tests.model.aggregation;
 
 import io.ebean.Model;
+import io.ebean.annotation.Aggregation;
+import io.ebean.annotation.Formula;
+import io.ebean.bean.Computed;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -14,7 +18,7 @@ public class DMachine extends Model {
   private String name;
 
   @ManyToOne
-  private final DOrg organisation;
+  private DOrg organisation;
 
   @Version
   private long version;
@@ -24,6 +28,18 @@ public class DMachine extends Model {
 
   @OneToMany(mappedBy = "machine")
   private List<DMachineAuxUseAgg> auxUseAggs;
+
+  @Aggregation("sum(machineStats.cost)")
+  private Computed<BigDecimal> sumCost;
+
+  @Formula(select = "_b${ta}.total_amount", join = "join (select machine_id, sum(cost * 2) as total_amount " +
+    "from d_machine_stats group by machine_id) as _b${ta} on _b${ta}.machine_id = ${ta}.id")
+  private Computed<BigDecimal> sumCost2;
+
+  private Computed<BigDecimal> value;
+
+  public DMachine() {
+  }
 
   public DMachine(DOrg organisation, String name) {
     this.organisation = organisation;
@@ -77,5 +93,29 @@ public class DMachine extends Model {
 
   public void setAuxUseAggs(List<DMachineAuxUseAgg> auxUseAggs) {
     this.auxUseAggs = auxUseAggs;
+  }
+
+  public Computed<BigDecimal> getSumCost() {
+    return sumCost;
+  }
+
+  public void setSumCost(Computed<BigDecimal> sumCost) {
+    this.sumCost = sumCost;
+  }
+
+  public Computed<BigDecimal> getValue() {
+    return value;
+  }
+
+  public void setValue(Computed<BigDecimal> value) {
+    this.value = value;
+  }
+
+  public Computed<BigDecimal> getSumCost2() {
+    return sumCost2;
+  }
+
+  public void setSumCost2(Computed<BigDecimal> sumCost2) {
+    this.sumCost2 = sumCost2;
   }
 }

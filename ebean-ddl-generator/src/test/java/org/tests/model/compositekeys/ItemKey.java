@@ -1,7 +1,7 @@
 package org.tests.model.compositekeys;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import javax.validation.constraints.Size;
 
 

@@ -9,10 +9,7 @@ import io.ebean.config.NamingConvention;
 import io.ebean.config.TableName;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.CamelCaseHelper;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
-import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.BeanTable;
-import io.ebeaninternal.server.deploy.PropertyForeignKey;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocMany;
@@ -22,28 +19,28 @@ import io.ebeaninternal.server.deploy.meta.DeployTableJoin;
 import io.ebeaninternal.server.deploy.meta.DeployTableJoinColumn;
 import io.ebeaninternal.server.query.SqlJoinType;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.MapKey;
-import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
-import jakarta.persistence.OrderColumn;
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.EnumType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.Lob;
+import javax.persistence.ManyToMany;
+import javax.persistence.MapKey;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.OrderColumn;
 import java.util.Set;
 
 /**
  * Read the deployment annotation for Assoc Many beans.
  */
-final class AnnotationAssocManys extends AnnotationAssoc {
+class AnnotationAssocManys extends AnnotationAssoc {
 
-  AnnotationAssocManys(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorManager factory) {
+  AnnotationAssocManys(DeployBeanInfo<?> info, ReadAnnotationConfig readConfig, BeanDescriptorMap factory) {
     super(info, readConfig, factory);
   }
 
@@ -68,7 +65,7 @@ final class AnnotationAssocManys extends AnnotationAssoc {
     }
   }
 
-  private void read(DeployBeanPropertyAssocMany<?> prop) {
+  protected void read(DeployBeanPropertyAssocMany<?> prop) {
     OneToMany oneToMany = get(prop, OneToMany.class);
     if (oneToMany != null) {
       readToOne(oneToMany, prop);
@@ -173,6 +170,10 @@ final class AnnotationAssocManys extends AnnotationAssoc {
 
   @SuppressWarnings("unchecked")
   private void readElementCollection(DeployBeanPropertyAssocMany<?> prop, ElementCollection elementCollection) {
+    if(!(this.factory instanceof BeanDescriptorManager)){
+      return;
+    }
+    BeanDescriptorManager factory = (BeanDescriptorManager) this.factory;
     prop.setElementCollection();
     if (!elementCollection.targetClass().equals(void.class)) {
       prop.setTargetType(elementCollection.targetClass());
@@ -246,6 +247,7 @@ final class AnnotationAssocManys extends AnnotationAssoc {
       scalar = false;
       DeployBeanPropertyAssocOne valueProp = new DeployBeanPropertyAssocOne<>(elementDescriptor, elementType);
       valueProp.setName("value");
+      valueProp.setDbColumn("value");
       valueProp.setEmbedded();
       valueProp.setElementProperty();
       valueProp.setSortOrder(sortOrder++);

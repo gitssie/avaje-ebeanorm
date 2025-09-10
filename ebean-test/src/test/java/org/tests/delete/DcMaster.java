@@ -1,6 +1,6 @@
 package org.tests.delete;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

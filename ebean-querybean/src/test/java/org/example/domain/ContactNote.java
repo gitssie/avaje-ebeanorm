@@ -2,9 +2,9 @@ package org.example.domain;
 
 import io.ebean.Finder;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.Entity;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class ContactNote extends BaseModel {

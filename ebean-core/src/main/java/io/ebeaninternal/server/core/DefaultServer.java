@@ -26,10 +26,7 @@ import io.ebeaninternal.api.SpiQuery.Type;
 import io.ebeaninternal.server.autotune.AutoTuneService;
 import io.ebeaninternal.server.cache.RemoteCacheEvent;
 import io.ebeaninternal.server.core.timezone.DataTimeZone;
-import io.ebeaninternal.server.deploy.BeanDescriptor;
-import io.ebeaninternal.server.deploy.BeanDescriptorManager;
-import io.ebeaninternal.server.deploy.BeanProperty;
-import io.ebeaninternal.server.deploy.InheritInfo;
+import io.ebeaninternal.server.deploy.*;
 import io.ebeaninternal.server.dto.DtoBeanDescriptor;
 import io.ebeaninternal.server.dto.DtoBeanManager;
 import io.ebeaninternal.server.el.ElFilter;
@@ -44,10 +41,10 @@ import io.ebeaninternal.util.ParamTypeHelper;
 import io.ebeaninternal.util.ParamTypeHelper.TypeInfo;
 import io.ebeanservice.docstore.api.DocStoreIntegration;
 
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.NonUniqueResultException;
-import jakarta.persistence.OptimisticLockException;
-import jakarta.persistence.PersistenceException;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.NonUniqueResultException;
+import javax.persistence.OptimisticLockException;
+import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -2266,5 +2263,9 @@ public final class DefaultServer implements SpiServer, SpiEbeanServer {
 
   List<MetaQueryPlan> queryPlanCollectNow(QueryPlanRequest request) {
     return queryPlanManager.collect(request);
+  }
+
+  public <T extends BeanDescriptorMap> T getBeanDescriptorManager(){
+    return (T)descriptorManager;
   }
 }

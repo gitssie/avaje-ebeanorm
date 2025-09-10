@@ -1,6 +1,6 @@
 package org.tests.cascade;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class RelMaster {

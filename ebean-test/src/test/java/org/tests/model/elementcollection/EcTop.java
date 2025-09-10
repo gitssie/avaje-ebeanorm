@@ -1,9 +1,9 @@
 package org.tests.model.elementcollection;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
-import static jakarta.persistence.CascadeType.ALL;
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 public class EcTop {

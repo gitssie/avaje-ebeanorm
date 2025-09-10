@@ -4,7 +4,7 @@ import io.ebean.core.type.DataReader;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.query.SqlBeanLoad;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 /**
  * Dynamic property based on aggregation (max, min, avg, count).

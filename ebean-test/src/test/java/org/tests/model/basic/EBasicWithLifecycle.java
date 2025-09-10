@@ -6,7 +6,7 @@ import io.ebean.annotation.PreSoftDelete;
 import io.ebean.annotation.SoftDelete;
 
 import javax.annotation.PostConstruct;
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "e_basic_withlife")

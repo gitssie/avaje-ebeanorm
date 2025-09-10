@@ -1,7 +1,7 @@
 package org.tests.inheritance.company.domain;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
 
 /**
  * @author Per-Ingemar Andersson, It-huset i Norden AB

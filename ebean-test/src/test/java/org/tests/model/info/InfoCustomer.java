@@ -3,7 +3,7 @@ package org.tests.model.info;
 import io.ebean.Finder;
 import io.ebean.Model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class InfoCustomer extends Model {

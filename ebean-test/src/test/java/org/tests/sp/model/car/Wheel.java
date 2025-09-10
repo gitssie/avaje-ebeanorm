@@ -2,8 +2,8 @@ package org.tests.sp.model.car;
 
 import org.tests.sp.model.IdEntity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "sp_car_wheel")

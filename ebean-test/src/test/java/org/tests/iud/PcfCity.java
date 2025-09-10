@@ -1,9 +1,9 @@
 package org.tests.iud;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
+import javax.persistence.Entity;
+import javax.persistence.OneToOne;
 
-import static jakarta.persistence.CascadeType.ALL;
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 public class PcfCity extends PcfModel {

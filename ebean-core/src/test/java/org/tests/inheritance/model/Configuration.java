@@ -3,7 +3,7 @@ package org.tests.inheritance.model;
 import io.ebean.annotation.Cache;
 import io.ebean.annotation.ChangeLog;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @ChangeLog
 @Entity

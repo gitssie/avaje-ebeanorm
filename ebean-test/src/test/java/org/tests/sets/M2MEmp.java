@@ -1,6 +1,6 @@
 package org.tests.sets;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;

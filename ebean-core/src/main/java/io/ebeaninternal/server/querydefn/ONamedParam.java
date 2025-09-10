@@ -2,7 +2,7 @@ package io.ebeaninternal.server.querydefn;
 
 import io.ebeaninternal.api.SpiNamedParam;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 /**
  * Named parameter used as placeholder in expressions created by EQL language parsing.

@@ -2,7 +2,7 @@ package org.tests.model.onetoone;
 
 import io.ebean.annotation.DbForeignKey;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.UUID;
 
 @Entity

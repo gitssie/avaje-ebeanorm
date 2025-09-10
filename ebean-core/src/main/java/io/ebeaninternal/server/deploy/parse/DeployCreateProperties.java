@@ -2,6 +2,7 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.Model;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.core.type.ScalarType;
 import io.ebean.util.AnnotationUtil;
 import io.ebeaninternal.api.CoreLog;
@@ -9,7 +10,7 @@ import io.ebeaninternal.server.deploy.ManyType;
 import io.ebeaninternal.server.deploy.meta.*;
 import io.ebeaninternal.server.type.TypeManager;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.lang.reflect.*;
 
 import static java.lang.System.Logger.Level.*;
@@ -21,10 +22,10 @@ import static java.lang.System.Logger.Level.*;
  * one or normal scalar property.
  * </p>
  */
-public final class DeployCreateProperties {
+public class DeployCreateProperties {
 
-  private final DetermineManyType determineManyType;
-  private final TypeManager typeManager;
+  protected final DetermineManyType determineManyType;
+  protected final TypeManager typeManager;
 
   public DeployCreateProperties(TypeManager typeManager) {
     this.typeManager = typeManager;
@@ -45,7 +46,7 @@ public final class DeployCreateProperties {
    * We want to ignore ebean internal fields and some others as well.
    * </p>
    */
-  private boolean ignoreFieldByName(String fieldName) {
+  protected boolean ignoreFieldByName(String fieldName) {
     if (fieldName.startsWith("_ebean_")) {
       // ignore Ebean internal fields
       return true;
@@ -54,7 +55,7 @@ public final class DeployCreateProperties {
     return fieldName.startsWith("ajc$instance$");
   }
 
-  private boolean ignoreField(Field field) {
+  protected boolean ignoreField(Field field) {
     return Modifier.isStatic(field.getModifiers())
       || Modifier.isTransient(field.getModifiers())
       || ignoreFieldByName(field.getName());
@@ -64,7 +65,7 @@ public final class DeployCreateProperties {
    * properties the bean properties from Class. Some of these properties may not map to database
    * columns.
    */
-  private void createProperties(DeployBeanDescriptor<?> desc, Class<?> beanType, int level) {
+  protected void createProperties(DeployBeanDescriptor<?> desc, Class<?> beanType, int level) {
     if (beanType.equals(Model.class)) {
       // ignore all fields on model (_$dbName)
       return;
@@ -118,7 +119,7 @@ public final class DeployCreateProperties {
 
   private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field) {
     Class<?> propertyType = field.getType();
-    if (isSpecialScalarType(field)) {
+    if (isSpecialScalarType(field) || isComputedType(propertyType)) { //check for Computed<T> scalar type (scalar,aggregation,formular)
       return new DeployBeanProperty(desc, propertyType, field.getGenericType());
     }
     // check for Collection type (list, set or map)
@@ -168,11 +169,15 @@ public final class DeployCreateProperties {
       || (AnnotationUtil.has(field, UnmappedJson.class));
   }
 
+  private boolean isComputedType(Class<?> propertyType){
+    return Computed.class == propertyType;
+  }
+
   private boolean isTransientField(Field field) {
     return AnnotationUtil.has(field, Transient.class);
   }
 
-  private DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field, Class<?> beanType) {
+  protected DeployBeanProperty createProp(DeployBeanDescriptor<?> desc, Field field, Class<?> beanType) {
     DeployBeanProperty prop = createProp(desc, field);
     if (prop == null) {
       // transient annotation on unsupported type

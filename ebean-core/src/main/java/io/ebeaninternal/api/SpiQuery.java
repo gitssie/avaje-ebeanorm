@@ -35,7 +35,7 @@ import java.util.Set;
 public interface SpiQuery<T> extends Query<T>, SpiQueryFetch, TxnProfileEventCodes, SpiCancelableQuery {
 
   enum Mode {
-    NORMAL(false), LAZYLOAD_MANY(false), LAZYLOAD_BEAN(true), REFRESH_BEAN(true);
+    NORMAL(false), LAZYLOAD_MANY(false), LAZYLOAD_BEAN(true), REFRESH_BEAN(true), LAZYLOAD_COMPUTED(false);
 
     Mode(boolean loadContextBean) {
       this.loadContextBean = loadContextBean;

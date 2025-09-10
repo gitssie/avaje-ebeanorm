@@ -3,8 +3,8 @@ package org.tests.model.docstore;
 import io.ebean.annotation.DocStore;
 import org.tests.model.basic.Product;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.ManyToOne;
 
 @DocStore
 @DiscriminatorValue("PR")

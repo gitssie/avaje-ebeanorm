@@ -2,7 +2,7 @@ package org.example.records;
 
 import io.ebean.Model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.UUID;
 
 @IdClass(UserSiteId.class)

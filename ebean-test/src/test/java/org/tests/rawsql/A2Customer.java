@@ -2,7 +2,7 @@ package org.tests.rawsql;
 
 import io.ebean.annotation.Sql;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 @Sql

@@ -4,8 +4,8 @@ import io.ebean.annotation.History;
 import io.ebean.annotation.SoftDelete;
 import org.tests.model.draftable.BaseDomain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
+import javax.persistence.Entity;
+import javax.persistence.OneToOne;
 
 @History
 @Entity

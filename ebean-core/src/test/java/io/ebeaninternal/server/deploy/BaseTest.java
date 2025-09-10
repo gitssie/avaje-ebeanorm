@@ -6,7 +6,7 @@ import io.ebean.annotation.Platform;
 import io.ebeaninternal.api.SpiEbeanServer;
 import org.tests.model.basic.Animal;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 public class BaseTest {
 

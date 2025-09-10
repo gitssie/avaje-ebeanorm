@@ -1,6 +1,6 @@
 package org.tests.basic.one2one;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "wheel")

@@ -2,7 +2,7 @@ package org.tests.lazyloadconf;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Cache(enableBeanCache = true)

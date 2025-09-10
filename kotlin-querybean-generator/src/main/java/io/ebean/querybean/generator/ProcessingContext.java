@@ -200,7 +200,7 @@ class ProcessingContext implements Constants {
     return (
       modifiers.contains(Modifier.STATIC) ||
       modifiers.contains(Modifier.TRANSIENT) ||
-      hasAnnotations(field, "jakarta.persistence.Transient")
+      hasAnnotations(field, "javax.persistence.Transient")
     );
   }
 

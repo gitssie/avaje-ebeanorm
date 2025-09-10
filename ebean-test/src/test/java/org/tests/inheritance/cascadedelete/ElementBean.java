@@ -2,9 +2,9 @@ package org.tests.inheritance.cascadedelete;
 
 import io.ebean.annotation.NotNull;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
 @Entity
 public class ElementBean {

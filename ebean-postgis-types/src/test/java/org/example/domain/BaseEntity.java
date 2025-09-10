@@ -1,7 +1,7 @@
 package org.example.domain;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
 abstract class BaseEntity {

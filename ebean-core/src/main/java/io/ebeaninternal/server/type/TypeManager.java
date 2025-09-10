@@ -3,7 +3,7 @@ package io.ebeaninternal.server.type;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 import java.lang.reflect.Type;
 
 /**
@@ -59,6 +59,8 @@ public interface TypeManager {
    * Return the ScalarType used to handle DB ARRAY.
    */
   ScalarType<?> dbArrayType(Class<?> type, Type genericType, boolean nullable);
+
+  ScalarType<?> dbComputedType(Class<?> type, Type genericType, boolean nullable);
 
   /**
    * Return the ScalarType used to handle HSTORE (Map<String,String>).

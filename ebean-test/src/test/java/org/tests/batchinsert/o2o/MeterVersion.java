@@ -2,10 +2,10 @@ package org.tests.batchinsert.o2o;
 
 import io.ebean.annotation.NotNull;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import java.util.UUID;
 
 @Entity

@@ -4,9 +4,9 @@ import io.ebean.Finder;
 import io.ebean.Model;
 import io.ebean.annotation.SoftDelete;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import java.io.Serializable;
 
 @Entity

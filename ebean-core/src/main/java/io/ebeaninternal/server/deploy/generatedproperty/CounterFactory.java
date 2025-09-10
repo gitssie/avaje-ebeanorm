@@ -2,7 +2,7 @@ package io.ebeaninternal.server.deploy.generatedproperty;
 
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Types;

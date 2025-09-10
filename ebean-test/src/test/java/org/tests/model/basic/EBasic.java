@@ -3,9 +3,9 @@ package org.tests.model.basic;
 import io.ebean.annotation.EnumValue;
 import io.ebean.annotation.Index;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 

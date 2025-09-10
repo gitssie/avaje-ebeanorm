@@ -14,7 +14,7 @@ import org.tests.model.basic.EBasicWithUniqueCon;
 import org.tests.model.basic.EOptOneB;
 import org.tests.model.basic.EOptOneC;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 

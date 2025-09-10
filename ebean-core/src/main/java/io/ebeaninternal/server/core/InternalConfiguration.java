@@ -27,6 +27,7 @@ import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.core.timezone.*;
 import io.ebeaninternal.server.deploy.BeanDescriptorManager;
+import io.ebeaninternal.server.deploy.BeanDescriptorManagerTenant;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.parse.DeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.DeployInherit;
@@ -98,7 +99,7 @@ public final class InternalConfiguration {
   private ServerCacheNotify cacheNotify;
   private boolean localL2Caching;
 
-  InternalConfiguration(boolean online, ClusterManager clusterManager, SpiBackgroundExecutor backgroundExecutor,
+  InternalConfiguration(boolean isTenant, boolean online, ClusterManager clusterManager, SpiBackgroundExecutor backgroundExecutor,
                         DatabaseBuilder.Settings config, BootupClasses bootupClasses) {
 
     this.online = online;
@@ -124,7 +125,7 @@ public final class InternalConfiguration {
 
     final InternalConfigXmlMap xmlMap = initExternalMapping();
     this.dtoBeanManager = new DtoBeanManager(typeManager, xmlMap.readDtoMapping());
-    this.beanDescriptorManager = new BeanDescriptorManager(this);
+    this.beanDescriptorManager = isTenant ? new BeanDescriptorManagerTenant(this) : new BeanDescriptorManager(this);
     Map<String, String> asOfTableMapping = beanDescriptorManager.deploy(xmlMap.xmlDeployment());
     Map<String, String> draftTableMap = beanDescriptorManager.draftTableMap();
     beanDescriptorManager.scheduleBackgroundTrim();

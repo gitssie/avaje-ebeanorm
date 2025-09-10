@@ -1,11 +1,11 @@
 package org.tests.cascade;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import java.util.List;
 
-import static jakarta.persistence.CascadeType.ALL;
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 public class COOne {

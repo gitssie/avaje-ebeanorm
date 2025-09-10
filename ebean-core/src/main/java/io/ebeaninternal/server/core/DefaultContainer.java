@@ -14,7 +14,7 @@ import io.ebeaninternal.server.cluster.ClusterManager;
 import io.ebeaninternal.server.core.bootup.BootupClassPathSearch;
 import io.ebeaninternal.server.core.bootup.BootupClasses;
 import io.ebeaninternal.server.executor.DefaultBackgroundExecutor;
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -37,6 +37,7 @@ public final class DefaultContainer implements SpiContainer {
   private final ReentrantLock lock = new ReentrantLock();
   private final ClusterManager clusterManager;
   private final List<EntityClassRegister> entityClassRegisters;
+  boolean isTenant = false;
 
   public DefaultContainer(ContainerConfig containerConfig) {
     this.clusterManager = new ClusterManager(containerConfig);
@@ -44,6 +45,11 @@ public final class DefaultContainer implements SpiContainer {
     // resources such as clustering
     ShutdownManager.registerContainer(this);
     entityClassRegisters = initEntityRegisters();
+  }
+
+  public DefaultContainer(ContainerConfig containerConfig, boolean isTenant) {
+    this(containerConfig);
+    this.isTenant = isTenant;
   }
 
   private List<EntityClassRegister> initEntityRegisters() {
@@ -115,7 +121,7 @@ public final class DefaultContainer implements SpiContainer {
       config.getNamingConvention().setDatabasePlatform(config.getDatabasePlatform());
       // executor and l2 caching service setup early (used during server construction)
       SpiBackgroundExecutor executor = createBackgroundExecutor(config);
-      InternalConfiguration c = new InternalConfiguration(online, clusterManager, executor, config, bootupClasses);
+      InternalConfiguration c = new InternalConfiguration(isTenant, online, clusterManager, executor, config, bootupClasses);
       DefaultServer server = new DefaultServer(c, c.cacheManager());
       // generate and run DDL if required plus other plugins
       if (!DbOffline.isGenerateMigration()) {

@@ -1,6 +1,6 @@
 package org.tests.model;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class EWhoProps extends EWhoPropsSuper {

@@ -1,6 +1,6 @@
 package org.tests.model.generated;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 /**
  * @author Vilmos Nagy  <vilmos.nagy@outlook.com>

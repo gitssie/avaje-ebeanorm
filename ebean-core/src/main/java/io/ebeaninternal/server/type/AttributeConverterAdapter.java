@@ -2,7 +2,7 @@ package io.ebeaninternal.server.type;
 
 import io.ebean.config.ScalarTypeConverter;
 
-import jakarta.persistence.AttributeConverter;
+import javax.persistence.AttributeConverter;
 
 /**
  * Adapter from ScalarTypeConverter to AttributeConverter.

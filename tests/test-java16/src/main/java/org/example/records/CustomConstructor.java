@@ -1,6 +1,6 @@
 package org.example.records;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 import java.util.Objects;
 
 @Embeddable

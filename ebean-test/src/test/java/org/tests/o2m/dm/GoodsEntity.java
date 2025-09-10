@@ -1,6 +1,6 @@
 package org.tests.o2m.dm;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

@@ -3,8 +3,8 @@ package org.tests.model.basic.relates;
 
 import io.ebean.annotation.ChangeLog;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.UUID;
 
 /**

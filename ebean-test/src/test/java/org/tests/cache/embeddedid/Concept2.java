@@ -1,6 +1,6 @@
 package org.tests.cache.embeddedid;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @IdClass(ConceptId.class)

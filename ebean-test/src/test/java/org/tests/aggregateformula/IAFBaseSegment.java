@@ -1,6 +1,6 @@
 package org.tests.aggregateformula;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Inheritance

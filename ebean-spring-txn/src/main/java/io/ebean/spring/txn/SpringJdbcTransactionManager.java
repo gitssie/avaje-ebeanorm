@@ -10,7 +10,7 @@ import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 import java.util.List;
 

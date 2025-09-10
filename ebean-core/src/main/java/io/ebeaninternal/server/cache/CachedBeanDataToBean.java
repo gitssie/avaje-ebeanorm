@@ -32,6 +32,7 @@ public final class CachedBeanDataToBean {
       }
     }
     ebi.setLoadedLazy();
+    desc.setElementBeanLoadedLazy(bean);
   }
 
   private static void loadProperty(EntityBean bean, CachedBeanData cacheBeanData, EntityBeanIntercept ebi, BeanProperty prop, PersistenceContext context) {

@@ -1,7 +1,7 @@
 package org.tests.model.composite;
 
 import io.ebean.annotation.NotNull;
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 
 import java.util.Objects;
 import java.util.UUID;

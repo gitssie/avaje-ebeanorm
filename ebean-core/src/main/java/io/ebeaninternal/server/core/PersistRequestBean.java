@@ -21,9 +21,9 @@ import io.ebeanservice.docstore.api.DocStoreUpdate;
 import io.ebeanservice.docstore.api.DocStoreUpdateContext;
 import io.ebeanservice.docstore.api.DocStoreUpdates;
 
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.OptimisticLockException;
-import jakarta.persistence.PersistenceException;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.OptimisticLockException;
+import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.sql.Statement;
 import java.util.*;
@@ -39,6 +39,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
   private final BeanPersistController controller;
   private final T bean;
   private final EntityBean entityBean;
+  private final BeanElementHelper helper;
   private final EntityBeanIntercept intercept;
   /**
    * The parent bean for unidirectional save.
@@ -133,6 +134,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     this.beanPersistListener = beanDescriptor.persistListener();
     this.bean = bean;
     this.parentBean = parentBean;
+    this.helper = new BeanElementHelper(beanDescriptor, entityBean, intercept);
     this.controller = beanDescriptor.persistController();
     this.type = type;
     this.docStoreMode = calcDocStoreMode(transaction, type);
@@ -143,7 +145,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     if (this.type == Type.UPDATE) {
       if (intercept.isNew()) {
         // 'stateless update' - set loaded properties as dirty
-        intercept.setNewBeanForUpdate();
+        helper.setNewBeanForUpdate();
         statelessUpdate = true;
       } else if (!intercept.isDirty()) {
         // check if any mutable scalar properties are dirty
@@ -263,7 +265,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       if (prop.isVersion()) {
         if (isLoadedProperty(prop)) {
           // @Version property must be loaded to be involved
-          Object value = generatedProperty.getUpdateValue(prop, entityBean, now());
+          Object value = generatedProperty.getUpdateValue(prop, entityBean, now(), transaction);
           Object oldVal = prop.getValue(entityBean);
           setVersionValue(value);
           intercept.setOldValue(prop.propertyIndex(), oldVal);
@@ -271,9 +273,11 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       } else {
         // @WhenModified set without invoking interception
         Object oldVal = prop.getValue(entityBean);
-        Object value = generatedProperty.getUpdateValue(prop, entityBean, now());
-        prop.setValueChanged(entityBean, value);
-        intercept.setOldValue(prop.propertyIndex(), oldVal);
+        Object value = generatedProperty.getUpdateValue(prop, entityBean, now(), transaction);
+        if (oldVal != value) {
+          prop.setValueChanged(entityBean, value);
+          intercept.setOldValue(prop.propertyIndex(), oldVal);
+        }
       }
     }
   }
@@ -289,7 +293,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
 
   private void onInsertGeneratedProperties() {
     for (BeanProperty prop : beanDescriptor.propertiesGenInsert()) {
-      Object value = prop.generatedProperty().getInsertValue(prop, entityBean, now());
+      Object value = prop.generatedProperty().getInsertValue(prop, entityBean, now(), transaction);
       prop.setValueChanged(entityBean, value);
     }
   }
@@ -578,7 +582,7 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
   private void postControllerPrepareUpdate() {
     if (statelessUpdate && controller != null) {
       // 'stateless update' - set dirty properties modified in controller preUpdate
-      intercept.setNewBeanForUpdate();
+      helper.setNewBeanForUpdate();
     }
   }
 
@@ -687,18 +691,22 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     return intercept;
   }
 
+  public BeanElementHelper helper() {
+    return helper;
+  }
+
   /**
    * Return true if this property is loaded (full bean or included in partial bean).
    */
   public boolean isLoadedProperty(BeanProperty prop) {
-    return intercept.isLoadedProperty(prop.propertyIndex());
+    return helper.isLoadedProperty(prop);
   }
 
   /**
    * Return true if the property is dirty.
    */
   public boolean isDirtyProperty(BeanProperty prop) {
-    return intercept.isDirtyProperty(prop.propertyIndex());
+    return helper.isDirtyProperty(prop);
   }
 
   /**
@@ -867,7 +875,8 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
       changeLog();
     }
     // if bean persisted again then should result in an update
-    intercept.setLoaded();
+    helper.setLoaded();
+
     if (isInsert()) {
       postInsert();
     }
@@ -935,13 +944,13 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
         transaction.logSummary("Inserted [{0}] [{1}]{2}", name, (idValue == null ? "" : idValue), draft);
         break;
       case UPDATE:
-        transaction.logSummary("Updated [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("Updated [{0}] [{1}]{2}", name, idValue, draft);
         break;
       case DELETE:
-        transaction.logSummary("Deleted [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("Deleted [{0}] [{1}]{2}", name, idValue, draft);
         break;
       case DELETE_SOFT:
-        transaction.logSummary("SoftDelete [{0}] [{1}]{2}", name, idValue , draft);
+        transaction.logSummary("SoftDelete [{0}] [{1}]{2}", name, idValue, draft);
         break;
       default:
         break;
@@ -963,9 +972,9 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
    */
   public boolean isAddToUpdate(BeanProperty prop) {
     if (requestUpdateAllLoadedProps) {
-      return intercept.isLoadedProperty(prop.propertyIndex());
+      return helper.isLoadedProperty(prop);
     } else {
-      return intercept.isDirtyProperty(prop.propertyIndex());
+      return helper.isDirtyProperty(prop);
     }
   }
 
@@ -1148,10 +1157,11 @@ public final class PersistRequestBean<T> extends PersistRequest implements BeanP
     }
     BeanProperty versionProperty = beanDescriptor.versionProperty();
     if (versionProperty != null) {
-      if (intercept.isLoadedProperty(versionProperty.propertyIndex())) {
+      if (helper.isLoadedProperty(versionProperty)) {
         key.append('v');
       }
     }
+
     if (publish) {
       key.append('p');
     }

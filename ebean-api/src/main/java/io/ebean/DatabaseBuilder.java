@@ -15,7 +15,7 @@ import io.ebean.event.changelog.ChangeLogPrepare;
 import io.ebean.event.changelog.ChangeLogRegister;
 import io.ebean.event.readaudit.ReadAuditLogger;
 import io.ebean.event.readaudit.ReadAuditPrepare;
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 
 import javax.sql.DataSource;
 import java.time.Clock;

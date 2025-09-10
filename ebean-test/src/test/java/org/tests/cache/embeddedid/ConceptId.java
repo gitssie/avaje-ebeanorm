@@ -1,6 +1,6 @@
 package org.tests.cache.embeddedid;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 
 @Embeddable
 public class ConceptId {

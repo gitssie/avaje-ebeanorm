@@ -1,6 +1,6 @@
 package io.ebeaninternal.server.querydefn;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 /**
  * Parses a Object relational query statement into a OrmQueryDetail and OrmQueryAttributes.

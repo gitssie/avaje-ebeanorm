@@ -6,7 +6,7 @@ import io.ebean.config.dbplatform.DatabasePlatformProvider;
 import io.ebean.platform.cockroach.CockroachPlatform;
 import io.ebean.platform.yugabyte.YugabytePlatform;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.*;
 import java.util.Locale;
 

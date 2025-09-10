@@ -2,7 +2,7 @@ package org.tests.model.basic;
 
 import io.ebean.annotation.InvalidateQueryCache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 

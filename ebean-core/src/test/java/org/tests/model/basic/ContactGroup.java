@@ -1,6 +1,6 @@
 package org.tests.model.basic;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class ContactGroup extends BasicDomain {

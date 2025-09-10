@@ -56,7 +56,7 @@ import io.ebeanservice.docstore.api.mapping.DocMappingBuilder;
 import io.ebeanservice.docstore.api.mapping.DocPropertyMapping;
 import io.ebeanservice.docstore.api.mapping.DocumentMapping;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Modifier;
@@ -65,6 +65,7 @@ import java.sql.Types;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.ebeaninternal.server.persist.DmlUtil.isNullOrZero;
@@ -145,7 +146,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
 
   final Class<T> beanType;
   final Class<?> rootBeanType;
-  private final BeanDescriptorMap owner;
+  final BeanDescriptorMap owner;
   final String[] properties;
 
   private final BeanPostLoad beanPostLoad;
@@ -179,6 +180,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private final BeanProperty orderColumn;
   private final BeanProperty[] propertiesNonMany;
   private final BeanProperty[] propertiesAggregate;
+  private final BeanProperty[] propertiesComputed;
   private final BeanPropertyAssocMany<?>[] propertiesMany;
   private final BeanPropertyAssocMany<?>[] propertiesManySave;
   private final BeanPropertyAssocMany<?>[] propertiesManyDelete;
@@ -199,9 +201,10 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
    * All non transient properties excluding the id properties.
    */
   private final BeanProperty[] propertiesNonTransient;
-  final BeanProperty[] propertiesIndex;
+  BeanProperty[] propertiesIndex;
   private final BeanProperty[] propertiesGenInsert;
   private final BeanProperty[] propertiesGenUpdate;
+  private final BeanProperty[] propertiesGenDelete;
   private final List<BeanProperty[]> propertiesUnique = new ArrayList<>();
   private final boolean idOnlyReference;
   private BeanNaturalKey beanNaturalKey;
@@ -233,6 +236,12 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private boolean docStoreEmbeddedInvalidation;
   private final String defaultSelectClause;
   private SpiEbeanServer ebeanServer;
+  //dynamic element bean
+  private Function<EntityBean, EntityBean> elementBean;
+  private boolean dynamicClass;
+
+  private long deployId;
+  private long deployVersion;
 
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
@@ -279,7 +288,9 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.partitionMeta = deploy.getPartitionMeta();
     this.tablespaceMeta = deploy.getTablespaceMeta();
     this.storageEngine = deploy.getStorageEngine();
-    this.autoTunable = entityType == EntityType.ORM || entityType == EntityType.VIEW;
+    this.elementBean = deploy.getElementBean();
+    this.dynamicClass = readDynamicClass();
+    this.autoTunable = beanFinder == null && (entityType == EntityType.ORM || entityType == EntityType.VIEW);
     // helper object used to derive lists of properties
     DeployBeanPropertyLists listHelper = new DeployBeanPropertyLists(owner, this, deploy);
     this.softDeleteProperty = listHelper.getSoftDeleteProperty();
@@ -311,11 +322,13 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.propertiesMany = listHelper.getMany();
     this.propertiesNonMany = listHelper.getNonMany();
     this.propertiesAggregate = listHelper.getAggregates();
+    this.propertiesComputed = listHelper.getComputeds();
     this.propertiesManySave = listHelper.getManySave();
     this.propertiesManyDelete = listHelper.getManyDelete();
     this.propertiesManyToMany = listHelper.getManyToMany();
     this.propertiesGenInsert = listHelper.getGeneratedInsert();
     this.propertiesGenUpdate = listHelper.getGeneratedUpdate();
+    this.propertiesGenDelete = listHelper.getGeneratedDelete();
     this.idOnlyReference = isIdOnlyReference(propertiesBaseScalar);
     boolean noRelationships = propertiesOne.length + propertiesMany.length == 0;
     this.cacheSharableBeans = noRelationships && deploy.getCacheOptions().isReadOnly();
@@ -355,6 +368,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
         propertiesIndex[i] = propMap.get(ebi.property(i));
       }
     }
+    this.deployId = deploy.getDeployId();
+    this.deployVersion = deploy.getDeployVersion();
   }
 
   public String idSelect() {
@@ -1722,7 +1737,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
       throw new UnsupportedOperationException("cannot create entity bean for abstract entity " + name());
     }
     try {
-      EntityBean bean = (EntityBean) prototypeEntityBean._ebean_newInstance();
+      EntityBean bean = dynamicClass ? createPrototypeEntityBean(beanType) : (EntityBean) prototypeEntityBean._ebean_newInstance();
       if (beanPostConstructListener != null) {
         beanPostConstructListener.autowire(bean); // calls all registered listeners
         beanPostConstructListener.postConstruct(bean); // calls first the @PostConstruct method and then the listeners
@@ -3212,6 +3227,11 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   }
 
   @Override
+  public STreeProperty[] propsComputed() {
+    return propertiesComputed;
+  }
+
+  @Override
   public STreePropertyAssoc[] propsEmbedded() {
     return propertiesEmbedded;
   }
@@ -3358,6 +3378,14 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     return propertiesGenUpdate;
   }
 
+  /**
+   * Return the properties set as generated values on delete.
+   * @return
+   */
+  public BeanProperty[] propertiesGenDelete() {
+    return propertiesGenDelete;
+  }
+
   public void jsonWriteDirty(SpiJsonWriter writeJson, EntityBean bean, boolean[] dirtyProps) throws IOException {
     jsonHelp.jsonWriteDirty(writeJson, bean, dirtyProps);
   }
@@ -3428,5 +3456,36 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     if (hasInheritance()) {
       inheritInfo().visitChildren(info -> visitor.accept(info.desc()));
     }
+  }
+
+  private boolean readDynamicClass() {
+    if (prototypeEntityBean == null) {
+      return false;
+    }
+    Object bean = prototypeEntityBean._ebean_newInstance();
+    return bean.getClass() != beanType;
+  }
+
+  public boolean isDynamicEntity() {
+    return elementBean != null;
+  }
+
+  public EntityBean elementBean(EntityBean bean) {
+    return elementBean == null ? null : elementBean.apply(bean);
+  }
+
+  public void setElementBeanLoadedLazy(EntityBean bean) {
+    bean = elementBean(bean);
+    if (bean != null) {
+      bean._ebean_getIntercept().setLoadedLazy();
+    }
+  }
+
+  public long getDeployId(){
+    return deployId;
+  }
+
+  public long getDeployVersion(){
+    return deployVersion;
   }
 }

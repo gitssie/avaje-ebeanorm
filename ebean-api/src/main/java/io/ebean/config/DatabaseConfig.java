@@ -20,7 +20,7 @@ import io.ebean.event.readaudit.ReadAuditLogger;
 import io.ebean.event.readaudit.ReadAuditPrepare;
 import io.ebean.meta.MetricNamingMatch;
 import io.ebean.util.StringHelper;
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 
 import javax.sql.DataSource;
 import java.time.Clock;

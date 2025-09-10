@@ -1,6 +1,6 @@
 package io.ebeaninternal.server.deploy.meta;
 
-import jakarta.persistence.OrderColumn;
+import javax.persistence.OrderColumn;
 
 public final class DeployOrderColumn {
 

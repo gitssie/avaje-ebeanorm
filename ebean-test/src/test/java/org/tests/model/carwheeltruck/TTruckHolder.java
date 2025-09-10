@@ -2,10 +2,10 @@ package org.tests.model.carwheeltruck;
 
 import org.tests.model.basic.EBasic;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
-import static jakarta.persistence.CascadeType.ALL;
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 public class TTruckHolder {

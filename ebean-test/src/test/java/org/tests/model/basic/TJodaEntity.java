@@ -3,8 +3,8 @@ package org.tests.model.basic;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 @Entity
 public class TJodaEntity {

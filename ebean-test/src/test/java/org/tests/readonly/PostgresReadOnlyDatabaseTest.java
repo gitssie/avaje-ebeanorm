@@ -7,7 +7,7 @@ import io.ebean.annotation.Transactional;
 import io.ebean.datasource.DataSourceBuilder;
 import io.ebean.test.containers.PostgresContainer;
 import io.ebeaninternal.api.SpiTransaction;
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package org.tests.o2m.jointable.inheritance;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class ClassA extends ClassSuper {

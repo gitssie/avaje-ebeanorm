@@ -1,6 +1,6 @@
 package org.tests.model.survey;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

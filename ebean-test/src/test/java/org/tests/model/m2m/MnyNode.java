@@ -4,7 +4,7 @@ import io.ebean.annotation.Identity;
 import io.ebean.annotation.Platform;
 import io.ebean.annotation.Where;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Identity(start = 1000)

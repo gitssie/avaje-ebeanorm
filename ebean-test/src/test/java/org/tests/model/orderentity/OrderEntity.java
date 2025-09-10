@@ -1,6 +1,6 @@
 package org.tests.model.orderentity;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.util.List;
 

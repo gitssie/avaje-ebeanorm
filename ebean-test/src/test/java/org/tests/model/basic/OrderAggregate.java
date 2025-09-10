@@ -2,8 +2,8 @@ package org.tests.model.basic;
 
 import io.ebean.annotation.Sql;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
+import javax.persistence.Entity;
+import javax.persistence.OneToOne;
 
 /**
  * An example of an Aggregate object.

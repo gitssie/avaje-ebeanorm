@@ -10,7 +10,7 @@ import org.tests.model.basic.Car;
 import org.tests.model.basic.IntEnum;
 import org.tests.model.basic.VarcharEnum;
 
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 import java.time.DayOfWeek;
 import java.time.Month;
 

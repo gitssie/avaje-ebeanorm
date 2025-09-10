@@ -3,7 +3,7 @@ package org.tests.model.basic;
 import io.ebean.annotation.Index;
 import io.ebean.annotation.Platform;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 
 /**

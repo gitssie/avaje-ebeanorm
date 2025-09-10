@@ -1,6 +1,6 @@
 package org.tests.update.objects;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "e_save_test_d")

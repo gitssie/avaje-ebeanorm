@@ -2,8 +2,8 @@ package org.example.domain;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import net.postgis.jdbc.geometry.Point;
 import net.postgis.jdbc.geometry.Polygon;
 

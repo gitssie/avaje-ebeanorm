@@ -1,6 +1,6 @@
 package io.ebean;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 /**
  * Captures and wraps IOException's occurring during ElasticSearch processing etc.

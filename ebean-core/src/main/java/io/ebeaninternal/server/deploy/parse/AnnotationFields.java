@@ -2,33 +2,44 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.annotation.Index;
 import io.ebean.annotation.*;
+import io.ebean.bean.Computed;
 import io.ebean.config.EncryptDeploy;
 import io.ebean.config.EncryptDeploy.Mode;
+import io.ebean.config.IdGenerator;
 import io.ebean.config.dbplatform.DbEncrypt;
 import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
 import io.ebean.core.type.ScalarType;
+import io.ebeaninternal.server.deploy.BeanDescriptor;
 import io.ebeaninternal.server.deploy.DbMigrationInfo;
 import io.ebeaninternal.server.deploy.IndexDefinition;
+import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssoc;
 import io.ebeaninternal.server.deploy.meta.DeployBeanPropertyAssocOne;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
+import io.ebeaninternal.server.deploy.parse.tenant.generatedproperty.EmptyGeneratedProperty;
+import io.ebeaninternal.server.properties.BeanPropertyConvertGetter;
+import io.ebeaninternal.server.properties.BeanPropertyGetter;
+import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeBytesBase;
 import io.ebeaninternal.server.type.ScalarTypeBytesEncrypted;
 import io.ebeaninternal.server.type.ScalarTypeEncryptedWrapper;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
+import java.lang.reflect.Constructor;
 import java.sql.Types;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Read the field level deployment annotations.
  */
-final class AnnotationFields extends AnnotationParser {
+class AnnotationFields extends AnnotationParser {
 
   /**
    * If present read Jackson JsonIgnore.
@@ -67,7 +78,7 @@ final class AnnotationFields extends AnnotationParser {
   /**
    * Read the Id marker annotations on EmbeddedId properties.
    */
-  private void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
+  protected void readAssocOne(DeployBeanPropertyAssoc<?> prop) {
     readJsonAnnotations(prop);
     if (has(prop, Id.class)) {
       readIdAssocOne(prop);
@@ -114,9 +125,12 @@ final class AnnotationFields extends AnnotationParser {
     if (has(prop, WhoCreated.class)) {
       generatedPropFactory.setWhoCreated(prop);
     }
+    if (has(prop, TenantId.class)) {
+      generatedPropFactory.setWhoTenant(prop);
+    }
   }
 
-  private void readField(DeployBeanProperty prop) {
+  protected void readField(DeployBeanProperty prop) {
     // all Enums will have a ScalarType assigned...
     boolean isEnum = prop.getPropertyType().isEnum();
     Enumerated enumerated = get(prop, Enumerated.class);
@@ -141,6 +155,8 @@ final class AnnotationFields extends AnnotationParser {
     initTenantId(prop);
     initDbJson(prop);
     initFormula(prop);
+    initConvert(prop);
+    initComputed(prop);
     initVersion(prop);
     initWhen(prop);
     initWhoProperties(prop);
@@ -189,7 +205,7 @@ final class AnnotationFields extends AnnotationParser {
     }
   }
 
-  private void initValidation(DeployBeanProperty prop) {
+  protected void initValidation(DeployBeanProperty prop) {
     if (readConfig.isValidationNotNull(prop)) {
       prop.setNullable(false);
     }
@@ -256,6 +272,7 @@ final class AnnotationFields extends AnnotationParser {
   private void initFormula(DeployBeanProperty prop) {
     DocCode docCode = get(prop, DocCode.class);
     if (docCode != null) {
+      readCodeGenValue(prop, DocCode.class.getSimpleName());
       prop.setDocCode(docCode);
     }
     DocSortable docSortable = get(prop, DocSortable.class);
@@ -273,6 +290,111 @@ final class AnnotationFields extends AnnotationParser {
     final Aggregation aggregation = prop.getMetaAnnotation(Aggregation.class);
     if (aggregation != null) {
       prop.setAggregation(aggregation.value().replace("$1", prop.getName()));
+    }
+  }
+
+  private void initComputed(DeployBeanProperty prop) {
+    Class<?> type = prop.getPropertyType();
+    if (Computed.class != type) {
+      return;
+    }
+    ScalarType<?> scalarType = util.typeManager().dbComputedType(type, prop.getGenericType(), prop.isNullable());
+    if (scalarType != null) {
+      if (prop.getDesc().getEntityType() != BeanDescriptor.EntityType.ORM) {
+        throw new RuntimeException("Does not mapped to ORM which is " + scalarType.getClass());
+      } else if (prop.getDesc().idProperty() == null) {
+        throw new RuntimeException("Does not mapped to @Id property in ORM which is " + scalarType.getClass());
+      }
+      int dbType = scalarType.jdbcType();
+      prop.setDbType(dbType);
+      prop.setScalarType(scalarType);
+    }
+  }
+
+  private <T> T newInstance(Convert convert) {
+    try {
+      Class<T> converterClass = (Class<T>) convert.converter();
+      Constructor<?>[] constructors = converterClass.getDeclaredConstructors();
+
+      // 按优先级顺序查找匹配的构造器
+      Constructor<T> targetConstructor = null;
+      Object[] args = null;
+
+      // 1. 优先查找 (XEntityFinder, Convert) 构造器
+      for (Constructor<?> constructor : constructors) {
+        Class<?>[] paramTypes = constructor.getParameterTypes();
+        if (paramTypes.length == 2 &&
+          paramTypes[0] == XEntityFinder.class &&
+          paramTypes[1] == Convert.class) {
+          targetConstructor = (Constructor<T>) constructor;
+          args = new Object[]{info.getEntityFinder(), convert};
+          break;
+        }
+      }
+
+      // 2. 查找 (Convert) 构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          Class<?>[] paramTypes = constructor.getParameterTypes();
+          if (paramTypes.length == 1 && paramTypes[0] == Convert.class) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[]{convert};
+            break;
+          }
+        }
+      }
+
+      // 3. 查找 (XEntityFinder) 构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          Class<?>[] paramTypes = constructor.getParameterTypes();
+          if (paramTypes.length == 1 && paramTypes[0] == XEntityFinder.class) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[]{info.getEntityFinder()};
+            break;
+          }
+        }
+      }
+
+      // 4. 查找无参构造器
+      if (targetConstructor == null) {
+        for (Constructor<?> constructor : constructors) {
+          if (constructor.getParameterTypes().length == 0) {
+            targetConstructor = (Constructor<T>) constructor;
+            args = new Object[0];
+            break;
+          }
+        }
+      }
+
+      if (targetConstructor == null) {
+        throw new IllegalArgumentException("No suitable constructor found for converter: " + converterClass.getName());
+      }
+
+      targetConstructor.setAccessible(true);
+      return targetConstructor.newInstance(args);
+
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Failed to create instance of converter: " + convert.converter().getName(), e);
+    }
+  }
+
+  protected void initConvert(DeployBeanProperty prop) {
+    Convert convert = get(prop, Convert.class);
+    //custom defines getter
+    if (convert != null && Function.class.isAssignableFrom(convert.converter())) {
+      prop.setGetter(new BeanPropertyConvertGetter(newInstance(convert)));
+      prop.setGeneratedProperty(new EmptyGeneratedProperty());
+    } else if (convert != null && BeanPropertyGetter.class.isAssignableFrom(convert.converter())) {
+      prop.setGetter(newInstance(convert));
+    }
+    //custom defines setter
+    if (convert != null && BeanPropertySetter.class.isAssignableFrom(convert.converter())) {
+      prop.setSetter(newInstance(convert));
+    }
+    //custom generated
+    if (convert != null && GeneratedProperty.class.isAssignableFrom(convert.converter())) {
+      prop.setGeneratedProperty(newInstance(convert));
     }
   }
 
@@ -440,10 +562,24 @@ final class AnnotationFields extends AnnotationParser {
     return util.createDataEncryptSupport(table, column);
   }
 
+  private void readCodeGenValue(DeployBeanProperty prop, String generatorName) {
+    IdGenerator generator = generatedPropFactory.getIdGeneratorPure(generatorName);
+    if (generator == null) {
+      throw new IllegalStateException("No custom IdGenerator registered with name " + generatorName);
+    }
+    if (generator instanceof GeneratedProperty) {
+      prop.setGeneratedProperty((GeneratedProperty) generator);
+    }
+    return;
+  }
+
   private void readGenValue(GeneratedValue gen, Id id, DeployBeanProperty prop) {
     if (id == null) {
       if (UUID.class.equals(prop.getPropertyType())) {
         generatedPropFactory.setUuid(prop);
+        return;
+      } else {
+        readCodeGenValue(prop, gen.generator());
         return;
       }
     }

@@ -2,7 +2,7 @@ package org.tests.model.cache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

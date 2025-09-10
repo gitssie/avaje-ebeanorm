@@ -2,7 +2,7 @@ package org.tests.model.tevent;
 
 import io.ebean.annotation.Aggregation;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
 

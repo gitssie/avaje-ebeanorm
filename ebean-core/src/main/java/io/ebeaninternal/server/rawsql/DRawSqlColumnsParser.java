@@ -3,7 +3,7 @@ package io.ebeaninternal.server.rawsql;
 import io.ebeaninternal.server.rawsql.SpiRawSql.ColumnMapping;
 import io.ebeaninternal.server.util.DSelectColumnsParser;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

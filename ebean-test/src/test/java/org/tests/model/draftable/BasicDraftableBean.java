@@ -3,7 +3,7 @@ package org.tests.model.draftable;
 import io.ebean.annotation.Draft;
 import io.ebean.annotation.Draftable;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 @Draftable

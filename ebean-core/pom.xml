@@ -8,6 +8,7 @@
 
   <artifactId>ebean-core</artifactId>
   <packaging>jar</packaging>
+  <version>14.6.0-SNAPSHOT</version>
 
   <name>ebean core</name>
   <description>ebean core module</description>
@@ -87,15 +88,15 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- JAVAX-DEPENDENCY-START ___
+    <!-- JAVAX-DEPENDENCY-START -->
     <dependency>
       <groupId>javax.transaction</groupId>
       <artifactId>javax.transaction-api</artifactId>
       <version>1.3</version>
       <optional>true</optional>
     </dependency>
-    ____ JAVAX-DEPENDENCY-END -->
-    <!-- JAKARTA-DEPENDENCY-START -->
+    <!-- JAVAX-DEPENDENCY-END -->
+    <!-- JAKARTA-DEPENDENCY-START ___
     <dependency>
       <groupId>jakarta.transaction</groupId>
       <artifactId>jakarta.transaction-api</artifactId>
@@ -108,7 +109,7 @@
       <version>4.0.1</version>
       <scope>provided</scope>
     </dependency>
-    <!-- JAKARTA-DEPENDENCY-END -->
+    ____ JAKARTA-DEPENDENCY-END -->
 
     <!-- validation annotations Size etc -->
     <dependency>

@@ -4,7 +4,7 @@ import io.ebeaninternal.api.SpiTransaction;
 import io.ebeaninternal.api.SpiUpdatePlan;
 import io.ebeaninternal.server.core.PersistRequestBean;
 
-import jakarta.persistence.OptimisticLockException;
+import javax.persistence.OptimisticLockException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 

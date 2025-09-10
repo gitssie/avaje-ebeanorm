@@ -1,6 +1,6 @@
 package org.tests.o2m.dm;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class Attachment extends HistoryColumns {

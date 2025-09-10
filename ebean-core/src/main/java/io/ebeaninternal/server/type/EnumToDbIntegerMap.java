@@ -3,7 +3,7 @@ package io.ebeaninternal.server.type;
 import io.ebean.core.type.DataBinder;
 import io.ebean.core.type.DataReader;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.sql.Types;
 

@@ -5,7 +5,7 @@ import io.ebean.DB;
 import org.junit.jupiter.api.Test;
 import org.tests.model.basic.UUOne;
 
-import jakarta.persistence.EntityNotFoundException;
+import javax.persistence.EntityNotFoundException;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

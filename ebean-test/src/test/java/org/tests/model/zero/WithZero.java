@@ -1,6 +1,6 @@
 package org.tests.model.zero;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class WithZero {

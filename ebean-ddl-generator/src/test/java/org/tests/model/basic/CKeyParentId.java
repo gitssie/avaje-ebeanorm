@@ -1,6 +1,6 @@
 package org.tests.model.basic;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 import javax.validation.constraints.Size;
 
 @Embeddable

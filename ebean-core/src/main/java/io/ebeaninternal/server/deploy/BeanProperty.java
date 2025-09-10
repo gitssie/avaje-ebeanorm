@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import io.ebean.DataIntegrityException;
 import io.ebean.ModifyAwareType;
 import io.ebean.ValuePair;
-import io.ebean.bean.EntityBean;
-import io.ebean.bean.EntityBeanIntercept;
-import io.ebean.bean.MutableValueInfo;
-import io.ebean.bean.PersistenceContext;
+import io.ebean.bean.*;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.dbplatform.DbEncryptFunction;
 import io.ebean.config.dbplatform.DbPlatformType;
@@ -18,6 +15,7 @@ import io.ebean.plugin.Property;
 import io.ebean.text.StringParser;
 import io.ebean.util.SplitName;
 import io.ebeaninternal.api.CoreLog;
+import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.api.SpiExpressionRequest;
 import io.ebeaninternal.api.SpiQuery;
 import io.ebeaninternal.api.json.SpiJsonReader;
@@ -48,6 +46,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
@@ -115,8 +114,11 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
    */
   final String name;
   final int propertyIndex;
+  final int fieldIndex;
+  private final long propertyId;
   private final Field field;
   private final Class<?> propertyType;
+  private final Type genericType;
   private final String dbBind;
   final String dbColumn;
   private final String elPrefix;
@@ -190,6 +192,8 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.descriptor = descriptor;
     this.name = InternString.intern(deploy.getName());
     this.propertyIndex = deploy.getPropertyIndex();
+    this.fieldIndex = deploy.getFieldIndex();
+    this.propertyId = deploy.getPropertyId();
     this.unidirectionalShadow = deploy.isUndirectionalShadow();
     this.importedPrimaryKey = deploy.isImportedPrimaryKey();
     this.discriminator = deploy.isDiscriminator();
@@ -246,6 +250,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.lob = isLobType(dbType);
     this.propertyType = deploy.getPropertyType();
     this.field = deploy.getField();
+    this.genericType = deploy.getGenericType();
     this.docOptions = deploy.getDocPropertyOptions();
     this.elPlaceHolder = tableAliasIntern(descriptor, deploy.getElPlaceHolder(), false, null);
     this.elPlaceHolderEncrypted = tableAliasIntern(descriptor, deploy.getElPlaceHolder(), dbEncrypted, dbColumn);
@@ -287,6 +292,8 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   protected BeanProperty(BeanProperty source, BeanPropertyOverride override) {
     this.descriptor = source.descriptor;
     this.propertyIndex = source.propertyIndex;
+    this.fieldIndex = source.fieldIndex;
+    this.propertyId = source.propertyId;
     this.name = source.name();
     this.dbColumn = override.getDbColumn();
     this.nullable = override.isDbNullable();
@@ -340,8 +347,9 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.dbType = source.dbType(true);
     this.scalarType = source.scalarType;
     this.lob = isLobType(dbType);
-    this.propertyType = source.type();
-    this.field = source.field();
+    this.propertyType = source.propertyType;
+    this.field = source.field;
+    this.genericType = source.genericType;
     this.docOptions = source.docOptions;
     this.unmappedJson = source.unmappedJson;
     this.elPrefix = override.replace(source.elPrefix, source.dbColumn);
@@ -849,6 +857,14 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     return propertyIndex;
   }
 
+  public int fieldIndex() {
+    return fieldIndex;
+  }
+
+  public long propertyId(){
+    return propertyId;
+  }
+
   @Override
   public String elName() {
     return name;
@@ -952,6 +968,13 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
 
   public boolean isArrayType() {
     return scalarType instanceof ScalarTypeArray;
+  }
+
+  /**
+   * Return the generic type for this property.
+   */
+  public Type getGenericType() {
+    return genericType;
   }
 
   /**
@@ -1530,5 +1553,13 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
       ModifyAwareType bc = (ModifyAwareType) value;
       setValue(entityBean, bc.freeze());
     }
+  }
+
+  public boolean isCustom() {
+    return field == null && fieldIndex >= 0;
+  }
+
+  public void setEbeanServer(SpiEbeanServer server) {
+
   }
 }

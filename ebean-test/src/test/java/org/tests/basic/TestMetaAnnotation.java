@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.tests.model.basic.Address;
 import org.tests.model.basic.metaannotation.SizeMedium;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;

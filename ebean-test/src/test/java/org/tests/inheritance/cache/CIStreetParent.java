@@ -1,6 +1,6 @@
 package org.tests.inheritance.cache;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)

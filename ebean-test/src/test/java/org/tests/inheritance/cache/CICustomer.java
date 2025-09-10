@@ -1,7 +1,7 @@
 package org.tests.inheritance.cache;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
 
 @Entity
 @DiscriminatorValue(value="1")

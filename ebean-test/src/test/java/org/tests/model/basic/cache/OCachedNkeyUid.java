@@ -2,7 +2,7 @@ package org.tests.model.basic.cache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 import java.util.UUID;
 
 @Cache(naturalKey = "cid")

@@ -1,8 +1,8 @@
 package org.tests.model.basic;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
 
 @Entity
 public class SomeEnumBean {

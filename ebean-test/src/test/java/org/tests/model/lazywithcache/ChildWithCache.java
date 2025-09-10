@@ -2,10 +2,10 @@ package org.tests.model.lazywithcache;
 
 import io.ebean.annotation.Cache;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
+import javax.persistence.Basic;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
 
 /**
  * Class with @Cache and lazy load property.

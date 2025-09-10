@@ -1,6 +1,6 @@
 package org.tests.model.bridge;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 import java.util.UUID;
 

@@ -2,7 +2,7 @@ package org.domain;
 
 
 import io.ebean.annotation.Cache;
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 /**
  * Using Natural Key caching but no Near Caching so always hitting Redis.

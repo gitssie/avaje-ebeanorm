@@ -1,7 +1,7 @@
 package org.example.domain.otherpackage;
 
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
 @Converter
 public class PhoneAttributeConverter implements AttributeConverter<PhoneNumber, String> {

@@ -3,13 +3,17 @@ package org.tests.model.basic;
 import io.ebean.annotation.*;
 import org.tests.model.basic.finder.CustomerFinder;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Customer entity bean.
@@ -28,7 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
 @Table(name = "o_customer")
 @DbComment("Holds external customers")
 public class Customer extends BasicDomain {
-
   private static final long serialVersionUID = 1L;
 
   public static final CustomerFinder find = new CustomerFinder();
@@ -80,10 +83,10 @@ public class Customer extends BasicDomain {
   @DocEmbedded(doc = "*,country(*)")
   @ManyToOne(cascade = CascadeType.ALL)
   Address billingAddress;
-
-  @DocEmbedded(doc = "*,country(*)")
-  @ManyToOne(cascade = CascadeType.ALL)
-  Address shippingAddress;
+//
+//  @DocEmbedded(doc = "*,country(*)")
+//  @ManyToOne(cascade = CascadeType.ALL)
+//  Address shippingAddress;
 
   @OneToMany(mappedBy = "customer")
   @Where(clause = "${ta}.order_date is not null")
@@ -142,16 +145,16 @@ public class Customer extends BasicDomain {
   /**
    * Return shipping address.
    */
-  public Address getShippingAddress() {
-    return shippingAddress;
-  }
+//  public Address getShippingAddress() {
+//    return shippingAddress;
+//  }
 
   /**
    * Set shipping address.
    */
-  public void setShippingAddress(Address shippingAddress) {
-    this.shippingAddress = shippingAddress;
-  }
+//  public void setShippingAddress(Address shippingAddress) {
+//    this.shippingAddress = shippingAddress;
+//  }
 
   /**
    * Return orders.

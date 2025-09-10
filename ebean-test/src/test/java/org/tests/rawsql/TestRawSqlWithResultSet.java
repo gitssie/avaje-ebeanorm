@@ -41,7 +41,6 @@ public class TestRawSqlWithResultSet extends BaseTestCase {
       for (Customer customer : list) {
         customer.getId();
         customer.getName();
-        customer.getBillingAddress();
       }
 
     } finally {

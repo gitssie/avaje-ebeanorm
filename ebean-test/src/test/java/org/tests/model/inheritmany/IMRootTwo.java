@@ -1,7 +1,7 @@
 package org.tests.model.inheritmany;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
 import java.util.Date;
 
 @Entity

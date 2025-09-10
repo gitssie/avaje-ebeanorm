@@ -2,7 +2,7 @@ package org.tests.model.history;
 
 import io.ebean.annotation.Length;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 import java.util.Objects;
 
 @Embeddable

@@ -1,8 +1,8 @@
 package org.example.domain;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Inheritance;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.Inheritance;
 
 @Inheritance
 @DiscriminatorValue("DOG")

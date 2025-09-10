@@ -6,6 +6,8 @@ import io.ebean.bean.EntityBeanIntercept;
 import io.ebean.bean.PersistenceContext;
 import io.ebean.core.type.DataReader;
 import io.ebeaninternal.api.SpiQuery;
+import io.ebeaninternal.server.query.STreeProperty;
+import io.ebeaninternal.server.query.STreeType;
 
 import java.util.Map;
 
@@ -58,6 +60,8 @@ public interface DbReadContext {
    * Register a collection for lazy loading.
    */
   void register(BeanPropertyAssocMany<?> many, BeanCollection<?> bc);
+
+  void register(BeanProperty property, BeanCollection<?> bc);
 
   /**
    * Set back the bean that has just been loaded with its id.

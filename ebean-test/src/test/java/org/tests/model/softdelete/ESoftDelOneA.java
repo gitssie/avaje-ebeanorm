@@ -2,7 +2,7 @@ package org.tests.model.softdelete;
 
 import io.ebean.annotation.SoftDelete;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class ESoftDelOneA {

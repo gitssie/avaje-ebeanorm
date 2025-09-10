@@ -1,6 +1,6 @@
 package org.example.domain;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 
 @Embeddable
 public class CaoKey {

@@ -1,6 +1,6 @@
 package org.tests.model.carwheel;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "sa_tire")

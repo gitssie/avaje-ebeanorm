@@ -18,7 +18,7 @@ import io.ebeaninternal.server.loadcontext.DLoadContext;
 import io.ebeaninternal.server.query.CQueryPlan;
 import io.ebeaninternal.server.transaction.DefaultPersistenceContext;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;

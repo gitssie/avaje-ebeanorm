@@ -6,8 +6,8 @@ import io.ebean.annotation.WhenCreated;
 import io.ebean.annotation.WhenModified;
 import org.joda.time.DateTime;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
 public abstract class BaseModel extends Model {

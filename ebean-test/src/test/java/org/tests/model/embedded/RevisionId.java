@@ -1,6 +1,6 @@
 package org.tests.model.embedded;
 
-import jakarta.persistence.Embeddable;
+import javax.persistence.Embeddable;
 
 @Embeddable
 public class RevisionId {

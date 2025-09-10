@@ -2,7 +2,7 @@ package org.tests.model.json;
 
 import io.ebean.annotation.DbJson;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

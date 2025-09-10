@@ -7,7 +7,7 @@ import io.ebean.core.type.DataReader;
 import io.ebean.core.type.DocPropertyType;
 import io.ebean.core.type.ScalarTypeBase;
 
-import jakarta.persistence.EnumType;
+import javax.persistence.EnumType;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;

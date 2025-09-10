@@ -1,6 +1,6 @@
 package org.tests.inheritance.bothsides;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class Target1 extends TargetBase {

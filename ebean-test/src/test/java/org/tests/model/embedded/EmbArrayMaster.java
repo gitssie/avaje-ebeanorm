@@ -2,7 +2,7 @@ package org.tests.model.embedded;
 
 import io.ebean.annotation.DbArray;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.util.List;
 
 @Entity

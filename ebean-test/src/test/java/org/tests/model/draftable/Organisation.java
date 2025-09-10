@@ -1,6 +1,6 @@
 package org.tests.model.draftable;
 
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
 public class Organisation extends BaseDomain {

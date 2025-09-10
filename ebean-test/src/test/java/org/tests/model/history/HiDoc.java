@@ -2,8 +2,8 @@ package org.tests.model.history;
 
 import org.tests.model.draftable.BaseDomain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
+import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import java.util.List;
 
 

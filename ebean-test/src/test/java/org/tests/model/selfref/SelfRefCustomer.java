@@ -1,6 +1,6 @@
 package org.tests.model.selfref;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "self_ref_customer")

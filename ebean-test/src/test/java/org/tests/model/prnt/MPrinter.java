@@ -1,6 +1,6 @@
 package org.tests.model.prnt;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class MPrinter {

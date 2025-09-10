@@ -5,6 +5,9 @@ import io.ebean.annotation.Cache;
 import io.ebean.annotation.DocStore;
 import io.ebean.annotation.DocStoreMode;
 import io.ebean.annotation.Identity;
+import io.ebean.bean.ElementBean;
+import io.ebean.bean.EntityBean;
+import io.ebean.config.DatabaseConfig;
 import io.ebean.config.TableName;
 import io.ebean.config.dbplatform.IdType;
 import io.ebean.config.dbplatform.PlatformIdGenerator;
@@ -22,11 +25,12 @@ import io.ebeaninternal.server.idgen.UuidV1IdGenerator;
 import io.ebeaninternal.server.idgen.UuidV1RndIdGenerator;
 import io.ebeaninternal.server.idgen.UuidV4IdGenerator;
 import io.ebeaninternal.server.rawsql.SpiRawSql;
-import jakarta.persistence.Entity;
-import jakarta.persistence.MappedSuperclass;
+import javax.persistence.Entity;
+import javax.persistence.MappedSuperclass;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Describes Beans including their deployment information.
@@ -131,6 +135,11 @@ public class DeployBeanDescriptor<T> {
   private DeployBeanProperty idProperty;
   private TableJoin primaryKeyJoin;
 
+  //dynamic element bean
+  private Function<EntityBean, EntityBean> elementBean;
+  private long deployId;
+  private long deployVersion;
+
   /**
    * Construct the BeanDescriptor.
    */
@@ -139,6 +148,13 @@ public class DeployBeanDescriptor<T> {
     this.config = config;
     this.beanType = beanType;
   }
+
+  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config,long deployId,long deployVersion) {
+    this(manager,beanType,config);
+    this.deployId = deployId;
+    this.deployVersion = deployVersion;
+  }
+
 
   public BindMaxLength bindMaxLength() {
     return manager.bindMaxLength();
@@ -369,6 +385,14 @@ public class DeployBeanDescriptor<T> {
 
   public void setIdentityType(IdType type) {
     this.identityMode.setIdType(type);
+  }
+
+  public String[] getProperties() {
+    return properties;
+  }
+
+  public void setProperties(String[] props) {
+    this.properties = props;
   }
 
   /**
@@ -672,6 +696,10 @@ public class DeployBeanDescriptor<T> {
 
   public Collection<DeployBeanProperty> properties() {
     return propMap.values();
+  }
+
+  public void removeProperty(DeployBeanProperty prop) {
+    propMap.remove(prop.getName());
   }
 
   /**
@@ -1109,4 +1137,39 @@ public class DeployBeanDescriptor<T> {
     }
   }
 
+  public Function<EntityBean, EntityBean> getElementBean() {
+    return elementBean;
+  }
+
+  public void setElementBean(Function<EntityBean, EntityBean> elementBean) {
+    this.elementBean = elementBean;
+  }
+
+  public DatabaseBuilder.Settings getConfig() {
+    return config;
+  }
+
+  public DeployBeanProperty[] readCustomSlot() {
+    DeployBeanProperty ccp = null;
+    DeployBeanProperty slot = null;
+    for (DeployBeanProperty prop : propertiesAll()) {
+      if (ccp == null && prop.getPropertyType() == ElementBean.class) {
+        ccp = prop;
+      } else if (slot == null && prop.isTransient() && prop.getPropertyType() == int.class && prop.getName().equals("__slot__")) {
+        slot = prop;
+      }
+    }
+    if (ccp == null || slot == null) {
+      return new DeployBeanProperty[0];
+    }
+    return new DeployBeanProperty[]{ccp, slot};
+  }
+
+  public long getDeployId() {
+    return deployId;
+  }
+
+  public long getDeployVersion() {
+    return deployVersion;
+  }
 }

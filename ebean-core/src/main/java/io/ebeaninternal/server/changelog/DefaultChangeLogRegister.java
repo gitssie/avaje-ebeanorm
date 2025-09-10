@@ -31,6 +31,10 @@ public final class DefaultChangeLogRegister implements ChangeLogRegister {
   @Override
   public ChangeLogFilter getChangeFilter(Class<?> beanType) {
     ChangeLog changeLog = getChangeLog(beanType);
+    return getChangeFilter(changeLog);
+  }
+
+  public ChangeLogFilter getChangeFilter(ChangeLog changeLog){
     if (changeLog == null) {
       return null;
     }

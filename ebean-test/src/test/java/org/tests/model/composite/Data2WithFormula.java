@@ -2,7 +2,7 @@ package org.tests.model.composite;
 
 
 import io.ebean.annotation.Index;
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 import java.util.UUID;
 

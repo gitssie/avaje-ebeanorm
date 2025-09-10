@@ -7,14 +7,14 @@ interface Constants {
   String TYPEQUERYBEAN = "io.ebean.typequery.TypeQueryBean";
   String GENERATED = "io.ebean.typequery.Generated";
 
-  String ONE_TO_MANY = "jakarta.persistence.OneToMany";
-  String MANY_TO_MANY = "jakarta.persistence.ManyToMany";
-  String MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
-  String DISCRIMINATOR_VALUE = "jakarta.persistence.DiscriminatorValue";
-  String INHERITANCE = "jakarta.persistence.Inheritance";
-  String ENTITY = "jakarta.persistence.Entity";
-  String EMBEDDABLE = "jakarta.persistence.Embeddable";
-  String CONVERTER = "jakarta.persistence.Converter";
+  String ONE_TO_MANY = "javax.persistence.OneToMany";
+  String MANY_TO_MANY = "javax.persistence.ManyToMany";
+  String MAPPED_SUPERCLASS = "javax.persistence.MappedSuperclass";
+  String DISCRIMINATOR_VALUE = "javax.persistence.DiscriminatorValue";
+  String INHERITANCE = "javax.persistence.Inheritance";
+  String ENTITY = "javax.persistence.Entity";
+  String EMBEDDABLE = "javax.persistence.Embeddable";
+  String CONVERTER = "javax.persistence.Converter";
   String EBEAN_COMPONENT = "io.ebean.annotation.EbeanComponent";
 
   String DBARRAY = "io.ebean.annotation.DbArray";

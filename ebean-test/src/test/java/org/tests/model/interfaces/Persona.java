@@ -1,6 +1,6 @@
 package org.tests.model.interfaces;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 public class Persona implements IPersona {

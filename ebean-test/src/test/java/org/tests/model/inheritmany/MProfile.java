@@ -1,8 +1,8 @@
 package org.tests.model.inheritmany;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class MProfile extends MBase {

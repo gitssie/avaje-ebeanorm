@@ -5,7 +5,7 @@ import io.ebean.DataIntegrityException;
 import io.ebean.DuplicateKeyException;
 import io.ebean.SerializableConflictException;
 
-import jakarta.persistence.PersistenceException;
+import javax.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
