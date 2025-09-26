@@ -455,7 +455,9 @@ public final class SqlTreeBuilder {
       // find the property including searching the
       STreeProperty p = desc.findPropertyWithDynamic(propName, queryProps.getPath());
       if (p == null) {
-        throw new PersistenceException("Property not found - " + SplitName.add(queryProps.getPath(), propName));
+        log.log(ERROR,"property [" + propName + "] not found on " + desc + " for query - excluding it.");
+        p = desc.findProperty("id");
+        selectProps.add(p);
 
       } else if (p.isId() && excludeIdProperty()) {
         // do not bother to include id for normal queries as the
