@@ -137,8 +137,9 @@ public class DeployBeanDescriptor<T> {
 
   //dynamic element bean
   private Function<EntityBean, EntityBean> elementBean;
-  private long deployId;
-  private long deployVersion;
+  private long entityId;
+  private long version;
+
 
   /**
    * Construct the BeanDescriptor.
@@ -149,10 +150,10 @@ public class DeployBeanDescriptor<T> {
     this.beanType = beanType;
   }
 
-  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config,long deployId,long deployVersion) {
+  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config,long entityId,long version) {
     this(manager,beanType,config);
-    this.deployId = deployId;
-    this.deployVersion = deployVersion;
+    this.entityId = entityId;
+    this.entityId = version;
   }
 
 
@@ -1165,11 +1166,11 @@ public class DeployBeanDescriptor<T> {
     return new DeployBeanProperty[]{ccp, slot};
   }
 
-  public long getDeployId() {
-    return deployId;
+  public long getEntityId() {
+    return entityId;
   }
 
-  public long getDeployVersion() {
-    return deployVersion;
+  public long getVersion() {
+    return version;
   }
 }

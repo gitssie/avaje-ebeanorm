@@ -149,6 +149,7 @@ public class DeployBeanProperty {
   private int propertyIndex;
   private int fieldIndex = -1;
   private long propertyId;
+  private String displayType;
   private BeanPropertyGetter getter;
   private BeanPropertySetter setter;
   /**
@@ -1175,5 +1176,13 @@ public class DeployBeanProperty {
 
   public void setPropertyId(long propertyId) {
     this.propertyId = propertyId;
+  }
+
+  public String getDisplayType() {
+    return displayType;
+  }
+
+  public void setDisplayType(String displayType) {
+    this.displayType = displayType;
   }
 }

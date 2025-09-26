@@ -50,6 +50,7 @@ public class XAnnotationFields extends AnnotationFields {
   private void parseField(XField field, DeployBeanProperty prop) {
     this.field = field;
     prop.setPropertyId(field.getId() == null ? 0 : field.getId());
+    prop.setDisplayType(field.getDisplayType());
     prop.initAnnotations(new HashSet<>(field.getAnnotations()));
     if (prop instanceof DeployBeanPropertyAssoc<?>) {
       readAssocOne((DeployBeanPropertyAssoc<?>) prop);

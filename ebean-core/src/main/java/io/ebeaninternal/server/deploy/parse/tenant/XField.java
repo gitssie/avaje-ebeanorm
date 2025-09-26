@@ -13,6 +13,7 @@ public class XField {
   private Class<?> type;
   private Class<?> targetType;
   private String targetTypeName;
+  private String displayType;
 
   private boolean enabled = true;
   private boolean nullable = true;
@@ -65,6 +66,14 @@ public class XField {
   public void setType(Class<?> type) {
     this.type = type;
     this.targetType = type;
+  }
+
+  public String getDisplayType() {
+    return displayType;
+  }
+
+  public void setDisplayType(String displayType) {
+    this.displayType = displayType;
   }
 
   public Class<?> getTargetType() {

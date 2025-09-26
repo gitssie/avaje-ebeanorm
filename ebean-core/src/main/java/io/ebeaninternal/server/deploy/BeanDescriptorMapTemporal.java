@@ -264,10 +264,10 @@ public class BeanDescriptorMapTemporal {
       proxy.setConcurrencyMode(desc);
     }
     // generate the byte code
-    setBeanReflect(desc);
+    setPropertyAccessors(desc);
   }
 
-  protected void setBeanReflect(DeployBeanDescriptor<?> desc) {
+  protected void setPropertyAccessors(DeployBeanDescriptor<?> desc) {
     // Set the BeanReflectGetter and BeanReflectSetter that typically
     // use generated code. NB: Due to Bug 166 so now doing this for
     // abstract classes as well.

@@ -33,7 +33,7 @@ final class XAnnotationClass {
 
   private void read(Class<?> cls) {
     String name = entity.getName();
-    if (name != null && name.trim().length() > 0) {
+    if (name != null && !name.trim().isEmpty()) {
       descriptor.setName(name);
     }
 

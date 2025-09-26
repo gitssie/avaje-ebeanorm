@@ -240,8 +240,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private Function<EntityBean, EntityBean> elementBean;
   private boolean dynamicClass;
 
-  private long deployId;
-  private long deployVersion;
+  private long entityId;
+  private long version;
 
   public BeanDescriptor(BeanDescriptorMap owner, DeployBeanDescriptor<T> deploy) {
     this.owner = owner;
@@ -368,8 +368,8 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
         propertiesIndex[i] = propMap.get(ebi.property(i));
       }
     }
-    this.deployId = deploy.getDeployId();
-    this.deployVersion = deploy.getDeployVersion();
+    this.entityId = deploy.getEntityId();
+    this.version = deploy.getVersion();
   }
 
   public String idSelect() {
@@ -3481,11 +3481,11 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     }
   }
 
-  public long getDeployId(){
-    return deployId;
+  public long getEntityId() {
+    return entityId;
   }
 
-  public long getDeployVersion(){
-    return deployVersion;
+  public long getVersion() {
+    return version;
   }
 }

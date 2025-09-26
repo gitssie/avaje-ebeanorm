@@ -116,6 +116,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
   final int propertyIndex;
   final int fieldIndex;
   private final long propertyId;
+  private final String displayType;
   private final Field field;
   private final Class<?> propertyType;
   private final Type genericType;
@@ -194,6 +195,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.propertyIndex = deploy.getPropertyIndex();
     this.fieldIndex = deploy.getFieldIndex();
     this.propertyId = deploy.getPropertyId();
+    this.displayType = deploy.getDisplayType();
     this.unidirectionalShadow = deploy.isUndirectionalShadow();
     this.importedPrimaryKey = deploy.isImportedPrimaryKey();
     this.discriminator = deploy.isDiscriminator();
@@ -294,6 +296,7 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     this.propertyIndex = source.propertyIndex;
     this.fieldIndex = source.fieldIndex;
     this.propertyId = source.propertyId;
+    this.displayType = source.displayType;
     this.name = source.name();
     this.dbColumn = override.getDbColumn();
     this.nullable = override.isDbNullable();
@@ -861,8 +864,12 @@ public class BeanProperty implements ElPropertyValue, Property, STreeProperty {
     return fieldIndex;
   }
 
-  public long propertyId(){
+  public long propertyId() {
     return propertyId;
+  }
+
+  public String displayType() {
+    return displayType;
   }
 
   @Override
