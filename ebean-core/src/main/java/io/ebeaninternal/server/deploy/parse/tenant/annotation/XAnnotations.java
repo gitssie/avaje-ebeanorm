@@ -16,6 +16,8 @@ public class XAnnotations {
     annotationClass.put("DBJson", XDbJson.class);
     annotationClass.put("DBJsonB", XDbJsonB.class);
     annotationClass.put("DBMap", XDbMap.class);
+    annotationClass.put("DBArray", XDbArray.class);
+    annotationClass.put("DBComment", XDbComment.class);
     annotationClass.put("GeneratedValue", XGeneratedValue.class);
     annotationClass.put("Convert", XConvert.class);
     annotationClass.put("Index", XIndex.class);
@@ -29,6 +31,7 @@ public class XAnnotations {
     annotationClass.put("ManyToOne", XManyToOne.class);
     annotationClass.put("OneToMany", XOneToMany.class);
     annotationClass.put("OneToOne", XOneToOne.class);
+    annotationClass.put("Where", XWhere.class);
 
     annotationClass.put("ChangeLog", XChangeLog.class);
 
