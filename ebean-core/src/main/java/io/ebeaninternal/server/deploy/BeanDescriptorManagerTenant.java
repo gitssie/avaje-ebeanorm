@@ -3,11 +3,15 @@ package io.ebeaninternal.server.deploy;
 import io.ebean.bean.DynamicEntity;
 import io.ebean.bean.XEntityProvider;
 import io.ebean.config.CurrentTenantProvider;
+import io.ebean.plugin.BeanType;
 import io.ebeaninternal.api.SpiEbeanServer;
 import io.ebeaninternal.server.core.InternalConfiguration;
 import io.ebeaninternal.server.core.ServiceUtil;
+import io.ebeaninternal.server.deploy.parse.DeployBeanInfo;
 import io.ebeaninternal.server.deploy.parse.TenantDeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.XReadAnnotations;
+
+import java.util.List;
 
 public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
   protected final XReadAnnotations readAnnotations;
@@ -36,6 +40,20 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     return ServiceUtil.service(cls);
   }
 
+  /**
+   * Return the bean deploy info for the given class.
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> DeployBeanInfo<T> deploy(Class<T> cls) {
+    Object tenantId = tenantProvider.currentId();
+    if (tenantId == null || notDynamicClass(cls)) {
+      return super.deploy(cls);
+    }
+    BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
+    return (DeployBeanInfo<T>) mapTenant.getDeploy(cls);
+  }
+
   @Override
   public <T> BeanDescriptor<T> descriptor(Class<T> entityType) {
     Object tenantId = tenantProvider.currentId();
@@ -54,6 +72,26 @@ public class BeanDescriptorManagerTenant extends BeanDescriptorManager {
     }
     BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
     return mapTenant.beanManager(entityType);
+  }
+
+  @Override
+  public BeanTable beanTable(Class<?> type) {
+    Object tenantId = tenantProvider.currentId();
+    if (ebeanServer == null || tenantId == null || notDynamicClass(type)) {
+      return super.beanTable(type);
+    }
+    BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
+    return mapTenant.beanTable(type);
+  }
+
+  @Override
+  public List<? extends BeanType<?>> beanTypes(String tableName) {
+    Object tenantId = tenantProvider.currentId();
+    if (ebeanServer == null || tenantId == null) {
+      return super.beanTypes(tableName);
+    }
+    BeanDescriptorMapTenant mapTenant = beanDescriptorManagerProvider.getDescriptorTenant(tenantId);
+    return mapTenant.beanTypes(tableName);
   }
 
   @Override

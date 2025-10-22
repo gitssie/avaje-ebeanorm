@@ -5,6 +5,7 @@ import io.ebean.config.DatabaseConfig;
 import io.ebean.config.EncryptKey;
 import io.ebean.config.NamingConvention;
 import io.ebean.core.type.ScalarType;
+import io.ebean.plugin.BeanType;
 import io.ebeaninternal.server.cache.SpiCacheManager;
 import io.ebeaninternal.server.deploy.id.IdBinder;
 import io.ebeaninternal.server.deploy.meta.DeployBeanDescriptor;
@@ -109,14 +110,32 @@ public class BeanDescriptorMapTenant implements BeanDescriptorMap {
   }
 
   private boolean isLocalTableManaged(String tableName) {
-    return tableToDescMap.get(tableName.toLowerCase()) != null || tableToViewDescMap.get(tableName.toLowerCase()) != null;
+    tableName = tableName.toLowerCase();
+    return tableToDescMap.get(tableName) != null || tableToViewDescMap.get(tableName) != null;
+  }
+
+  /**
+   * Return the BeanDescriptors mapped to the table.
+   */
+  public List<? extends BeanType<?>> beanTypes(String tableName) {
+    tableName = tableName.toLowerCase();
+    List<? extends BeanType<?>> arr = tableToDescMap.get(tableName);
+    return arr != null ? arr : beanDescriptorManager.tableToDescMap.get(tableName);
+  }
+
+  public DeployBeanInfo<?> getDeploy(Class<?> cls) {
+    BeanDescriptorMapTemporal that = current.get();
+    if (that != null) {
+      return that.descInfo(cls);
+    }
+    DeployBeanInfo<?> res = descInfoMap.get(cls);
+    return res != null ? res : rootInfoMap.get(cls);
   }
 
   @Override
   public BeanTable beanTable(Class<?> beanClass) {
-    BeanDescriptorMapTemporal that = current.get();
-    if (that != null) {
-      return that.beanTable(beanClass);
+    if (!isDeployed(beanClass)) {
+      deploy(beanClass);
     }
     return beanTableMap.get(beanClass.getName());
   }

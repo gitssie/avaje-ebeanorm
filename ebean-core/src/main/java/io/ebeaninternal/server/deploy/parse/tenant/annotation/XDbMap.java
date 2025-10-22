@@ -7,7 +7,6 @@ import jakarta.persistence.Lob;
 import java.lang.annotation.Annotation;
 
 public class XDbMap implements DbMap {
-  @Lob
   private String name = "";
   private int length;
 

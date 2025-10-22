@@ -16,9 +16,11 @@ import io.ebeaninternal.server.type.TypeManager;
 
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Transient;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -119,7 +121,8 @@ public class TenantDeployCreateProperties {
     if (propertyType.isEnum() || propertyType.isPrimitive()) {
       return new DeployBeanProperty(desc, propertyType, null, null);
     }
-    ScalarType<?> scalarType = typeManager.type(propertyType);
+    ScalarType<?> scalarType = field.getScalarType();
+    scalarType = scalarType != null ? scalarType : typeManager.type(propertyType);
     if (scalarType != null) {
       return new DeployBeanProperty(desc, propertyType, scalarType, null);
     }
@@ -194,6 +197,7 @@ public class TenantDeployCreateProperties {
   protected DeployBeanDescriptor<?> copyDescriptor(XEntity entity, DeployBeanDescriptor descriptor, Class<?> beanClass) throws Exception {
     DeployBeanDescriptor<?> desc = new DeployBeanDescriptor<>(null, beanClass, null, entity.getId() == null ? 0 : entity.getId(), entity.getVersion());
     Field[] fields = descriptor.getClass().getDeclaredFields();
+    String[] excludes = new String[]{"beanType", "concurrencyMode", "elementBean", "entityId", "version"};
     for (Field field : fields) {
       field.setAccessible(true);
       if (Modifier.isStatic(field.getModifiers())) {
@@ -203,7 +207,7 @@ public class TenantDeployCreateProperties {
         field.set(desc, copyBeanProperty(desc, (LinkedHashMap<String, DeployBeanProperty>) field.get(descriptor)));
       } else if (field.getName().equals("properties")) {
         field.set(desc, null);
-      } else if (field.getName().equals("beanType") || field.getName().equals("concurrencyMode")) {
+      } else if (Arrays.binarySearch(excludes, field.getName()) >= 0) {
         continue;
       } else {
         field.set(desc, field.get(descriptor));

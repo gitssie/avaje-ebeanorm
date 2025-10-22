@@ -33,10 +33,10 @@ final class XAnnotationClass {
 
   private void read(Class<?> cls) {
     String name = entity.getName();
-    if (name != null && !name.trim().isEmpty()) {
+    descriptor.setApiKey(name);
+    if (entity.isGenerateClass()) {
       descriptor.setName(name);
     }
-
     //changelog
     ChangeLog changeLog = entity.getAnnotation(ChangeLog.class);
     if (changeLog != null) {

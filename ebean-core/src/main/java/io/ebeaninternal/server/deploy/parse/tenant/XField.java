@@ -1,6 +1,7 @@
 package io.ebeaninternal.server.deploy.parse.tenant;
 
 import io.ebean.bean.ToStringBuilder;
+import io.ebean.core.type.ScalarType;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -14,6 +15,7 @@ public class XField {
   private Class<?> targetType;
   private String targetTypeName;
   private String displayType;
+  private ScalarType<?> scalarType;
 
   private boolean enabled = true;
   private boolean nullable = true;
@@ -90,6 +92,14 @@ public class XField {
 
   public void setTargetTypeName(String targetTypeName) {
     this.targetTypeName = targetTypeName;
+  }
+
+  public ScalarType<?> getScalarType() {
+    return scalarType;
+  }
+
+  public void setScalarType(ScalarType<?> scalarType) {
+    this.scalarType = scalarType;
   }
 
   public boolean isEnabled() {

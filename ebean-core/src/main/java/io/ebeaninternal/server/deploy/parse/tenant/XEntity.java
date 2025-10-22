@@ -23,6 +23,8 @@ public class XEntity {
   private boolean updateable = true;
   private boolean queryable = true;
   private boolean feedEnabled = true;
+  private boolean generateClass = false;
+
   private long version;
 
   public XEntity() {
@@ -33,6 +35,13 @@ public class XEntity {
     this.beanType = beanType;
     this.fields = new LinkedHashMap<>();
     this.annotations = new HashMap<>();
+  }
+
+  public XEntity(Class<?> beanType, String name, Map<String, XField> fields, Map<Class<? extends Annotation>, Annotation> annotations) {
+    this.beanType = beanType;
+    this.name = name;
+    this.fields = fields;
+    this.annotations = annotations;
   }
 
   public Long getId() {
@@ -176,6 +185,14 @@ public class XEntity {
 
   public void setVersion(long version) {
     this.version = version;
+  }
+
+  public boolean isGenerateClass() {
+    return generateClass;
+  }
+
+  public void setGenerateClass(boolean generateClass) {
+    this.generateClass = generateClass;
   }
 
   @Override

@@ -225,6 +225,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   private String softDeleteByIdInSql;
 
   private final String name;
+  private final String apiKey;
   private final String baseTableAlias;
   private final boolean cacheSharableBeans;
   private final String docStoreQueueId;
@@ -249,6 +250,7 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
     this.entityType = deploy.getEntityType();
     this.properties = deploy.propertyNames();
     this.name = InternString.intern(deploy.getName());
+    this.apiKey = InternString.intern(deploy.getApiKey());
     this.baseTableAlias = "t0";
     this.fullName = InternString.intern(deploy.getFullName());
     this.beanType = deploy.getBeanType();
@@ -2012,6 +2014,10 @@ public class BeanDescriptor<T> implements BeanType<T>, STreeType, SpiBeanType {
   @Override
   public String name() {
     return name;
+  }
+
+  public String getApiKey() {
+    return apiKey;
   }
 
   /**

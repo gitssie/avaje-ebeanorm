@@ -12,7 +12,9 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
+
 import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -87,10 +89,10 @@ public class XAnnotationFields extends AnnotationFields {
     prop.setNullable(field.isNullable());
     if (!prop.isLob()) {
       Integer maxSize = field.getMaxLength();
-      if (maxSize != null && maxSize > 0) {
+      if (CharSequence.class.isAssignableFrom(prop.getPropertyType()) && maxSize != null && maxSize > 0) {
         prop.setDbLength(maxSize);
       }
-      if (Number.class.isAssignableFrom(prop.getPropertyType())) {
+      if (BigDecimal.class.isAssignableFrom(prop.getPropertyType())) {
         if (field.getIntegerLength() != null && field.getIntegerLength() > 0) {
           prop.setDbLength(field.getIntegerLength());
         }

@@ -115,6 +115,7 @@ public class DeployBeanDescriptor<T> {
    */
   private InheritInfo inheritInfo;
   private String name;
+  private String apiKey;
   private ChangeLogFilter changeLogFilter;
   private String dbComment;
   private PartitionMeta partitionMeta;
@@ -150,10 +151,10 @@ public class DeployBeanDescriptor<T> {
     this.beanType = beanType;
   }
 
-  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config,long entityId,long version) {
-    this(manager,beanType,config);
+  public DeployBeanDescriptor(BeanDescriptorManager manager, Class<T> beanType, DatabaseConfig config, long entityId, long version) {
+    this(manager, beanType, config);
     this.entityId = entityId;
-    this.entityId = version;
+    this.version = version;
   }
 
 
@@ -733,6 +734,14 @@ public class DeployBeanDescriptor<T> {
    */
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getApiKey() {
+    return apiKey;
+  }
+
+  public void setApiKey(String apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
