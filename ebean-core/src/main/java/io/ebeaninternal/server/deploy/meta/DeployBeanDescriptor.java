@@ -452,6 +452,10 @@ public class DeployBeanDescriptor<T> {
     this.cacheOptions = new CacheOptions(cache, properties);
   }
 
+  public void setCache(boolean enableBeanCache, boolean enableQueryCache){
+    this.cacheOptions = new CacheOptions(enableBeanCache, enableQueryCache);
+  }
+
   /**
    * Return the cache options.
    */

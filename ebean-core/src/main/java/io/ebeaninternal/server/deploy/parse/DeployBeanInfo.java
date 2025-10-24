@@ -27,14 +27,15 @@ public final class DeployBeanInfo<T> {
    */
   public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor) {
     this.util = util;
+    this.entityFinder = util.getEntityFinder();
     this.descriptor = descriptor;
   }
 
-  public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor, XEntity entity, XEntityFinder entityFinder) {
+  public DeployBeanInfo(DeployUtil util, DeployBeanDescriptor<T> descriptor, XEntity entity) {
     this.util = util;
+    this.entityFinder = util.getEntityFinder();
     this.descriptor = descriptor;
     this.entity = entity;
-    this.entityFinder = entityFinder;
   }
 
   @Override

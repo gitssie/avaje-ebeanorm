@@ -2,11 +2,13 @@ package io.ebeaninternal.server.deploy.parse;
 
 import io.ebean.DatabaseBuilder;
 import io.ebean.annotation.*;
+import io.ebean.bean.XEntityProvider;
 import io.ebean.config.*;
 import io.ebean.config.dbplatform.DatabasePlatform;
 import io.ebean.config.dbplatform.DbPlatformType;
 import io.ebean.core.type.ScalarType;
 import io.ebeaninternal.server.deploy.meta.DeployBeanProperty;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.type.DataEncryptSupport;
 import io.ebeaninternal.server.type.ScalarTypeArray;
 import io.ebeaninternal.server.type.ScalarTypeWrapper;
@@ -16,7 +18,9 @@ import io.ebeaninternal.server.type.TypeManager;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.PersistenceException;
+
 import java.sql.Types;
+import java.util.Optional;
 
 /**
  * Utility object to help processing deployment information.
@@ -43,8 +47,13 @@ public final class DeployUtil {
   private final EncryptKeyManager encryptKeyManager;
   private final Encryptor bytesEncryptor;
   private final boolean useValidationNotNull;
+  private final XEntityFinder entityFinder;
 
   public DeployUtil(TypeManager typeMgr, DatabaseBuilder.Settings config) {
+    this(typeMgr, config, null);
+  }
+
+  public DeployUtil(TypeManager typeMgr, DatabaseBuilder.Settings config, XEntityFinder entityFinder) {
     this.typeManager = typeMgr;
     this.namingConvention = config.getNamingConvention();
     this.dbPlatform = config.getDatabasePlatform();
@@ -53,6 +62,7 @@ public final class DeployUtil {
     Encryptor be = config.getEncryptor();
     this.bytesEncryptor = be != null ? be : new SimpleAesEncryptor();
     this.useValidationNotNull = config.isUseValidationNotNull();
+    this.entityFinder = entityFinder;
   }
 
   public TypeManager typeManager() {
@@ -271,5 +281,9 @@ public final class DeployUtil {
    */
   public String convertQuotes(String name) {
     return dbPlatform.convertQuotedIdentifiers(name);
+  }
+
+  public XEntityFinder getEntityFinder() {
+    return entityFinder;
   }
 }

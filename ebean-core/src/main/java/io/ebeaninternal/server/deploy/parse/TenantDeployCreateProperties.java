@@ -189,7 +189,7 @@ public class TenantDeployCreateProperties {
     DeployBeanDescriptor desc = copyDescriptor(entity, info.getDescriptor(), beanClass);
     createProperties(desc, entity, desc.getBeanType());
     setProperties(desc);
-    info = new DeployBeanInfo<>(info.getUtil(), desc, entity, entityProvider);
+    info = new DeployBeanInfo<>(info.getUtil(), desc, entity);
     readAnnotations.readInitial(info); //initial base scalar properties
     return info;
   }

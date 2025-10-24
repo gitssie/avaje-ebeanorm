@@ -64,4 +64,11 @@ public interface GeneratedProperty {
    */
   boolean isDDLNotNullable();
 
+  default boolean generatedOnly() {
+    return true;
+  }
+
+  default int sortOrder() {
+    return 0;
+  }
 }

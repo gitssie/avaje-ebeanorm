@@ -71,6 +71,15 @@ public class CacheOptions {
     this.region = cache.region();
   }
 
+  public CacheOptions(boolean enableBeanCache, boolean enableQueryCache) {
+    this.invalidateQueryCache = false;
+    this.enableBeanCache = enableBeanCache;
+    this.enableQueryCache = enableQueryCache;
+    this.readOnly = false;
+    this.naturalKey = null;
+    this.region = null;
+  }
+
   /**
    * Return the cache region name.
    */

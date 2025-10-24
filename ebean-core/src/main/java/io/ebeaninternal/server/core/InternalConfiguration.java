@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import io.ebean.DatabaseBuilder;
 import io.ebean.ExpressionFactory;
 import io.ebean.annotation.Platform;
+import io.ebean.bean.XEntityProvider;
 import io.ebean.cache.*;
 import io.ebean.config.*;
 import io.ebean.config.dbplatform.DatabasePlatform;
@@ -32,6 +33,7 @@ import io.ebeaninternal.server.deploy.generatedproperty.GeneratedPropertyFactory
 import io.ebeaninternal.server.deploy.parse.DeployCreateProperties;
 import io.ebeaninternal.server.deploy.parse.DeployInherit;
 import io.ebeaninternal.server.deploy.parse.DeployUtil;
+import io.ebeaninternal.server.deploy.parse.tenant.XEntityFinder;
 import io.ebeaninternal.server.dto.DtoBeanManager;
 import io.ebeaninternal.server.expression.DefaultExpressionFactory;
 import io.ebeaninternal.server.expression.platform.DbExpressionHandler;
@@ -119,13 +121,20 @@ public final class InternalConfiguration {
     this.multiValueBind = createMultiValueBind(databasePlatform.platform());
     this.deployInherit = new DeployInherit(bootupClasses);
     this.deployCreateProperties = new DeployCreateProperties(typeManager);
-    this.deployUtil = new DeployUtil(typeManager, config);
     this.serverCachePlugin = initServerCachePlugin();
     this.cacheManager = initCacheManager();
 
     final InternalConfigXmlMap xmlMap = initExternalMapping();
     this.dtoBeanManager = new DtoBeanManager(typeManager, xmlMap.readDtoMapping());
-    this.beanDescriptorManager = isTenant ? new BeanDescriptorManagerTenant(this) : new BeanDescriptorManager(this);
+    if (isTenant) {
+      XEntityProvider entityProvider = (XEntityProvider) config.getServiceObject(XEntityProvider.class.getName());
+      XEntityFinder entityFinder = entityProvider.create();
+      this.deployUtil = new DeployUtil(typeManager, config, entityFinder);
+      this.beanDescriptorManager = new BeanDescriptorManagerTenant(this, entityFinder, entityProvider.tenantProvider());
+    } else {
+      this.deployUtil = new DeployUtil(typeManager, config);
+      this.beanDescriptorManager = new BeanDescriptorManager(this);
+    }
     Map<String, String> asOfTableMapping = beanDescriptorManager.deploy(xmlMap.xmlDeployment());
     Map<String, String> draftTableMap = beanDescriptorManager.draftTableMap();
     beanDescriptorManager.scheduleBackgroundTrim();
@@ -601,9 +610,9 @@ public final class InternalConfiguration {
       case POSTGRES:
         return new QueryPlanLoggerExplain(explain(config, "explain (analyze, costs, verbose, buffers) "));
       case YUGABYTE:
-        return new QueryPlanLoggerExplain(explain(config,"explain (analyze, buffers, dist) "));
+        return new QueryPlanLoggerExplain(explain(config, "explain (analyze, buffers, dist) "));
       default:
-        return new QueryPlanLoggerExplain(explain(config,"explain "));
+        return new QueryPlanLoggerExplain(explain(config, "explain "));
     }
   }
 

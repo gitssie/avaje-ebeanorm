@@ -9,9 +9,7 @@ import io.ebeaninternal.server.deploy.generatedproperty.GeneratedProperty;
 import io.ebeaninternal.server.properties.BeanPropertySetter;
 import io.ebeaninternal.server.type.ScalarTypeString;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -376,7 +374,7 @@ public final class DeployBeanPropertyLists {
         list.add(prop);
       }
     }
-    return list.toArray(new BeanProperty[0]);
+    return sortGeneratedProps(list.toArray(new BeanProperty[0]));
   }
 
   /**
@@ -390,7 +388,7 @@ public final class DeployBeanPropertyLists {
         list.add(prop);
       }
     }
-    return list.toArray(new BeanProperty[0]);
+    return sortGeneratedProps(list.toArray(new BeanProperty[0]));
   }
 
   public BeanProperty[] getGeneratedDelete() {
@@ -401,7 +399,12 @@ public final class DeployBeanPropertyLists {
         list.add(prop);
       }
     }
-    return list.toArray(new BeanProperty[0]);
+    return sortGeneratedProps(list.toArray(new BeanProperty[0]));
+  }
+
+  private BeanProperty[] sortGeneratedProps(BeanProperty[] props){
+    Arrays.sort(props, Comparator.comparingInt(a -> a.generatedProperty().sortOrder()));
+    return props;
   }
 
   /**
