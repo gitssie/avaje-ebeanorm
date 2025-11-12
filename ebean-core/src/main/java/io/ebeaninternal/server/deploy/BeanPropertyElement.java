@@ -32,7 +32,7 @@ public class BeanPropertyElement<T> extends BeanProperty {
         properties.add(bp);
       }
     }
-    if (!properties.isEmpty() && beanDescriptor == null) {
+    if (beanDescriptor == null) {
       DeployBeanDescriptor dp = new DeployBeanDescriptor(null, Map.class, null);
       dp.setProperties(new String[0]);
       dp.setName(ElementBean.class.getSimpleName());

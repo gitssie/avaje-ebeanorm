@@ -182,8 +182,6 @@ final class AnnotationClass extends AnnotationParser {
         InvalidateQueryCache invalidateQueryCache = typeGet(cls, InvalidateQueryCache.class);
         if (invalidateQueryCache != null) {
           descriptor.setInvalidateQueryCache(invalidateQueryCache.region());
-        }else{
-          descriptor.setCache(false,true);
         }
       }
     }
